@@ -30,22 +30,20 @@ class Config:
 
     # --- original ablatable mechanisms ---
     use_topology: bool = True
-    use_recon_error: bool = True
     class_weighted: bool = True
 
     # --- architectural modifications ---
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
-    use_focal_loss: bool = True        # focal loss (γ=2) vs weighted CE
 
     # --- exposed magnitudes ---
     sgc_k: int = 2
-    svd_components: int = 16
     sgc_epochs: int = 200
+    wf_epochs: int = 70                # optimization for walk-forward loop
     sgc_lr: float = 0.01
     sgc_weight_decay: float = 5e-4
     focal_gamma: float = 2.0           # 0.0 == weighted CE
-    mlp_hidden: tuple = (128, 64)
+    mlp_hidden: tuple = (512, 256, 128)
     mlp_dropout: float = 0.3
 
     seed: int = RANDOM_SEED

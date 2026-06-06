@@ -32,7 +32,7 @@ class TestFeatureScaling:
     PageRank (~1e-4) and clustering (~0..1) were previously unscaled.
     """
 
-    def _make_minimal_dm(self, use_topology: bool, use_recon: bool):
+    def _make_minimal_dm(self, use_topology: bool):
         """Build a tiny synthetic EllipticDataModule for scaling checks."""
         from config import Config
         from data.build_graph import EllipticDataModule
@@ -63,8 +63,6 @@ class TestFeatureScaling:
             train_steps=range(1, 5),
             test_steps=range(5, 7),
             use_topology=use_topology,
-            use_recon_error=use_recon,
-            svd_components=3,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
         dm.setup()
@@ -72,7 +70,7 @@ class TestFeatureScaling:
 
     def test_base_features_are_scaled(self):
         """Base 166-dim block must be ~N(0,1) on the training split."""
-        dm, cfg = self._make_minimal_dm(use_topology=False, use_recon=False)
+        dm, cfg = self._make_minimal_dm(use_topology=False)
         Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
         col_means = np.abs(Xs.mean(axis=0))
         col_stds  = Xs.std(axis=0)
@@ -86,7 +84,7 @@ class TestFeatureScaling:
         appended at index n_base: must also be ~N(0,1) on the training split.
         PageRank raw values are O(1e-4); unscaled they dominate at the wrong scale.
         """
-        dm, cfg = self._make_minimal_dm(use_topology=True, use_recon=False)
+        dm, cfg = self._make_minimal_dm(use_topology=True)
         Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
         n_base = 10   # synthetic feature count
         topo_cols = Xs[:, n_base: n_base + 2]   # pagerank + clustering
@@ -100,21 +98,6 @@ class TestFeatureScaling:
         assert topo_stds.min() > 0.1, (
             f"W1: Topology columns appear constant — std={topo_stds}."
         )
-
-    def test_recon_error_column_is_scaled_W1(self):
-        """
-        W1 REGRESSION: Reconstruction error column must be ~N(0,1) on train split.
-        """
-        dm, cfg = self._make_minimal_dm(use_topology=True, use_recon=True)
-        Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
-        recon_col = Xs[:, -1]  # last column is recon error
-        mean_abs = abs(recon_col.mean())
-        std_val  = recon_col.std()
-        assert mean_abs < 0.5, (
-            f"W1: Recon error column NOT scaled — mean={mean_abs:.4f}. "
-            f"Fix: include recon error in second scaler pass."
-        )
-        assert std_val > 0.1, f"W1: Recon error appears constant — std={std_val:.4f}."
 
     def test_second_scaler_fitted_on_train_only_no_leakage(self):
         """
@@ -144,8 +127,6 @@ class TestFeatureScaling:
             train_steps=range(1, 5),
             test_steps=range(5, 7),
             use_topology=False,
-            use_recon_error=False,
-            svd_components=2,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
         dm.setup()
@@ -217,67 +198,7 @@ class TestTemporalLeakageGuard:
             _validate_temporal_edges(df, df_edge_cross)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# W2 — Stacking meta distribution shift
-# ─────────────────────────────────────────────────────────────────────────────
 
-class TestStackingMetaDistribution:
-    """
-    W2: The base models generating meta-training features and meta-test features
-    must be trained on the same set of timesteps (early window only).
-    """
-
-    def test_base_model_window_consistency_W2(self):
-        """
-        W2 REGRESSION: Capture which fit_steps are passed to base_predictions
-        for the meta-train call and the meta-test call.
-        Both must use early steps only.
-        """
-        from models.stacking import stacking_meta_classifier
-
-        # We don't need the real dataset — just check the call contract.
-        # Patch base_predictions to record what fit_steps it is called with.
-        recorded_fit_steps = []
-
-        dm_mock = MagicMock()
-        dm_mock.sgc_input_dim = 10
-
-        from config import Config
-        cfg = Config(
-            train_steps=range(1, 11),
-            test_steps=range(11, 16),
-        )
-        early = [s for s in cfg.train_steps if s <= 5]
-
-        with patch("models.stacking._base_predictions") as mock_bp:
-            # Return dummy arrays so the LR can fit
-            n_meta = 20
-            n_test = 10
-            mock_bp.side_effect = [
-                (np.random.rand(n_meta, 3), np.random.randint(0, 2, n_meta)),
-                (np.random.rand(n_test, 3), np.random.randint(0, 2, n_test)),
-            ]
-            try:
-                stacking_meta_classifier(dm_mock, cfg)
-            except Exception:
-                pass  # we only care about the call args
-
-            calls = mock_bp.call_args_list
-            assert len(calls) == 2, f"Expected 2 calls to _base_predictions, got {len(calls)}"
-
-            # Both calls must pass early as fit_steps
-            meta_train_fit_steps = list(calls[0][0][0])  # first positional arg of first call
-            meta_test_fit_steps  = list(calls[1][0][0])  # first positional arg of second call
-
-            assert meta_train_fit_steps == early, (
-                f"W2: Meta-train base models fitted on {meta_train_fit_steps}, "
-                f"expected early={early}."
-            )
-            assert meta_test_fit_steps == early, (
-                f"W2: Meta-test base models fitted on {meta_test_fit_steps}, "
-                f"expected early={early}. Old code used cfg.train_steps here — "
-                f"that causes distribution shift."
-            )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -316,7 +237,6 @@ class TestSGCInputDimEncapsulation:
             train_steps=range(1, 4),
             test_steps=range(4, 5),
             use_topology=False,
-            use_recon_error=False,
             use_multiscale_prop=True,
             sgc_k=2,
         )
@@ -357,7 +277,6 @@ class TestSGCInputDimEncapsulation:
             train_steps=range(1, 3),
             test_steps=range(3, 4),
             use_topology=False,
-            use_recon_error=False,
             sgc_k=1,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)

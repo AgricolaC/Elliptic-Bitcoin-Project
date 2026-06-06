@@ -12,15 +12,6 @@ except ImportError:
         return np.zeros((n, 2), dtype=np.float32)
 
 try:
-    from features.reconstruction import SVDReconstructor
-except ImportError:
-    class SVDReconstructor:
-        def __init__(self, cfg): self.cfg = cfg
-        def fit(self, X): pass
-        def get_reconstruction_error(self, X):
-            return np.zeros((X.shape[0], 1), dtype=np.float32)
-
-try:
     from models.layers import sgc_propagate
 except ImportError:
     sgc_propagate = None
@@ -93,16 +84,15 @@ class EllipticDataModule:
 
         # LEAKAGE GUARD: two independent scalers — each fitted on train only.
         # scaler_base: fitted on raw 166 features.
-        # scaler_aug:  fitted on [base | topology | recon_error] (W1 fix).
+        # scaler_aug:  fitted on [base | topology] (W1 fix).
         self.scaler_base = StandardScaler()
         self.scaler_aug  = StandardScaler()
-        self.svd = SVDReconstructor(cfg)
         self.feature_dim = len(feature_cols)
         self.sgc_input_dim: int = -1   # W6: will be set inside setup()
 
     def setup(self) -> "EllipticDataModule":
         """
-        Build graphs, scale features, optionally inject topology + recon error,
+        Build graphs, scale features, optionally inject topology,
         apply a second scaler pass (W1 fix), run SGC propagation (W6 fix).
 
         Defensive Notes:
@@ -151,29 +141,13 @@ class EllipticDataModule:
                     [self.graphs[t]["x_np"], topo_feats], axis=1
                 )
 
-        # ── Step 4: SVD reconstruction error ───────────────────────────────────
-        if c.use_recon_error:
-            # LEAKAGE GUARD: SVD fitted on train augmented features only.
-            train_X_aug = np.concatenate(
-                [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
-            )
-            self.svd.fit(train_X_aug)
-            for t in self.graphs:
-                err = self.svd.get_reconstruction_error(self.graphs[t]["x_np"])
-                # SHAPE GUARD
-                assert err.shape == (self.graphs[t]["n"], 1), \
-                    f"t={t}: recon error shape {err.shape} != ({self.graphs[t]['n']}, 1)"
-                self.graphs[t]["x_np"] = np.concatenate(
-                    [self.graphs[t]["x_np"], err], axis=1
-                )
-
         # ── Step 5: Second scaler pass (W1 FIX) ───────────────────────────────
-        # Rescales the full augmented feature matrix [base | topo | recon] so
-        # that topology (PageRank ~1e-4, clustering ~0..1) and reconstruction
-        # error operate on the same variance scale as the base features.
+        # Rescales the full augmented feature matrix [base | topo] so
+        # that topology (PageRank ~1e-4, clustering ~0..1) operate on the 
+        # same variance scale as the base features.
         #
         # LEAKAGE GUARD: scaler_aug fitted on train_steps augmented data only.
-        if c.use_topology or c.use_recon_error:
+        if c.use_topology:
             train_X_full = np.concatenate(
                 [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
             )
@@ -211,10 +185,9 @@ class EllipticDataModule:
 
         n_base = len(self.feature_cols)
         n_topo = 2 if c.use_topology else 0
-        n_recon = 1 if c.use_recon_error else 0
         print(
             f"[DataModule] feature_dim={self.feature_dim} "
-            f"({n_base} base + {n_topo} topo + {n_recon} recon) | "
+            f"({n_base} base + {n_topo} topo) | "
             f"sgc_input_dim={self.sgc_input_dim}"
         )
         return self

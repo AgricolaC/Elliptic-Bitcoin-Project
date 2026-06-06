@@ -46,14 +46,15 @@ def _validate_temporal_edges(df: pd.DataFrame, df_edge: pd.DataFrame) -> None:
 
 
 import os, glob
-import kagglehub
 
 def download_and_load_data() -> Tuple[pd.DataFrame, pd.DataFrame, int, List[str]]:
     """Download and load Elliptic dataset from Kaggle."""
-    DATA_ROOT = kagglehub.dataset_download("ellipticco/elliptic-data-set")
+    import os
+    DATA_ROOT = os.path.expanduser("~/.cache/kagglehub/datasets/ellipticco/elliptic-data-set/versions/1")
     def _find(name):
         hits = glob.glob(os.path.join(DATA_ROOT, "**", name), recursive=True)
         assert hits, f"Could not locate {name} under {DATA_ROOT}"
+        return hits[0]
         return hits[0]
 
     feat_path  = _find("elliptic_txs_features.csv")

@@ -32,6 +32,7 @@ def fit_head(
     cfg: Config,
     class_weights: torch.Tensor,
     device: torch.device,
+    epochs: int = -1,
 ) -> "SGCHead":
     """
     Train one SGCHead.
@@ -50,7 +51,8 @@ def fit_head(
     mask = (ytr != -1)
 
     model.train()
-    for _ in range(cfg.sgc_epochs):
+    n_epochs = epochs if epochs > 0 else cfg.sgc_epochs
+    for _ in range(n_epochs):
         opt.zero_grad()
         if mask.sum() > 0:
             loss = loss_fn(model(Xtr)[mask], ytr[mask])
@@ -81,8 +83,8 @@ def walk_forward_validation(
     cfg: Config,
     device: torch.device,
     sweep_name: str = "default",   # W7 FIX: parameterized filename
-    # cls_w REMOVED (W8 FIX): weights now computed per-tau from expanding window
-) -> Tuple[float, float]:
+    return_records: bool = False,
+) -> Any:
     """
     Walk-forward temporal validation with dynamic class weights.
 
@@ -111,6 +113,7 @@ def walk_forward_validation(
     safe_name = re.sub(r"[^\w\-]", "_", sweep_name)
 
     wf_steps, wf_f1, wf_prauc = [], [], []
+    wf_records = []
 
     for tau in cfg.test_steps:
         train_block = list(range(min(dm.graphs), tau))
@@ -135,18 +138,22 @@ def walk_forward_validation(
 
         # W8 FIX: compute weights from the expanding window, not static train_steps
         cls_w = _compute_class_weights(ytr_w, device)
+        n_epochs = getattr(cfg, "wf_epochs", cfg.sgc_epochs)
 
-        model = fit_head(Xtr_w, ytr_w, dm.sgc_input_dim, cfg, cls_w, device)
+        model = fit_head(Xtr_w, ytr_w, dm.sgc_input_dim, cfg, cls_w, device, epochs=n_epochs)
         model.eval()
 
         with torch.no_grad():
             s = torch.softmax(model(Xte_w.to(device)), dim=1)[:, 1].cpu().numpy()
 
         wf_steps.append(tau)
-        wf_f1.append(
-            f1_score(yte_w, (s >= 0.5).astype(int), pos_label=1, zero_division=0)
-        )
-        wf_prauc.append(average_precision_score(yte_w, s))
+        f1 = f1_score(yte_w, (s >= 0.5).astype(int), pos_label=1, zero_division=0)
+        prauc = average_precision_score(yte_w, s)
+        wf_f1.append(f1)
+        wf_prauc.append(prauc)
+        
+        if return_records:
+            wf_records.append((tau, f1, prauc, yte_w, s))
 
     if wf_steps:
         plt.figure(figsize=(11, 4.5))
@@ -158,8 +165,8 @@ def walk_forward_validation(
         plt.ylabel("Score")
         plt.title(
             f"Walk-forward [{safe_name}] "
-            f"multiscale={cfg.use_multiscale_prop} mlp={cfg.use_mlp_head} "
-            f"focal={cfg.use_focal_loss}"
+            f"multiscale={cfg.use_multiscale_prop} "
+            f"topo={cfg.use_topology} | "
         )
         plt.legend()
         plt.grid(alpha=0.3)
@@ -171,7 +178,7 @@ def walk_forward_validation(
         plt.close()
 
     if not wf_f1:
-        return 0.0, 0.0
+        return (0.0, 0.0, []) if return_records else (0.0, 0.0)
 
     mean_f1    = float(np.mean(wf_f1))
     mean_prauc = float(np.mean(wf_prauc))
@@ -179,4 +186,4 @@ def walk_forward_validation(
         f"[{safe_name}] Mean walk-forward F1={mean_f1:.3f} | "
         f"min F1={min(wf_f1):.3f} at τ={wf_steps[int(np.argmin(wf_f1))]}"
     )
-    return mean_f1, mean_prauc
+    return (mean_f1, mean_prauc, wf_records) if return_records else (mean_f1, mean_prauc)
