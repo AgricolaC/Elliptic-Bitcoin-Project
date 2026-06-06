@@ -43,7 +43,7 @@ class Config:
     sgc_lr: float = 0.01
     sgc_weight_decay: float = 5e-4
     focal_gamma: float = 2.0           # 0.0 == weighted CE
-    mlp_hidden: tuple = (512, 256, 128)
+    mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3
 
     seed: int = RANDOM_SEED

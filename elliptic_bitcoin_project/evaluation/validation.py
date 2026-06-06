@@ -5,6 +5,7 @@ import re
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import time
 from typing import Tuple, List, Any
 from sklearn.metrics import f1_score, average_precision_score
 from config import Config, OUTPUT_DIR, set_global_seeds
@@ -114,6 +115,8 @@ def walk_forward_validation(
 
     wf_steps, wf_f1, wf_prauc = [], [], []
     wf_records = []
+    y_true_all, y_pred_all, s_pred_all = [], [], []
+    total_wf_train_time = 0.0
 
     for tau in cfg.test_steps:
         train_block = list(range(min(dm.graphs), tau))
@@ -140,7 +143,10 @@ def walk_forward_validation(
         cls_w = _compute_class_weights(ytr_w, device)
         n_epochs = getattr(cfg, "wf_epochs", cfg.sgc_epochs)
 
+        t0 = time.perf_counter()
         model = fit_head(Xtr_w, ytr_w, dm.sgc_input_dim, cfg, cls_w, device, epochs=n_epochs)
+        total_wf_train_time += (time.perf_counter() - t0)
+        
         model.eval()
 
         with torch.no_grad():
@@ -151,6 +157,10 @@ def walk_forward_validation(
         prauc = average_precision_score(yte_w, s)
         wf_f1.append(f1)
         wf_prauc.append(prauc)
+        
+        y_true_all.append(yte_w)
+        s_pred_all.append(s)
+        y_pred_all.append((s >= 0.5).astype(int))
         
         if return_records:
             wf_records.append((tau, f1, prauc, yte_w, s))
@@ -180,10 +190,19 @@ def walk_forward_validation(
     if not wf_f1:
         return (0.0, 0.0, []) if return_records else (0.0, 0.0)
 
+    # Compute Pooled Walk-Forward F1/PRAUC for apples-to-apples comparison with Static OOT
+    y_true_pooled = np.concatenate(y_true_all)
+    y_pred_pooled = np.concatenate(y_pred_all)
+    s_pred_pooled = np.concatenate(s_pred_all)
+    
+    pooled_f1 = float(f1_score(y_true_pooled, y_pred_pooled, pos_label=1, zero_division=0))
+    pooled_prauc = float(average_precision_score(y_true_pooled, s_pred_pooled))
+
     mean_f1    = float(np.mean(wf_f1))
-    mean_prauc = float(np.mean(wf_prauc))
+    
     print(
-        f"[{safe_name}] Mean walk-forward F1={mean_f1:.3f} | "
+        f"[{safe_name}] Pooled walk-forward F1={pooled_f1:.3f} | Mean per-step={mean_f1:.3f} | "
         f"min F1={min(wf_f1):.3f} at τ={wf_steps[int(np.argmin(wf_f1))]}"
     )
-    return (mean_f1, mean_prauc, wf_records) if return_records else (mean_f1, mean_prauc)
+    print(f"  [WF Pipeline] Walk-forward explicit training loop overhead: {total_wf_train_time:.2f} seconds")
+    return (pooled_f1, pooled_prauc, wf_records) if return_records else (pooled_f1, pooled_prauc)

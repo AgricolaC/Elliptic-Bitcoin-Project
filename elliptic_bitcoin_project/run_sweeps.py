@@ -209,8 +209,9 @@ def run_static_only_sweep(
 
 def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, **model_kwargs) -> tuple:
     """Walk-forward evaluation for scikit-learn/XGBoost tabular models."""
-    wf_f1s = []
-    wf_praucs = []
+    y_true_all = []
+    y_pred_all = []
+    s_pred_all = []
     
     for tau in cfg.test_steps:
         # Train on [1, tau-1]
@@ -245,10 +246,18 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, **mode
         s_pred = model.predict_proba(Xte)[:, 1]
         y_pred = (s_pred >= 0.5).astype(int)
         
-        wf_f1s.append(f1_score(yte, y_pred, pos_label=1, zero_division=0))
-        wf_praucs.append(average_precision_score(yte, s_pred))
+        y_true_all.append(yte)
+        y_pred_all.append(y_pred)
+        s_pred_all.append(s_pred)
         
-    return np.mean(wf_f1s), np.mean(wf_praucs)
+    y_true_pooled = np.concatenate(y_true_all)
+    y_pred_pooled = np.concatenate(y_pred_all)
+    s_pred_pooled = np.concatenate(s_pred_all)
+        
+    pooled_f1 = f1_score(y_true_pooled, y_pred_pooled, pos_label=1, zero_division=0)
+    pooled_prauc = average_precision_score(y_true_pooled, s_pred_pooled)
+    
+    return pooled_f1, pooled_prauc
 
 
 def main():
@@ -359,14 +368,17 @@ def main():
          Config(use_mlp_head=True,  use_multiscale_prop=True,
                 use_topology=False)),
 
-        ("Sweep 4: + Topology Features",
+        ("Sweep 4a: + Topology only (Champion)",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
                 use_topology=True))
     ]
 
     for name, cfg in sweeps:
         print(f"\n{'='*55}\nRunning: {name}\n{'='*55}")
-        res = run_single_sweep(name, cfg, df, df_edge, feature_cols)
+        if "Champion" in name:
+            res = run_single_sweep(name, cfg, df, df_edge, feature_cols)
+        else:
+            res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
         results.append(res)
         
         # Incremental save

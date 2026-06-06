@@ -129,13 +129,11 @@ def main() -> None:
     # Locate the champion artifacts
     model_dir = os.path.join(OUTPUT_DIR, "models")
     
-    # Try to load exactly what we specified: Sweep_4____Topology_only or Sweep_4____Topology_Features
-    # The actual string might depend on the sweep name string. Let's find it securely.
-    matches = glob.glob(os.path.join(model_dir, "Sweep_4*dm.pkl"))
-    if not matches:
-        raise FileNotFoundError(f"Champion DM not found in {model_dir}. Ensure run_sweeps.py finished running.")
-        
-    champion_prefix = matches[0].replace("_dm.pkl", "")
+    # Target exactly the newly specified canonical champion name
+    champion_prefix = os.path.join(model_dir, "Sweep_4a____Topology_only__Champion_")
+    
+    if not os.path.exists(champion_prefix + "_dm.pkl"):
+        raise FileNotFoundError(f"Champion DM not found at {champion_prefix}_dm.pkl. Ensure run_sweeps.py finished running.")
     
     print(f"\n--- Loading Champion Artifacts: {os.path.basename(champion_prefix)} ---")
     dm = joblib.load(champion_prefix + "_dm.pkl")
