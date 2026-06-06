@@ -205,6 +205,9 @@ def main():
         print(f"\n{'='*55}\nRunning: {name}\n{'='*55}")
         res = run_single_sweep(name, cfg, df, df_edge, feature_cols)
         results.append(res)
+        
+        # Incremental save
+        pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(os.path.join(OUTPUT_DIR, "sweep_results.csv"), index=False)
         print(f"--> {res}\n")
 
     # ── Advanced modules ───────────────────────────────────────────────────────

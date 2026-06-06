@@ -32,16 +32,7 @@ def main() -> None:
     # 3. Graph Building, Scaling & injections
     dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
     dm.setup()
-    
-    # 4. SGC Propagation (Symmetrized Graph inside)
-    t0 = time.time()
-    for t in range(1, 50):
-        g = dm.graphs[t]
-        g["prop"] = sgc_propagate(g["x"], g["edge_index"], cfg.sgc_k, cfg.use_multiscale_prop)
-        
-    dm.sgc_input_dim = dm.graphs[1]["prop"].shape[1]
-    print(f"Propagated all 49 slices in {time.time()-t0:.1f}s | SGC input dim = {dm.sgc_input_dim}")
-    
+
     # 5. Baselines (OOT Split on Raw 166 Features)
     print("\n--- Running Tree Baselines ---")
     run_baselines(dm, cfg)
@@ -76,7 +67,7 @@ def main() -> None:
     
     # 7. Walk-Forward Drift Validation
     print("\n--- Walk-Forward Validation ---")
-    walk_forward_validation(dm, cfg, DEVICE, cls_w)
+    walk_forward_validation(dm, cfg, DEVICE, sweep_name="main")
     
     # 8. Topological Manifold Forensics
     print("\n--- Manifold Visualization ---")
