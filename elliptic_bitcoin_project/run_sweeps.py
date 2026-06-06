@@ -139,6 +139,7 @@ def run_single_sweep(
     
     # Dump static OOT model, DM, and Walk-Forward records
     joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
+    joblib.dump(cfg, os.path.join(model_dir, f"{safe_name}_cfg.pkl"))
     torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
     joblib.dump(wf_records, os.path.join(model_dir, f"{safe_name}_wf_records.pkl"))
 
@@ -185,11 +186,12 @@ def run_static_only_sweep(
         static_f1    = f1_score(y_true, (scores >= 0.5).astype(int), pos_label=1, zero_division=0)
         static_prauc = average_precision_score(y_true, scores)
     
-    # Save the static-only model + dm for potential later analysis
+    # Save the static-only model + dm + cfg for potential later analysis
     safe_name = re.sub(r"[^\w\-]", "_", name)
     model_dir = os.path.join(OUTPUT_DIR, "models")
     os.makedirs(model_dir, exist_ok=True)
     joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
+    joblib.dump(cfg, os.path.join(model_dir, f"{safe_name}_cfg.pkl"))
     torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
 
     return _make_result(
