@@ -1,2 +1,7 @@
 Sweep,Static Time (s),Static Mem (MB),Static OOT F1,Static OOT PR-AUC,WF Time (s),WF Mem (MB),Walk-Forward Mean F1,Walk-Forward Mean PR-AUC
 Baseline: IsolationForest (166),0.581,92.35,0.0,0.036,8.518,254.36,0.0,0.036
+Baseline: XGBoost (166),3.44,1.26,0.792,0.799,60.189,88.72,0.871,0.916
+Baseline: RandomForest (166),8.681,2.71,0.81,0.799,172.915,89.6,0.835,0.904
+Sweep 1: SGC (baseline),6.506,83.01,0.286,0.251,25.333,2.87,0.309,0.322
+Sweep 2: + MLP Head,37.552,1.11,0.648,0.659,N/A,N/A,N/A,N/A
+Sweep 3: + Multiscale Prop,41.734,1.04,0.607,0.627,N/A,N/A,N/A,N/A
