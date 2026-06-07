@@ -9,12 +9,12 @@ env/
 .env
 
 # Results and Output logs
-results/
-!results/sweep_results.csv
-!results/mlp_profiling_results.csv
+results/models
 archive/
 sweep_log.txt
 sweep_log_expanded.txt
+
+references/study
 
 # OS Files
 .DS_Store

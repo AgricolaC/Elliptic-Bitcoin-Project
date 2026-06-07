@@ -55,8 +55,13 @@ class TestFeatureScaling:
         edge_rows = []
         for t in range(1, n_ts + 1):
             ids = [t * 1000 + i for i in range(n_nodes)]
-            for i in range(0, n_nodes - 1, 3):
-                edge_rows.append({"txId1": ids[i], "txId2": ids[i + 1]})
+            # Star graph for first 5 nodes
+            for i in range(1, 5):
+                edge_rows.append({"txId1": ids[0], "txId2": ids[i]})
+            # Triangle for next 3 nodes
+            edge_rows.append({"txId1": ids[5], "txId2": ids[6]})
+            edge_rows.append({"txId1": ids[6], "txId2": ids[7]})
+            edge_rows.append({"txId1": ids[7], "txId2": ids[5]})
         df_edge = pd.DataFrame(edge_rows)
 
         cfg = Config(
@@ -345,8 +350,12 @@ class TestSweepResultKeyStandardization:
 
     REQUIRED_KEYS = {
         "Sweep",
+        "Static Time (s)",
+        "Static Mem (MB)",
         "Static OOT F1",
         "Static OOT PR-AUC",
+        "WF Time (s)",
+        "WF Mem (MB)",
         "Walk-Forward Mean F1",
         "Walk-Forward Mean PR-AUC",
     }
@@ -364,7 +373,9 @@ class TestSweepResultKeyStandardization:
         with patch("run_sweeps.EllipticDataModule") as MockDM, \
              patch("run_sweeps.stack_prop") as mock_sp, \
              patch("run_sweeps.fit_head") as mock_fh, \
-             patch("run_sweeps.walk_forward_validation") as mock_wf:
+             patch("run_sweeps.walk_forward_validation") as mock_wf, \
+             patch("run_sweeps.joblib.dump") as mock_dump, \
+             patch("run_sweeps.torch.save") as mock_save:
 
             mock_dm = MagicMock()
             mock_dm.graphs = {t: {"prop": torch.zeros(5, 10), "y": torch.zeros(5).long(),
@@ -376,7 +387,7 @@ class TestSweepResultKeyStandardization:
             mock_model = MagicMock()
             mock_model.return_value = torch.zeros(20, 2)
             mock_fh.return_value = mock_model
-            mock_wf.return_value = (0.7, 0.8)
+            mock_wf.return_value = (0.7, 0.8, [])
 
             from config import Config
             cfg = Config(train_steps=range(1, 35), test_steps=range(35, 50))

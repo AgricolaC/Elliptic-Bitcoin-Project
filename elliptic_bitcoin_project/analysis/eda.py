@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Any
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import Config, OUTPUT_DIR
 
 def plot_temporal_distribution(df, cfg: Config) -> None:

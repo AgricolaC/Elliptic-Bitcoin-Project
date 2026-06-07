@@ -7,6 +7,8 @@ from scipy.stats import gaussian_kde
 from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 from sklearn.metrics import roc_auc_score
 from typing import Any
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import OUTPUT_DIR
 
 try:

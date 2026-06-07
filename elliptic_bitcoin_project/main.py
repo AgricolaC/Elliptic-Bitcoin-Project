@@ -8,6 +8,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 import time
 import torch
 import warnings
+import numpy as np
 
 from config import Config, set_global_seeds, DEVICE, OUTPUT_DIR
 from data.build_graph import EllipticDataModule
@@ -43,7 +44,7 @@ def plot_latent_space_kde(dm: EllipticDataModule, cfg: Config, slice_t: int = 42
     
     plt.figure(figsize=(12, 10), facecolor="#080812")
     ax = plt.gca()
-    ax.set_facecolor="#080812")
+    ax.set_facecolor="#080812"
     
     sns.kdeplot(x=X_2d[licit_mask, 0], y=X_2d[licit_mask, 1], cmap="Blues", fill=True, alpha=0.6, levels=10, thresh=0.05, ax=ax)
     sns.kdeplot(x=X_2d[illicit_mask, 0], y=X_2d[illicit_mask, 1], cmap="Reds", fill=True, alpha=0.6, levels=6, thresh=0.05, ax=ax)
@@ -130,7 +131,7 @@ def main() -> None:
     model_dir = os.path.join(OUTPUT_DIR, "models")
     
     # Target exactly the newly specified canonical champion name
-    champion_prefix = os.path.join(model_dir, "Sweep_4a____Topology_only__Champion_")
+    champion_prefix = os.path.join(model_dir, "Sweep_4____Topology_Features")
     
     if not os.path.exists(champion_prefix + "_dm.pkl"):
         raise FileNotFoundError(f"Champion DM not found at {champion_prefix}_dm.pkl. Ensure run_sweeps.py finished running.")

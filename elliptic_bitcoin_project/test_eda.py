@@ -91,8 +91,6 @@ class TestEDAConstraints:
         try:
             plot_feature_correlation(dm)
         except ValueError:
-            pass # Expected behavior
-        else:
             pytest.fail("plot_feature_correlation accessed test data, causing NaN crash! Leakage!")
 
 if __name__ == "__main__":

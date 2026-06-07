@@ -78,6 +78,18 @@ def main():
     print(f"--- Conclusion ---")
     print(f"Capacity Increase:      {params_new / params_old:.1f}x larger")
     print(f"Single Fit Penalty:     +{total_new - total_old:.3f} seconds per 200-epoch fit")
+    
+    # Save to CSV
+    import pandas as pd
+    import os
+    from config import OUTPUT_DIR
+    out_csv = os.path.join(OUTPUT_DIR, "mlp_profiling_results.csv")
+    csv_data = [
+        {"Head": "Small", "Hidden_Dims": "(128, 64)", "Parameters": params_old, "Cost_per_Epoch_ms": ms_old, "Total_200_Epochs_s": total_old},
+        {"Head": "Large", "Hidden_Dims": "(512, 256, 128)", "Parameters": params_new, "Cost_per_Epoch_ms": ms_new, "Total_200_Epochs_s": total_new}
+    ]
+    pd.DataFrame(csv_data).to_csv(out_csv, index=False)
+    print(f"\nProfiling results saved to {out_csv}")
 
 if __name__ == "__main__":
     main()

@@ -96,7 +96,29 @@ def main():
         print(f"  Train Time : {t_mean:.2f}s ± {t_std:.2f}s")
         if tr_mean - te_mean > 0.05:
             print(f"  > Train/Test Gap: {tr_mean - te_mean:.3f} (Warning: Potential Overfitting)")
-        print()
+        # Save to CSV
+    csv_data = []
+    for h in heads:
+        d = results[h]
+        for idx, s in enumerate(seeds):
+            if idx < len(d["train_f1"]):
+                csv_data.append({
+                    "Head": h,
+                    "Hidden_Dims": str(heads[h]),
+                    "Seed": s,
+                    "Parameters": d["params"],
+                    "Train_F1": d["train_f1"][idx],
+                    "Test_F1": d["test_f1"][idx],
+                    "Time_s": d["time"][idx]
+                })
+    
+    if csv_data:
+        import os
+        from config import OUTPUT_DIR
+        out_csv = os.path.join(OUTPUT_DIR, "head_capacity_results.csv")
+        pd.DataFrame(csv_data).to_csv(out_csv, index=False)
+        print(f"Results saved to {out_csv}")
+    print()
 
 if __name__ == "__main__":
     main()
