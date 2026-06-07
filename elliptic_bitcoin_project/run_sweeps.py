@@ -449,7 +449,7 @@ def main():
     except Exception as e:
         print(f"  Drift adaptation skipped: {e}")
 
-    # ── Expanding-window baseline (Precondition 3 for ADWIN) ──────────────────
+    # ── Expanding-window baseline ─────────────────────────────────────────────
     expanding_name = "Sweep 4: Expanding (no window)"
     if expanding_name not in completed_sweeps:
         print(f"\n{'='*55}\nRunning: {expanding_name}\n{'='*55}")
@@ -459,33 +459,6 @@ def main():
         print(f"--> {res}\n")
     else:
         print(f"Already completed {expanding_name}, skipping.")
-
-    # ── Phase 10: ADWIN Adaptive Window ───────────────────────────────────────
-    adwin_name = "Phase 10: ADWIN Adaptive Window"
-    if adwin_name not in completed_sweeps:
-        try:
-            from evaluation.adwin import adwin_window_schedule
-            from evaluation.validation import walk_forward_validation_adaptive
-            print(f"\n{'='*55}\nRunning: {adwin_name}\n{'='*55}")
-            with profile_resources() as wf_adwin:
-                adwin_f1, adwin_prauc = walk_forward_validation_adaptive(
-                    dm_adv, cfg_full, DEVICE, delta=0.002, sweep_name="ADWIN",
-                )
-            results.append(_make_result(
-                adwin_name,
-                static_time="N/A", static_mem="N/A",
-                static_f1="N/A", static_prauc="N/A",
-                wf_time=round(wf_adwin.get("time", 0.0), 3),
-                wf_mem=round(wf_adwin.get("peak_mem", 0.0), 2),
-                wf_f1=round(adwin_f1, 3),
-                wf_prauc=round(adwin_prauc, 3),
-            ))
-            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
-            print(f"--> ADWIN Pooled F1={adwin_f1:.3f}, PR-AUC={adwin_prauc:.3f}\n")
-        except Exception as e:
-            print(f"  ADWIN skipped: {e}")
-    else:
-        print(f"Already completed {adwin_name}, skipping.")
 
 
 
