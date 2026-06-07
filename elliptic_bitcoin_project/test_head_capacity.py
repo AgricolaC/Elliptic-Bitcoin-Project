@@ -20,7 +20,7 @@ def main():
     df, df_edge, _, feature_cols = download_and_load_data()
     
     # Base champion config
-    base_cfg = Config(use_topology=True, use_multiscale_prop=True, use_mlp_head=True)
+    base_cfg = Config(use_graph_structural=True, use_multiscale_prop=True, use_mlp_head=True)
     
     print("\n--- Building Propagation Features (Once) ---")
     dm = EllipticDataModule(df, df_edge, feature_cols, base_cfg)
@@ -40,7 +40,7 @@ def main():
         
         for s in seeds:
             # 1. Strict Isolation: Only change the seed and mlp_hidden
-            cfg = Config(use_topology=True, use_multiscale_prop=True, use_mlp_head=True)
+            cfg = Config(use_graph_structural=True, use_multiscale_prop=True, use_mlp_head=True)
             cfg.seed = s
             cfg.mlp_hidden = hidden_dims
             set_global_seeds(cfg.seed)

@@ -33,7 +33,7 @@ def _make_minimal_dm():
             edge_rows.append({"txId1": ids[i], "txId2": ids[i + 1]})
     df_edge = pd.DataFrame(edge_rows)
 
-    cfg = Config(use_topology=True, train_steps=range(1, 4), test_steps=range(4, n_ts + 1))
+    cfg = Config(use_graph_structural=True, train_steps=range(1, 4), test_steps=range(4, n_ts + 1))
     dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
     dm.setup()
     return dm

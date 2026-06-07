@@ -99,8 +99,30 @@ def run_defense_analytics(dm: EllipticDataModule, cfg: Config, model, xgb) -> No
     
     explainer = shap.TreeExplainer(xgb)
     shap_values = explainer.shap_values(Xte)
-    print(f"Total Absolute SHAP Importance (Local Ego Features 0-93): {np.abs(shap_values[:, :94]).sum():.2f}")
-    print(f"Total Absolute SHAP Importance (Neighborhood Features 94-165): {np.abs(shap_values[:, 94:166]).sum():.2f}")
+    
+    mean_shap = np.abs(shap_values).mean(axis=0)
+    top_n = 20
+    top_indices = np.argsort(mean_shap)[-top_n:]
+    
+    plt.figure(figsize=(10, 8))
+    colors = ['#4C72B0' if i < 94 else '#55A868' for i in top_indices]
+    labels = [f"Local f{i}" if i < 94 else f"Neighbor f{i}" for i in top_indices]
+    
+    plt.barh(range(top_n), mean_shap[top_indices], color=colors)
+    plt.yticks(range(top_n), labels)
+    plt.xlabel("Mean Absolute SHAP Value (impact on model output)")
+    plt.title("Top 20 SHAP Feature Importances")
+    
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor='#4C72B0', label='Local Features (0-93)'),
+                       Patch(facecolor='#55A868', label='Neighborhood Features (94-165)')]
+    plt.legend(handles=legend_elements, loc='lower right')
+    plt.tight_layout()
+    
+    out_file = os.path.join(OUTPUT_DIR, "shap_importance_bar.png")
+    plt.savefig(out_file)
+    plt.close()
+    print(f"SHAP feature importance bar chart saved to {out_file}")
 
 from sklearn.metrics import f1_score
 import joblib
@@ -145,7 +167,7 @@ def main() -> None:
     else:
         # Reconstruct fallback config if the sweep was executed before cfg dumping was added
         print("Fallback: Reconstructing champion config (Sweep 4) manually...")
-        cfg = Config(use_mlp_head=True, use_multiscale_prop=True, use_topology=True)
+        cfg = Config(use_mlp_head=True, use_multiscale_prop=True, use_graph_structural=True)
         set_global_seeds(cfg.seed)
         
     # Instantiate architecture

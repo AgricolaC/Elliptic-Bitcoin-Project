@@ -32,7 +32,7 @@ class TestFeatureScaling:
     PageRank (~1e-4) and clustering (~0..1) were previously unscaled.
     """
 
-    def _make_minimal_dm(self, use_topology: bool):
+    def _make_minimal_dm(self, use_graph_structural: bool):
         """Build a tiny synthetic EllipticDataModule for scaling checks."""
         from config import Config
         from data.build_graph import EllipticDataModule
@@ -67,7 +67,7 @@ class TestFeatureScaling:
         cfg = Config(
             train_steps=range(1, 5),
             test_steps=range(5, 7),
-            use_topology=use_topology,
+            use_graph_structural=use_graph_structural,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
         dm.setup()
@@ -75,7 +75,7 @@ class TestFeatureScaling:
 
     def test_base_features_are_scaled(self):
         """Base 166-dim block must be ~N(0,1) on the training split."""
-        dm, cfg = self._make_minimal_dm(use_topology=False)
+        dm, cfg = self._make_minimal_dm(use_graph_structural=False)
         Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
         col_means = np.abs(Xs.mean(axis=0))
         col_stds  = Xs.std(axis=0)
@@ -89,7 +89,7 @@ class TestFeatureScaling:
         appended at index n_base: must also be ~N(0,1) on the training split.
         PageRank raw values are O(1e-4); unscaled they dominate at the wrong scale.
         """
-        dm, cfg = self._make_minimal_dm(use_topology=True)
+        dm, cfg = self._make_minimal_dm(use_graph_structural=True)
         Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
         n_base = 10   # synthetic feature count
         topo_cols = Xs[:, n_base: n_base + 2]   # pagerank + clustering
@@ -131,7 +131,7 @@ class TestFeatureScaling:
         cfg = Config(
             train_steps=range(1, 5),
             test_steps=range(5, 7),
-            use_topology=False,
+            use_graph_structural=False,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
         dm.setup()
@@ -241,7 +241,7 @@ class TestSGCInputDimEncapsulation:
         cfg = Config(
             train_steps=range(1, 4),
             test_steps=range(4, 5),
-            use_topology=False,
+            use_graph_structural=False,
             use_multiscale_prop=True,
             sgc_k=2,
         )
@@ -281,7 +281,7 @@ class TestSGCInputDimEncapsulation:
         cfg = Config(
             train_steps=range(1, 3),
             test_steps=range(3, 4),
-            use_topology=False,
+            use_graph_structural=False,
             sgc_k=1,
         )
         dm = EllipticDataModule(df, df_edge, feature_cols, cfg)

@@ -253,7 +253,35 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, window
         y_score_all.append(s)
             
     from evaluation.validation import _aggregate_walk_forward
-    pooled_f1, pooled_prauc, macro_f1, macro_prauc = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
+    pooled_f1, pooled_prauc, macro_f1, macro_prauc, pooled_pak = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
+    return pooled_f1, pooled_prauc
+
+
+def walk_forward_isoforest(dm, cfg):
+    import numpy as np
+    from sklearn.ensemble import IsolationForest
+    from sklearn.metrics import f1_score, average_precision_score
+    y_true_all, y_pred_all, y_score_all = [], [], []
+    for tau in cfg.test_steps:
+        train_block = [t for t in range(min(dm.graphs), tau) if t in dm.graphs]
+        if not train_block:
+            continue
+        Xtr = np.concatenate([dm.graphs[t]["x"].numpy()[:, :166] for t in train_block])
+        g = dm.graphs[tau]
+        m = g["labeled_mask"].numpy()
+        Xte = g["x"].numpy()[:, :166][m]
+        yte = g["y"].numpy()[m]
+        if len(yte) == 0 or len(np.unique(yte)) < 2:
+            continue
+        iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg.seed, n_jobs=1)
+        iso.fit(Xtr)
+        scores = -iso.score_samples(Xte)  # higher = more anomalous
+        y_pred = (scores >= np.percentile(scores, 98)).astype(int)  # threshold at expected 2% illicit rate
+        y_true_all.append(yte)
+        y_pred_all.append(y_pred)
+        y_score_all.append(scores)
+    from evaluation.validation import _aggregate_walk_forward
+    pooled_f1, pooled_prauc, _, _, _ = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
     return pooled_f1, pooled_prauc
 
 
@@ -302,6 +330,35 @@ def main():
             ys_te.append(g["y"].numpy()[m])
         Xte_b, yte_b = np.concatenate(Xs_te), np.concatenate(ys_te)
 
+        if "Baseline: IsolationForest (166)" not in completed_sweeps:
+            from sklearn.ensemble import IsolationForest
+            with profile_resources() as stat_iso:
+                Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_default.train_steps])
+                Xte_iso = Xte_b
+                iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_default.seed, n_jobs=1)
+                iso.fit(Xtr_iso)
+                scores = -iso.score_samples(Xte_iso)
+                static_iso_f1 = f1_score(yte_b, (scores >= np.percentile(scores, 98)).astype(int), pos_label=1, zero_division=0)
+                static_iso_prauc = average_precision_score(yte_b, scores)
+                
+            with profile_resources() as wf_iso:
+                wf_iso_f1, wf_iso_prauc = walk_forward_isoforest(dm_base, cfg_default)
+                
+            results.append(_make_result(
+                "Baseline: IsolationForest (166)",
+                static_time=round(stat_iso.get("time", 0.0), 3),
+                static_mem=round(stat_iso.get("peak_mem", 0.0), 2),
+                static_f1=round(static_iso_f1, 3),
+                static_prauc=round(static_iso_prauc, 3),
+                wf_time=round(wf_iso.get("time", 0.0), 3),
+                wf_mem=round(wf_iso.get("peak_mem", 0.0), 2),
+                wf_f1=round(wf_iso_f1, 3),
+                wf_prauc=round(wf_iso_prauc, 3),
+            ))
+            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+        else:
+            print("Already completed Baseline: IsolationForest (166), skipping.")
+
         if "Baseline: XGBoost (166)" not in completed_sweeps:
             spw = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
             with profile_resources() as stat_xgb:
@@ -314,7 +371,7 @@ def main():
                 
             with profile_resources() as wf_xgb:
                 wf_xgb_f1, wf_xgb_prauc = walk_forward_baseline(
-                    dm_base, cfg_default, XGBClassifier, window=8,
+                    dm_base, cfg_default, XGBClassifier, window=None,
                     n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw, eval_metric="aucpr", random_state=cfg_default.seed, n_jobs=1
                 )
             
@@ -346,7 +403,7 @@ def main():
                 
             with profile_resources() as wf_rf:
                 wf_rf_f1, wf_rf_prauc = walk_forward_baseline(
-                    dm_base, cfg_default, RandomForestClassifier, window=8,
+                    dm_base, cfg_default, RandomForestClassifier, window=None,
                     n_estimators=200, class_weight="balanced", n_jobs=1, random_state=cfg_default.seed
                 )
 
@@ -374,19 +431,19 @@ def main():
         # name                          use_mlp  use_ms   use_topo  use_recon  use_focal
         ("Sweep 1: SGC (baseline)",
          Config(use_mlp_head=False, use_multiscale_prop=False,
-                use_topology=False)),
+                use_graph_structural=False)),
 
         ("Sweep 2: + MLP Head",
          Config(use_mlp_head=True,  use_multiscale_prop=False,
-                use_topology=False)),
+                use_graph_structural=False)),
 
         ("Sweep 3: + Multiscale Prop",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_topology=False)),
+                use_graph_structural=False)),
 
         ("Sweep 4: + Topology Features",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_topology=True))
+                use_graph_structural=True))
     ]
 
     for name, cfg in sweeps:
@@ -395,7 +452,7 @@ def main():
             print(f"Already completed {name}, skipping.")
             continue
         if "Sweep 4" in name or "Sweep 1" in name:
-            res = run_single_sweep(name, cfg, df, df_edge, feature_cols, window=8)
+            res = run_single_sweep(name, cfg, df, df_edge, feature_cols, window=None)
         else:
             res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
         results.append(res)
@@ -406,9 +463,9 @@ def main():
 
     print("\n--- K Ablation (Static Only) ---")
     k_sweeps = [
-        ("Sweep K=1 (Static)", Config(sgc_k=1, use_multiscale_prop=True, use_topology=True, use_mlp_head=True)),
-        ("Sweep K=2 (Static)", Config(sgc_k=2, use_multiscale_prop=True, use_topology=True, use_mlp_head=True)),
-        ("Sweep K=3 (Static)", Config(sgc_k=3, use_multiscale_prop=True, use_topology=True, use_mlp_head=True)),
+        ("Sweep K=1 (Static)", Config(sgc_k=1, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
+        ("Sweep K=2 (Static)", Config(sgc_k=2, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
+        ("Sweep K=3 (Static)", Config(sgc_k=3, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
     ]
     for name, cfg in k_sweeps:
         print(f"Running: {name}")
@@ -428,8 +485,8 @@ def main():
 
     try:
         from models.drift_adaptation import explicit_drift_adaptation
-        if "Phase 9: Drift Adaptation (Sliding Window)" in completed_sweeps:
-            print("Already completed Drift Adaptation, skipping.")
+        if True: # Demoted Phase 9 (Drift Adaptation)
+            print("Drift adaptation demoted to exploratory, skipping.")
         else:
             with profile_resources() as wf_drift:
                 res_drift = explicit_drift_adaptation(dm_adv, cfg_full)

@@ -1,12 +1,2 @@
 Sweep,Static Time (s),Static Mem (MB),Static OOT F1,Static OOT PR-AUC,WF Time (s),WF Mem (MB),Walk-Forward Mean F1,Walk-Forward Mean PR-AUC
-Baseline: XGBoost (166),3.247,1.27,0.792,0.799,59.087,88.73,0.871,0.916
-Baseline: RandomForest (166),8.772,2.72,0.81,0.799,175.178,89.59,0.835,0.904
-Sweep 1: SGC (baseline),6.705,82.99,0.286,0.251,,,,
-Sweep 2: + MLP Head,55.857,1.13,0.575,0.572,,,,
-Sweep 3: + Multiscale Prop,59.734,1.13,0.633,0.644,,,,
-Sweep 4: + Topology Features,58.742,1.12,0.707,0.655,408.116,2.46,0.629,0.751
-Sweep K=1 (Static),56.936,1.12,0.586,0.551,,,,
-Sweep K=2 (Static),61.234,1.12,0.707,0.655,,,,
-Sweep K=3 (Static),70.035,1.12,0.719,0.73,,,,
-Phase 9: Drift Adaptation (Sliding Window),,,,,99.966,89.54,0.594,0.722
-Sweep 4: Expanding (no window),66.317,83.04,0.707,0.655,409.625,2.7,0.629,0.751
+Baseline: IsolationForest (166),0.581,92.35,0.0,0.036,8.518,254.36,0.0,0.036

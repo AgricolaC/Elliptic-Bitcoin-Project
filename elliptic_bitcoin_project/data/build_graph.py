@@ -129,7 +129,7 @@ class EllipticDataModule:
             self.graphs[t]["x_np"] = self.scaler_base.transform(self.graphs[t]["x_np"])
 
         # ── Step 3: Optional topology injection ────────────────────────────────
-        if c.use_topology:
+        if c.use_graph_structural:
             for t in self.graphs:
                 ei = self.graphs[t]["edge_index"]
                 n  = self.graphs[t]["n"]
@@ -147,7 +147,7 @@ class EllipticDataModule:
         # same variance scale as the base features.
         #
         # LEAKAGE GUARD: scaler_aug fitted on train_steps augmented data only.
-        if c.use_topology:
+        if c.use_graph_structural:
             train_X_full = np.concatenate(
                 [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
             )
@@ -184,10 +184,10 @@ class EllipticDataModule:
             self.sgc_input_dim = self.feature_dim
 
         n_base = len(self.feature_cols)
-        n_topo = 2 if c.use_topology else 0
+        n_topo = 2 if c.use_graph_structural else 0
         print(
             f"[DataModule] feature_dim={self.feature_dim} "
-            f"({n_base} base + {n_topo} topo) | "
+            f"({n_base} base + {n_topo} graph_struct) | "
             f"sgc_input_dim={self.sgc_input_dim}"
         )
         return self

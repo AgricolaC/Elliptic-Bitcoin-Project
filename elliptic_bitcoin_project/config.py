@@ -29,7 +29,7 @@ class Config:
     disruption_step: int = 43
 
     # --- original ablatable mechanisms ---
-    use_topology: bool = True
+    use_graph_structural: bool = True
     class_weighted: bool = True
 
     # --- architectural modifications ---

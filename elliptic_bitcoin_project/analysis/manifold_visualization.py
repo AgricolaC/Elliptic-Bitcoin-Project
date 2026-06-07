@@ -16,7 +16,7 @@ try:
 except ImportError:
     pass
 
-def visualize_manifold(dm: Any, slice_t: int = 42, emb_dim: int = 3) -> None:
+def visualize_manifold(dm: Any, slice_t: int = 42, emb_dim: int = 2) -> None:
     g = dm.graphs[slice_t]
     n_full = g["n"]
     G = nx.Graph()
@@ -88,19 +88,18 @@ def visualize_manifold(dm: Any, slice_t: int = 42, emb_dim: int = 3) -> None:
     m_unk, m_lic, m_ill = (y_lcc == -1), (y_lcc == 0), (y_lcc == 1)
     try:
         fig = go.Figure()
-        fig.add_trace(go.Scatter3d(x=emb[m_unk,0], y=emb[m_unk,1], z=emb[m_unk,2], mode="markers",
-            name=f"Unknown ({m_unk.sum()})", marker=dict(size=1.4, color="#777", opacity=0.06)))
-        fig.add_trace(go.Scatter3d(x=emb[m_lic,0], y=emb[m_lic,1], z=emb[m_lic,2], mode="markers",
-            name=f"Licit core ({m_lic.sum()})", marker=dict(size=2.2, color="#4C72B0", opacity=0.18)))
-        fig.add_trace(go.Scatter3d(x=emb[m_ill,0], y=emb[m_ill,1], z=emb[m_ill,2], mode="markers",
+        fig.add_trace(go.Scatter(x=emb[m_unk,0], y=emb[m_unk,1], mode="markers",
+            name=f"Unknown ({m_unk.sum()})", marker=dict(size=3, color="#d3d3d3", opacity=0.3)))
+        fig.add_trace(go.Scatter(x=emb[m_lic,0], y=emb[m_lic,1], mode="markers",
+            name=f"Licit core ({m_lic.sum()})", marker=dict(size=5, color="#4C72B0", opacity=0.5)))
+        fig.add_trace(go.Scatter(x=emb[m_ill,0], y=emb[m_ill,1], mode="markers",
             name=f"Illicit ({m_ill.sum()})",
-            marker=dict(size=5.5, opacity=0.95, color=anomaly[m_ill], colorscale="Inferno",
-                        line=dict(width=0.5, color="white"),
-                        colorbar=dict(title=f"isolation<br>({best})", x=1.02))))
+            marker=dict(size=7, opacity=0.9, color="#C44E52",
+                        line=dict(width=0.5, color="white"))))
         fig.update_layout(
-            title=f"Spectral forensics t={slice_t} | estimator={best} | void-AUC={auc:.3f}",
-            scene=dict(xaxis_title="v₁", yaxis_title="v₂", zaxis_title="v₃", bgcolor="rgba(8,8,18,1)"),
-            paper_bgcolor="rgba(8,8,18,1)", font=dict(color="#ddd"),
+            title=f"2D Spectral Representation t={slice_t} | estimator={best} | void-AUC={auc:.3f}",
+            xaxis_title="v₁", yaxis_title="v₂",
+            plot_bgcolor="white", paper_bgcolor="white", font=dict(color="black", size=14),
             legend=dict(itemsizing="constant"), width=900, height=700)
         
         out_file = os.path.join(OUTPUT_DIR, f"spectral_forensics_t{slice_t}.html")

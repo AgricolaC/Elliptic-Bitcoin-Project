@@ -15,7 +15,13 @@ try:
 except ImportError:
     SGCHead = build_loss = None
 
-def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.ndarray], score_list: List[np.ndarray]) -> Tuple[float, float, float, float]:
+def precision_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
+    """Fraction of the top-k scored items that are anomalous."""
+    top_k = np.argsort(scores)[::-1][:k]
+    return float(y_true[top_k].sum()) / k
+
+
+def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.ndarray], score_list: List[np.ndarray]) -> Tuple[float, float, float, float, float]:
     """
     Compute pooled and macro-averaged walk-forward metrics.
     Returns: (pooled_f1, pooled_prauc, macro_f1, macro_prauc)
@@ -26,6 +32,8 @@ def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.
     
     pooled_f1 = float(f1_score(yt_p, yp_p, pos_label=1, zero_division=0))
     pooled_prauc = float(average_precision_score(yt_p, ys_p))
+    k = int(yt_p.sum())
+    pooled_pak = precision_at_k(yt_p, ys_p, k) if k > 0 else 0.0
     
     f1s, praucs = [], []
     for yt, yp, ys in zip(y_true_list, y_pred_list, score_list):
@@ -39,7 +47,7 @@ def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.
     macro_f1 = float(np.mean(f1s)) if f1s else 0.0
     macro_prauc = float(np.mean(praucs)) if praucs else 0.0
     
-    return pooled_f1, pooled_prauc, macro_f1, macro_prauc
+    return pooled_f1, pooled_prauc, macro_f1, macro_prauc, pooled_pak
 
 
 def stack_prop(dm: Any, steps: List[int]) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -205,20 +213,28 @@ def walk_forward_validation(
             wf_records.append((tau, step_f1, step_prauc, yte_w, s))
 
     if wf_steps:
-        plt.figure(figsize=(11, 4.5))
-        plt.plot(wf_steps, wf_f1_per_step,    marker="o", label="Illicit F1",  color="#C44E52")
-        plt.plot(wf_steps, wf_prauc_per_step, marker="s", label="PR-AUC",      color="#4C72B0")
-        plt.axvline(cfg.disruption_step, ls="--", color="k",
-                    label=f"t={cfg.disruption_step} dark-market shutdown")
-        plt.xlabel("Test time step τ")
-        plt.ylabel("Score")
+        plt.figure(figsize=(12, 5), facecolor="white")
+        
+        plt.plot(wf_steps, wf_f1_per_step,    marker="o", linewidth=2, label="Illicit F1",  color="#C44E52")
+        plt.plot(wf_steps, wf_prauc_per_step, marker="s", linewidth=2, label="PR-AUC",      color="#4C72B0")
+        
+        plt.axvline(cfg.disruption_step, ls="--", color="black", linewidth=2,
+                    label=f"dark market shutdown (t={cfg.disruption_step})")
+        
+        plt.xlabel("Test time step τ", fontsize=14, fontweight="bold")
+        plt.ylabel("Score", fontsize=14, fontweight="bold")
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        
         plt.title(
-            f"Walk-forward [{safe_name}] "
-            f"multiscale={cfg.use_multiscale_prop} "
-            f"topo={cfg.use_topology}"
+            f"Walk-forward [{safe_name}] | "
+            f"multiscale={cfg.use_multiscale_prop} | "
+            f"struct={cfg.use_graph_structural}",
+            fontsize=16, fontweight="bold"
         )
-        plt.legend()
-        plt.grid(alpha=0.3)
+        
+        plt.legend(fontsize=12, loc="upper right")
+        plt.grid(alpha=0.4)
         plt.tight_layout()
 
         # W7 FIX: unique filename per sweep — no overwrites
@@ -229,11 +245,12 @@ def walk_forward_validation(
     if not wf_steps:
         return (0.0, 0.0, []) if return_records else (0.0, 0.0)
 
-    pooled_f1, pooled_prauc, macro_f1, macro_prauc = _aggregate_walk_forward(y_true_all, y_pred_all, s_pred_all)
+    pooled_f1, pooled_prauc, macro_f1, macro_prauc, pooled_pak = _aggregate_walk_forward(y_true_all, y_pred_all, s_pred_all)
     
     print(
         f"[{safe_name}] Pooled F1={pooled_f1:.3f} | Macro F1={macro_f1:.3f} | "
-        f"Pooled PRAUC={pooled_prauc:.3f} | Macro PRAUC={macro_prauc:.3f}"
+        f"Pooled PRAUC={pooled_prauc:.3f} | Macro PRAUC={macro_prauc:.3f} | "
+        f"Pooled P@K={pooled_pak:.3f}"
     )
     print(f"  [WF Pipeline] Walk-forward explicit training loop overhead: {total_wf_train_time:.2f} seconds")
     return (pooled_f1, pooled_prauc, wf_records) if return_records else (pooled_f1, pooled_prauc)
