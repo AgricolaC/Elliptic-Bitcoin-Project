@@ -18,8 +18,7 @@ class SGCHead(nn.Module):
             for h in cfg.mlp_hidden:
                 layers.extend([
                     nn.Linear(curr_dim, h),
-                    nn.BatchNorm1d(h),
-                    nn.GELU(),
+                    nn.ReLU(),
                     nn.Dropout(p)
                 ])
                 curr_dim = h

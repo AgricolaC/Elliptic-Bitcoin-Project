@@ -443,7 +443,11 @@ def main():
 
         ("Sweep 4: + Topology Features",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=True))
+                use_graph_structural=True)),
+
+        ("Sweep 5: + Directional Channels",
+         Config(use_mlp_head=True,  use_multiscale_prop=True,
+                use_graph_structural=True, use_directional_prop=True))
     ]
 
     for name, cfg in sweeps:

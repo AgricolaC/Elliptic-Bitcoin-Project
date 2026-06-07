@@ -35,6 +35,7 @@ class Config:
     # --- architectural modifications ---
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
+    use_directional_prop: bool = False # Sweep 5: directional DAG channels
 
     # --- exposed magnitudes ---
     sgc_k: int = 2

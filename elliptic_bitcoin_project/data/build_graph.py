@@ -169,11 +169,18 @@ class EllipticDataModule:
             for t in self.graphs:
                 g = self.graphs[t]
                 g["prop"] = sgc_propagate(
-                    g["x"], g["edge_index"], c.sgc_k, c.use_multiscale_prop
+                    g["x"], g["edge_index"], c.sgc_k, c.use_multiscale_prop, c.use_directional_prop
                 )
             # SHAPE GUARD: verify dim from actual tensor
             sample_prop = self.graphs[ts_min]["prop"]
-            expected_dim = self.feature_dim * (c.sgc_k + 1 if c.use_multiscale_prop else 1)
+            
+            if c.use_directional_prop:
+                expected_dim = self.feature_dim * (1 + 3 * c.sgc_k)
+            elif c.use_multiscale_prop:
+                expected_dim = self.feature_dim * (c.sgc_k + 1)
+            else:
+                expected_dim = self.feature_dim
+                
             assert sample_prop.shape[1] == expected_dim, (
                 f"sgc_input_dim mismatch: got {sample_prop.shape[1]}, "
                 f"expected {expected_dim}"
