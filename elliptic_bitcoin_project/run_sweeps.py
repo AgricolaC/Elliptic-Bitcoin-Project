@@ -276,7 +276,8 @@ def walk_forward_isoforest(dm, cfg):
         iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg.seed, n_jobs=1)
         iso.fit(Xtr)
         scores = -iso.score_samples(Xte)  # higher = more anomalous
-        y_pred = (scores >= np.percentile(scores, 98)).astype(int)  # threshold at expected 2% illicit rate
+        actual_rate = (yte == 1).mean()
+        y_pred = (scores >= np.percentile(scores, (1 - actual_rate) * 100)).astype(int)
         y_true_all.append(yte)
         y_pred_all.append(y_pred)
         y_score_all.append(scores)
@@ -338,7 +339,9 @@ def main():
                 iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_default.seed, n_jobs=1)
                 iso.fit(Xtr_iso)
                 scores = -iso.score_samples(Xte_iso)
-                static_iso_f1 = f1_score(yte_b, (scores >= np.percentile(scores, 98)).astype(int), pos_label=1, zero_division=0)
+                actual_illicit_rate = (yte_b == 1).mean()
+                thresh_pct = (1 - actual_illicit_rate) * 100
+                static_iso_f1 = f1_score(yte_b, (scores >= np.percentile(scores, thresh_pct)).astype(int), pos_label=1, zero_division=0)
                 static_iso_prauc = average_precision_score(yte_b, scores)
                 
             with profile_resources() as wf_iso:

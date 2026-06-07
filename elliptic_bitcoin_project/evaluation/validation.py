@@ -79,7 +79,7 @@ def fit_head(
     set_global_seeds(cfg.seed)
     model = SGCHead(in_dim, cfg).to(device)
     loss_fn = build_loss(cfg, class_weights)
-    opt = torch.optim.Adam(
+    opt = torch.optim.AdamW(
         model.parameters(), lr=cfg.sgc_lr, weight_decay=cfg.sgc_weight_decay
     )
     Xtr, ytr = Xtr.to(device), ytr.to(device)
