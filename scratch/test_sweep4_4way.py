@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 
 from config import Config
 from data.load_dataset import download_and_load_data
-from run_sweeps import run_static_only_sweep
+from run_sweeps import run_static_only_sweep, run_single_sweep
 
 def main():
     print("Loading data...")
@@ -26,13 +26,13 @@ def main():
         print(f"\n==============================================")
         print(f"Running: {name}")
         print(f"==============================================")
-        res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
+        res = run_single_sweep(name, cfg, df, df_edge, feature_cols, window=None)
         results.append(res)
         print(f"Result: {res}")
         
     print("\n\n=== 4-Way Sweep 4 Results ===")
     for r in results:
-        print(f"{r['Sweep']:35s} | F1: {r['Static OOT F1']:.3f} | PR-AUC: {r['Static OOT PR-AUC']:.3f}")
+        print(f"{r['Sweep']:35s} | Stat F1: {r['Static OOT F1']:.3f} | WF F1: {r['Walk-Forward Mean F1']:.3f}")
 
 if __name__ == "__main__":
     main()

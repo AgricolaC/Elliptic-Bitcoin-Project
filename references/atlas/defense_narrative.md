@@ -48,5 +48,33 @@ When extending the architecture to include Directional Channels (In/Out/Undirect
 
 **However, the ultimate takeaway is that Sweep 4 remains supreme.** Even with advanced supervised feature selection, Sweep 5 (`0.711`) still falls short of the natural, unpruned Undirected Model (Sweep 4 at `0.721`). The directional channels introduce massive noise without providing any orthogonal predictive power that Sweep 4 hasn't already captured cleanly. 
 
-## Conclusion: The Core Bottleneck
-In alignment with the student elaborato template (Section 8), the central challenge of the Elliptic dataset is not just class imbalance, but **temporal generalization**. Our walk-forward ablation matrix proves that while topological features improve static detection, the fundamental bottleneck remains the non-stationary "concept drift" over the 49 timesteps. 
+## Conclusion: Tabular vs Topological Concept Drift
+In alignment with the student elaborato template (Section 8), the central challenge of the Elliptic dataset is not just class imbalance, but **temporal generalization**. 
+
+Our Walk-Forward evaluations revealed a critical distinction:
+1. **Raw XGBoost** achieves a highly robust `0.871` Walk-Forward F1. It mostly survives the Step 43 dark market shutdown because it relies purely on tabular node attributes (which experienced only moderate drift).
+2. **Sweep 4 (SGC + MLP)** achieves `0.721` on static data, but drops to `0.625` in Walk-Forward. 
+3. **Hybrid Sweep 6 (SGC + XGBoost)**: To isolate whether the MLP or the Graph Structure was to blame, we fed the rich topological SGC features into an XGBoost head. The hybrid model achieved near-perfect fraud detection before the shutdown (e.g., F1 `0.970` at Step 35, `0.965` at Step 41). However, exactly at **Step 43**, the performance catastrophically collapsed to **`0.077`**.
+
+**Final Thesis: The Structural Hysteresis Paradox** 
+The Elliptic dataset's dark market shutdown wasn't just a tabular shift; it was a fundamental **Topological Concept Drift** (a phase transition of the underlying graph manifold). 
+* **Tabular Elasticity:** Baseline XGBoost survived the recovery phase because its local features are structurally elastic. When tabular behavior changes, the decision trees quickly establish new boundaries and recover.
+* **Topological Rigidity & Hysteresis:** Because our decoupled SIGN model mathematically captures the pre-shutdown global topology perfectly, it becomes fatally over-indexed on an obsolete graph structure when the network re-wires into sparse peel-chains. The model suffers from **Structural Hysteresis**—it is permanently biased by the "ghost" of the old network structure, rendering the geometric priors highly toxic post-shutdown.
+
+Thus, while injecting structural priors (PageRank, Laplacian smoothing) yields phenomenal static results, it creates a brittle glass cannon under topological drift unless mitigated by strict memory bounding (sliding windows) or dynamic edge pruning.
+
+---
+
+Based on the empirical findings and theoretical limitations discovered during ablation, the defense should be structured around these three capstone insights:
+
+### 1. The "Architectural Tension" Slide (DropEdge vs. SGC)
+**The Premise:** To survive adversarial rewiring, a Graph Neural Network needs stochastic edges (DropEdge) to prevent overfitting to specific laundering routes. 
+**The Tension:** Decoupled architectures like SGC and SIGN derive their speed by pre-computing $S^k X$ offline. If you introduce stochastic edges, the graph changes every epoch, destroying the pre-computation advantage and forcing the massive $O(L \cdot |E|)$ message-passing complexity back into the training loop. This fundamentally highlights the trade-off between architectural scalability and adversarial robustness.
+
+### 2. The "Pragmatic Amputation" Slide (Sliding Window)
+**The Premise:** How do we mitigate Structural Hysteresis without incurring the massive computational penalties of Reinforcement Learning or continuous model adaptation?
+**The Solution:** The Sliding Window. We present the F1-trace showing the Hybrid model collapsing to $0.077$ and stagnating at $0.377$ under an expanding window. Then, we reveal the Sliding Window ($t-4$) ablation, showing the model aggressively amputating the toxic pre-shutdown geometry and violently snapping back to $0.893$ F1. 
+
+### 3. The "Future Work" Slide (TDA & Betti-1 Cycles)
+**The Premise:** Global topological invariants (like PageRank) are inherently brittle because they rely on macro-level stability. 
+**The Frontier:** The mathematical future of adversarial graph learning is localized **Topological Data Analysis (TDA)**. By extracting persistent homology (Betti-1 cycles) from local $k$-hop ego-networks, we can identify laundering "peel-chains" as invariant topological holes. A cycle is a cycle, whether it occurs in a massive centralized dark market or a highly fractured decentralized tumbler. This localized geometric anchor survives macro-level concept drift.

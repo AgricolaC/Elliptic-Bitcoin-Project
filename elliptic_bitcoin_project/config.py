@@ -28,19 +28,21 @@ class Config:
     test_steps:  range = range(35, 50)
     disruption_step: int = 43
 
-    # --- original ablatable mechanisms ---
+    # Original ablatable mechanisms
     use_graph_structural: bool = True
     class_weighted: bool = True
 
-    # --- architectural modifications ---
+    # Architectural modifications
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
+    use_xgb_head: bool = False         # Sweep 6: Hybrid XGBoost head
     use_directional_prop: bool = False # Sweep 5: directional DAG channels
+    topo_injection_mode: str = 'late'  # 'early' (smoothed) vs 'late' (anchored)
 
-    # --- exposed magnitudes ---
+    # SGC Hyperparameters
     sgc_k: int = 2
     sgc_epochs: int = 200
-    wf_epochs: int = 70                # optimization for walk-forward loop
+    wf_epochs: int = 100                # reduction in epoch for walk-forward loop
     sgc_lr: float = 0.01
     sgc_weight_decay: float = 5e-4
     focal_gamma: float = 2.0           # 0.0 == weighted CE
@@ -48,12 +50,15 @@ class Config:
     mlp_dropout: float = 0.3
     
     topo_injection_mode: str = 'early' # 'early' or 'late'
+    
+    # Feature Selection & Dim. Reduction
     use_pca: bool = False
     pca_variance: float = 0.99         # % of variance to retain when use_pca=True
     
     use_rf_selection: bool = False
     rf_importance_threshold: float = 0.99 # Cumulative importance to retain
 
+    # Seed
     seed: int = RANDOM_SEED
 
     def __post_init__(self) -> None:
