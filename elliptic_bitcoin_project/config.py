@@ -46,6 +46,13 @@ class Config:
     focal_gamma: float = 2.0           # 0.0 == weighted CE
     mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3
+    
+    topo_injection_mode: str = 'early' # 'early' or 'late'
+    use_pca: bool = False
+    pca_variance: float = 0.99         # % of variance to retain when use_pca=True
+    
+    use_rf_selection: bool = False
+    rf_importance_threshold: float = 0.99 # Cumulative importance to retain
 
     seed: int = RANDOM_SEED
 

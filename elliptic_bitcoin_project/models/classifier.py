@@ -13,11 +13,12 @@ class SGCHead(nn.Module):
         super().__init__()
         if cfg.use_mlp_head:
             p = cfg.mlp_dropout
-            layers = []
+            layers = [nn.BatchNorm1d(in_dim)]
             curr_dim = in_dim
             for h in cfg.mlp_hidden:
                 layers.extend([
                     nn.Linear(curr_dim, h),
+                    nn.BatchNorm1d(h),
                     nn.ReLU(),
                     nn.Dropout(p)
                 ])
@@ -25,9 +26,11 @@ class SGCHead(nn.Module):
             layers.append(nn.Linear(curr_dim, n_classes))
             self.net = nn.Sequential(*layers)
         else:
-            self.net = nn.Linear(in_dim, n_classes)
+            self.net = nn.Sequential(
+                nn.BatchNorm1d(in_dim),
+                nn.Linear(in_dim, n_classes)
+            )
             
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
-
 

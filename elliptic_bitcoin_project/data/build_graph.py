@@ -4,6 +4,7 @@ import torch
 from typing import Tuple, List, Dict, Any
 from config import Config
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 try:
     from features.network_metrics import topological_features
@@ -85,8 +86,10 @@ class EllipticDataModule:
         # LEAKAGE GUARD: two independent scalers — each fitted on train only.
         # scaler_base: fitted on raw 166 features.
         # scaler_aug:  fitted on [base | topology] (W1 fix).
+        # scaler_topo: fitted on topology only.
         self.scaler_base = StandardScaler()
         self.scaler_aug  = StandardScaler()
+        self.scaler_topo = StandardScaler()
         self.feature_dim = len(feature_cols)
         self.sgc_input_dim: int = -1   # W6: will be set inside setup()
 
@@ -137,9 +140,12 @@ class EllipticDataModule:
                 # SHAPE GUARD
                 assert topo_feats.shape == (n, 2), \
                     f"t={t}: topology shape {topo_feats.shape} != ({n}, 2)"
-                self.graphs[t]["x_np"] = np.concatenate(
-                    [self.graphs[t]["x_np"], topo_feats], axis=1
-                )
+                if c.topo_injection_mode == 'early':
+                    self.graphs[t]["x_np"] = np.concatenate(
+                        [self.graphs[t]["x_np"], topo_feats], axis=1
+                    )
+                else:
+                    self.graphs[t]["topo_np"] = topo_feats
 
         # ── Step 5: Second scaler pass (W1 FIX) ───────────────────────────────
         # Rescales the full augmented feature matrix [base | topo] so
@@ -148,17 +154,28 @@ class EllipticDataModule:
         #
         # LEAKAGE GUARD: scaler_aug fitted on train_steps augmented data only.
         if c.use_graph_structural:
-            train_X_full = np.concatenate(
-                [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
-            )
-            self.scaler_aug.fit(train_X_full)
-            for t in self.graphs:
-                self.graphs[t]["x_np"] = self.scaler_aug.transform(self.graphs[t]["x_np"])
+            if getattr(c, 'topo_injection_mode', 'early') == 'early':
+                train_X_full = np.concatenate(
+                    [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
+                )
+                self.scaler_aug.fit(train_X_full)
+                for t in self.graphs:
+                    self.graphs[t]["x_np"] = self.scaler_aug.transform(self.graphs[t]["x_np"])
+            else:
+                train_topo_full = np.concatenate(
+                    [self.graphs[t]["topo_np"] for t in c.train_steps if t in self.graphs], axis=0
+                )
+                self.scaler_topo.fit(train_topo_full)
+                for t in self.graphs:
+                    self.graphs[t]["topo_np"] = self.scaler_topo.transform(self.graphs[t]["topo_np"])
 
         # ── Step 6: Finalize tensors ───────────────────────────────────────────
         for t in self.graphs:
             x = torch.tensor(self.graphs[t]["x_np"], dtype=torch.float32)
             self.graphs[t]["x"] = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
+            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+                topo = torch.tensor(self.graphs[t]["topo_np"], dtype=torch.float32)
+                self.graphs[t]["topo"] = torch.nan_to_num(topo, nan=0.0, posinf=0.0, neginf=0.0)
 
         self.feature_dim = self.graphs[ts_min]["x"].shape[1]
 
@@ -168,9 +185,12 @@ class EllipticDataModule:
         if sgc_propagate is not None:
             for t in self.graphs:
                 g = self.graphs[t]
-                g["prop"] = sgc_propagate(
+                prop = sgc_propagate(
                     g["x"], g["edge_index"], c.sgc_k, c.use_multiscale_prop, c.use_directional_prop
                 )
+                if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+                    prop = torch.cat([prop, g["topo"]], dim=1)
+                g["prop"] = prop
             # SHAPE GUARD: verify dim from actual tensor
             sample_prop = self.graphs[ts_min]["prop"]
             
@@ -181,6 +201,9 @@ class EllipticDataModule:
             else:
                 expected_dim = self.feature_dim
                 
+            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+                expected_dim += 2
+                
             assert sample_prop.shape[1] == expected_dim, (
                 f"sgc_input_dim mismatch: got {sample_prop.shape[1]}, "
                 f"expected {expected_dim}"
@@ -189,6 +212,62 @@ class EllipticDataModule:
         else:
             # Fallback for test environments where layers is unavailable
             self.sgc_input_dim = self.feature_dim
+
+        # ── Step 8: PCA Dimensionality Reduction ──────────────────────────────
+        if getattr(c, 'use_pca', False):
+            print(f"[DataModule] Applying PCA (variance retained: {c.pca_variance}) to propagated features...")
+            train_props = []
+            for t in c.train_steps:
+                if t in self.graphs:
+                    train_props.append(self.graphs[t]["prop"].numpy())
+            train_props_full = np.concatenate(train_props, axis=0)
+            
+            # Scikit-learn requires svd_solver='full' when n_components is a float between 0 and 1
+            solver = 'full' if isinstance(c.pca_variance, float) else 'auto'
+            pca = PCA(n_components=c.pca_variance, svd_solver=solver)
+            pca.fit(train_props_full)
+            n_components = pca.n_components_
+            print(f"[DataModule] PCA selected {n_components} components to retain {c.pca_variance} variance.")
+            
+            for t in self.graphs:
+                prop_np = self.graphs[t]["prop"].numpy()
+                prop_pca = pca.transform(prop_np)
+                self.graphs[t]["prop"] = torch.tensor(prop_pca, dtype=torch.float32)
+                
+            self.sgc_input_dim = n_components
+            
+        elif getattr(c, 'use_rf_selection', False):
+            print(f"[DataModule] Applying Random Forest Feature Selection (cumulative importance: {c.rf_importance_threshold})...")
+            from sklearn.ensemble import RandomForestClassifier
+            train_props = []
+            train_labels = []
+            for t in c.train_steps:
+                if t in self.graphs:
+                    mask = self.graphs[t]["y"].numpy() != -1
+                    train_props.append(self.graphs[t]["prop"].numpy()[mask])
+                    train_labels.append(self.graphs[t]["y"].numpy()[mask])
+            train_props_full = np.concatenate(train_props, axis=0)
+            train_labels_full = np.concatenate(train_labels, axis=0)
+            
+            rf = RandomForestClassifier(n_estimators=50, random_state=c.seed, n_jobs=-1, class_weight='balanced')
+            rf.fit(train_props_full, train_labels_full)
+            
+            importances = rf.feature_importances_
+            indices = np.argsort(importances)[::-1]
+            cumulative_importance = np.cumsum(importances[indices])
+            
+            num_features = np.argmax(cumulative_importance >= c.rf_importance_threshold) + 1
+            selected_indices = np.sort(indices[:num_features])
+            
+            print(f"[DataModule] RF selected {num_features} components to retain {c.rf_importance_threshold} cumulative importance.")
+            
+            for t in self.graphs:
+                prop_np = self.graphs[t]["prop"].numpy()
+                prop_rf = prop_np[:, selected_indices]
+                self.graphs[t]["prop"] = torch.tensor(prop_rf, dtype=torch.float32)
+                
+            self.sgc_input_dim = num_features
+
 
         n_base = len(self.feature_cols)
         n_topo = 2 if c.use_graph_structural else 0

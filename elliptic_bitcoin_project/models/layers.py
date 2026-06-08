@@ -75,11 +75,7 @@ def sgc_propagate(
             cur = torch.sparse.mm(S, cur)
             hops.append(cur)
         if multiscale:
-            normalized = [hops[0]]
-            for h in hops[1:]:
-                std = h.std(dim=0, keepdim=True).clamp(min=1e-6)
-                normalized.append(h / std)
-            out = torch.cat(normalized, dim=1)
+            out = torch.cat(hops, dim=1)
             assert out.shape == (n, (k + 1) * d)
         else:
             out = hops[-1]
@@ -112,12 +108,7 @@ def sgc_propagate(
     for i in range(k):
         channels.extend([sym_hops[i], out_hops[i], in_hops[i]])
 
-    normalized = [channels[0]]
-    for h in channels[1:]:
-        std = h.std(dim=0, keepdim=True).clamp(min=1e-6)
-        normalized.append(h / std)
-
-    out = torch.cat(normalized, dim=1)
+    out = torch.cat(channels, dim=1)
     expected_dim = d * (1 + 3 * k)
     assert out.shape == (n, expected_dim), \
         f"Directional propagation shape {out.shape} != (n, {expected_dim})"

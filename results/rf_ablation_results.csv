@@ -1,0 +1,4 @@
+Sweep,Static Time (s),Static Mem (MB),Static OOT F1,Static OOT PR-AUC,WF Time (s),WF Mem (MB),Walk-Forward Mean F1,Walk-Forward Mean PR-AUC
+Sweep 3 (RF 99%),71.314,73.57,0.701,0.718,N/A,N/A,N/A,N/A
+Sweep 4 (RF 99%),69.977,1.13,0.676,0.712,N/A,N/A,N/A,N/A
+Sweep 5 (RF 99%),139.406,1.13,0.711,0.688,N/A,N/A,N/A,N/A

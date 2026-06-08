@@ -285,6 +285,44 @@ def walk_forward_isoforest(dm, cfg):
     pooled_f1, pooled_prauc, _, _, _ = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
     return pooled_f1, pooled_prauc
 
+def walk_forward_ae(dm, cfg, device):
+    import numpy as np
+    import torch
+    from evaluation.validation import fit_autoencoder, _aggregate_walk_forward
+    from sklearn.metrics import f1_score, average_precision_score
+    y_true_all, y_pred_all, y_score_all = [], [], []
+    for tau in cfg.test_steps:
+        train_block = [t for t in range(min(dm.graphs), tau) if t in dm.graphs]
+        if not train_block:
+            continue
+        Xtr_np = np.concatenate([dm.graphs[t]["x"].numpy()[:, :166] for t in train_block])
+        Xtr = torch.tensor(Xtr_np, dtype=torch.float32)
+        
+        ae = fit_autoencoder(Xtr, 166, cfg, device, epochs=60, lr=1e-3)
+        
+        g = dm.graphs[tau]
+        m = g["labeled_mask"].numpy()
+        Xte_np = g["x"].numpy()[:, :166][m]
+        yte = g["y"].numpy()[m]
+        if len(yte) == 0 or len(np.unique(yte)) < 2:
+            continue
+            
+        Xte = torch.tensor(Xte_np, dtype=torch.float32).to(device)
+        with torch.no_grad():
+            x_hat = ae(Xte)
+            scores = ((Xte - x_hat) ** 2).mean(dim=1).cpu().numpy()
+            
+        actual_rate = (yte == 1).mean()
+        thresh_pct = (1 - actual_rate) * 100
+        y_pred = (scores >= np.percentile(scores, thresh_pct)).astype(int)
+        
+        y_true_all.append(yte)
+        y_pred_all.append(y_pred)
+        y_score_all.append(scores)
+        
+    pooled_f1, pooled_prauc, _, _, _ = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
+    return pooled_f1, pooled_prauc
+
 
 def main():
     from data.load_dataset import download_and_load_data
@@ -361,6 +399,8 @@ def main():
             pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
         else:
             print("Already completed Baseline: IsolationForest (166), skipping.")
+
+
 
         if "Baseline: XGBoost (166)" not in completed_sweeps:
             spw = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
@@ -444,13 +484,14 @@ def main():
          Config(use_mlp_head=True,  use_multiscale_prop=True,
                 use_graph_structural=False)),
 
-        ("Sweep 4: + Topology Features",
+        ("Sweep 4: + Graph Structure Features (PageRank + Clustering Coeff.)",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
                 use_graph_structural=True)),
 
         ("Sweep 5: + Directional Channels",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=True, use_directional_prop=True))
+                use_graph_structural=True, use_directional_prop=True,
+                topo_injection_mode='early', sgc_weight_decay=5e-3))
     ]
 
     for name, cfg in sweeps:
@@ -458,10 +499,7 @@ def main():
         if name in completed_sweeps:
             print(f"Already completed {name}, skipping.")
             continue
-        if "Sweep 4" in name or "Sweep 1" in name:
-            res = run_single_sweep(name, cfg, df, df_edge, feature_cols, window=None)
-        else:
-            res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
+        res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
         results.append(res)
         
         # Incremental save
@@ -485,45 +523,48 @@ def main():
         print(f"--> {res}\n")
 
 
-    # ── Advanced modules ───────────────────────────────────────────────────────
-    cfg_full = sweeps[-1][1]
-    dm_adv   = EllipticDataModule(df, df_edge, feature_cols, cfg_full)
-    dm_adv.setup()
+    # ── Walk-Forward on Best SGC Configuration ────────────────────────────────
+    print("\n--- Walk-Forward Validation (Best SGC Sweep) ---")
+    best_f1 = -1.0
+    best_sweep_name = None
+    for r in results:
+        if isinstance(r.get("Sweep"), str) and r["Sweep"].startswith("Sweep ") and "K=" not in r["Sweep"]:
+            f1_val = r.get("Static OOT F1", 0.0)
+            if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_f1:
+                best_f1 = f1_val
+                best_sweep_name = r["Sweep"]
 
-    try:
-        from models.drift_adaptation import explicit_drift_adaptation
-        if True: # Demoted Phase 9 (Drift Adaptation)
-            print("Drift adaptation demoted to exploratory, skipping.")
-        else:
-            with profile_resources() as wf_drift:
-                res_drift = explicit_drift_adaptation(dm_adv, cfg_full)
+    if best_sweep_name:
+        wf_name = f"Best WF: {best_sweep_name}"
+        if wf_name not in completed_sweeps:
+            print(f"\nWinning Configuration: {best_sweep_name} (Static F1: {best_f1:.3f})")
+            best_cfg = next((cfg for name, cfg in sweeps if name == best_sweep_name), None)
+            
+            if best_cfg is not None:
+                from data.build_graph import EllipticDataModule
+                from evaluation.validation import walk_forward_validation
                 
-            results.append(_make_result(
-                res_drift["Sweep"],
-                static_time="N/A",
-                static_mem="N/A",
-                static_f1=res_drift.get("Static OOT F1", "N/A"),
-                static_prauc=res_drift.get("Static OOT PR-AUC", "N/A"),
-                wf_time=round(wf_drift.get("time", 0.0), 3),
-                wf_mem=round(wf_drift.get("peak_mem", 0.0), 2),
-                wf_f1=res_drift.get("Walk-Forward Mean F1", "N/A"),
-                wf_prauc=res_drift.get("Walk-Forward Mean PR-AUC", "N/A"),
-            ))
-            pd.DataFrame(results).to_csv(out_file, index=False)
-    except Exception as e:
-        print(f"  Drift adaptation skipped: {e}")
-
-    # ── Expanding-window baseline ─────────────────────────────────────────────
-    expanding_name = "Sweep 4: Expanding (no window)"
-    if expanding_name not in completed_sweeps:
-        print(f"\n{'='*55}\nRunning: {expanding_name}\n{'='*55}")
-        res = run_single_sweep(expanding_name, cfg_full, df, df_edge, feature_cols, window=None)
-        results.append(res)
-        pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
-        print(f"--> {res}\n")
-    else:
-        print(f"Already completed {expanding_name}, skipping.")
-
+                with profile_resources() as wf_stat:
+                    dm_best = EllipticDataModule(df, df_edge, feature_cols, best_cfg)
+                    dm_best.setup()
+                    wf_f1, wf_prauc = walk_forward_validation(dm_best, best_cfg, DEVICE, sweep_name=wf_name)
+                    
+                wf_res = _make_result(
+                    wf_name,
+                    static_time="N/A",
+                    static_mem="N/A",
+                    static_f1="N/A",
+                    static_prauc="N/A",
+                    wf_time=round(wf_stat.get("time", 0.0), 3),
+                    wf_mem=round(wf_stat.get("peak_mem", 0.0), 2),
+                    wf_f1=round(wf_f1, 3),
+                    wf_prauc=round(wf_prauc, 3),
+                )
+                results.append(wf_res)
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                print(f"--> {wf_res}\n")
+        else:
+            print(f"Already completed {wf_name}, skipping.")
 
 
     # ── Persist results ────────────────────────────────────────────────────────

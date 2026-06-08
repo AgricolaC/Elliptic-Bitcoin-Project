@@ -7,7 +7,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import time
 from typing import Tuple, List, Any
-from sklearn.metrics import f1_score, average_precision_score
+from sklearn.metrics import f1_score, average_precision_score, precision_recall_curve
 from config import Config, OUTPUT_DIR, set_global_seeds
 
 try:
@@ -79,7 +79,7 @@ def fit_head(
     set_global_seeds(cfg.seed)
     model = SGCHead(in_dim, cfg).to(device)
     loss_fn = build_loss(cfg, class_weights)
-    opt = torch.optim.AdamW(
+    opt = torch.optim.Adam(
         model.parameters(), lr=cfg.sgc_lr, weight_decay=cfg.sgc_weight_decay
     )
     Xtr, ytr = Xtr.to(device), ytr.to(device)
@@ -94,6 +94,8 @@ def fit_head(
             loss.backward()
             opt.step()
     return model
+
+
 
 
 def _compute_class_weights(ytr: torch.Tensor, device: torch.device) -> torch.Tensor:

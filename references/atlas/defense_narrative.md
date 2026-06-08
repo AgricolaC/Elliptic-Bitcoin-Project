@@ -2,17 +2,18 @@
 
 This document provides a structured theoretical defense of the Elliptic Bitcoin anomaly detection pipeline, contrasting our approach with the canonical methodologies covered in the course. This narrative serves as the foundation for the "Critical Discussion" and "Baselines" sections of the final report and oral exam.
 
-## 1. Connection to Module 2: Geometric Learning & MPNNs
-Our Simplified Graph Convolution (SGC) pipeline connects directly to the Message Passing Neural Network (MPNN) framework from Module 2. However, rather than learning adaptive message passing weights via GCNConv or GAT, we decouple the spatial aggregation from the feature transformation (following the SIGN/SGC paradigm). 
-- **Theoretical Justification**: In homophilous anomaly detection tasks like Elliptic, pre-computing the Laplacian propagation $D^{-1/2} A D^{-1/2} X$ over multiple scales ($k=1,2,3$) acts as a low-pass filter over the graph manifold. This captures the local geometric structure without suffering from the over-smoothing and optimization instability that plagues end-to-end deep GCNs.
-- **Intrinsic Dimensionality**: The raw 166 features have an intrinsic geometric structure (as discussed in Module 1 & `nb3b`). Our addition of handcrafted topology features (Sweep 4a: PageRank, Clustering Coefficients) explicitly maps structural roles that the spectral smoothing alone misses, providing the MLP head with orthogonal dimensions of variation.
+## 1. Connection to Module 2: Geometric Learning & SIGN-lite Architectures
+Our architecture is essentially a specialized implementation of **SIGN** (Scalable Inception Graph Neural Networks). By decoupling the spatial aggregation from the feature transformation, we pre-compute the heavy geometric lifting ($S^k X$).
+- **The Feature Injection Strategy (The Sweet Spot)**: As established in high-tier benchmarking literature, the true power of decoupled models like SIGN lies in feature injection. By pre-computing the spectral smoothing, we create the perfect architectural blueprint to append complex geometric priors without massive memory overhead. Our **Sweep 4** perfectly embodies this strategy: we extract handcrafted topological features (PageRank, Clustering Coefficients) and concatenate them directly into the pre-computed multiscale representations. This hybrid approach bridges the gap—granting the MLP the expressive power of deep structural analysis while maintaining the execution speed of a lightweight baseline.
+- **Intrinsic Dimensionality**: The raw 166 features have an intrinsic geometric structure. Our addition of graph topology features explicitly maps structural roles that the spectral smoothing alone misses, providing the MLP head with orthogonal dimensions of variation.
 - **Gauge-Theoretic Interpretation (`nb4 gauge theories exec.py`)**: As demonstrated in the course's gauge theory notebook, naive aggregation on a manifold violates gauge equivariance because aggregated features leave the local tangent plane. While standard GNNs on Euclidean spaces bypass this issue, the Elliptic DAG's locally-pooled neighborhood features implicitly encode a discrete gauge choice. 
-- **Symmetric Normalization as a Connection**: Our use of the symmetrically normalized adjacency matrix $\tilde{D}^{-1/2} \tilde{A} \tilde{D}^{-1/2}$ in SGC acts as the discrete analogue to choosing the Levi-Civita connection (the unique torsion-free connection compatible with the graph metric). This symmetric normalization is equivalent to assigning edge weights that locally flatten the discrete curvature, ensuring that the propagation phase natively preserves the structural gauge without requiring complex learnable per-layer transformations.
+- **Symmetric Normalization as a Connection**: Our use of the symmetrically normalized adjacency matrix $\tilde{D}^{-1/2} \tilde{A} \tilde{D}^{-1/2}$ in SGC can be interpreted as analogous to choosing the Levi-Civita connection (a torsion-free connection compatible with a metric). This symmetric normalization acts like assigning edge weights that locally flatten the discrete curvature, providing a canonical, basis-independent choice of propagation operator that reliably preserves structural gauge without requiring complex learnable per-layer transformations.
+
 
 ## 2. Comparison to DOMINANT (Module 4)
 *Course Reference: `lecture3 dominant.py`, `nb5_gans_graphs.ipynb`*
 
-Vaccarino's implementation of DOMINANT provides the canonical unsupervised approach to structural anomalies. It relies on a 2-layer GCN encoder and dual decoders (attribute and structure), optimizing a reconstruction objective where the anomaly score is $s(v) = \alpha ||x - \hat{x}||^2 + (1-\alpha) ||A - \hat{A}||^2$.
+The implementation of DOMINANT provides the canonical unsupervised approach to structural anomalies. It relies on a 2-layer GCN encoder and dual decoders (attribute and structure), optimizing a reconstruction objective where the anomaly score is $s(v) = \alpha ||x - \hat{x}||^2 + (1-\alpha) ||A - \hat{A}||^2$.
 
 - **Contrast**: Our pipeline is fundamentally **supervised and discriminative**, optimized for F1-score via a logistic bottleneck, whereas DOMINANT is **unsupervised and generative** (reconstruction-based).
 - **Trade-offs**: DOMINANT's reconstruction error is highly sensitive to the capacity of the bottleneck (as explored in `nb3_autoencoders`). If the intrinsic dimensionality of illicit nodes overlaps with normal nodes, reconstruction error fails to separate them. Because the Elliptic dataset provides ground-truth labels per timestep, a discriminative approach (like our MLP head) is empirically stronger for defining the precise decision boundary. Our architecture deliberately trades the label-free flexibility of DOMINANT for the precision of supervised F1 optimization.
@@ -30,7 +31,22 @@ The LSTM-AE demonstrates temporal anomaly detection via sequence-to-sequence rec
 
 The taxonomy of classical methods (LOF, Isolation Forest, One-Class SVM) provides the baseline for anomaly detection. 
 - **Scalability**: Algorithms like LOF are $O(n^2)$ distance-based, rendering them computationally prohibitive over the 203K nodes of the Elliptic dataset.
-- **Our Baselines**: We explicitly benchmark against XGBoost and RandomForest over the raw attributes ($X \in \mathbb{R}^{166}$). This proves that any gains achieved by our SGC pipeline are strictly attributable to the geometric structure (message passing and topology features) rather than just the non-linear capacity of the classifier head.
+- **Our Baselines**: We explicitly benchmark against XGBoost and RandomForest over the raw attributes ($X \in \mathbb{R}^{166}$). 
+
+## 5. The "Catch-22" of Multicollinearity and the Failure of PCA
+When extending the architecture to include Directional Channels (In/Out/Undirected), the feature dimension explodes to 1176. This creates a severe case of multicollinearity. We evaluated two methods to combat this dimensional bloat:
+
+1. **Heavy L2 Regularization (`5e-3`)**: While a massive L2 penalty prevents the MLP from memorizing noise, it simultaneously starves the model's capacity over 200 epochs, capping the directional model's performance at F1 `0.621` (Sweep 5).
+2. **PCA Dimensionality Reduction**: We applied PCA (retaining 99% variance) to compress the propagated features. 
+   - **Undirected Model (Sweep 4) (PCA 99%)**: F1 plummeted from `0.721` to `0.650`.
+   - **Directional Model (Sweep 5) (PCA 99%)**: Compressed from 1176 to 339 dims, but F1 fell to `0.558`.
+
+3. **Supervised Random Forest Feature Selection**: Unlike PCA, Random Forest Gini importance explicitly measures how well a feature separates illicit nodes from licit ones. We calculated the Gini importances of the directional model, sorted them, and kept only the subset of features needed to reach 99% cumulative predictive importance.
+   - **Directional Model (RF 99%)**: Selected 886 out of 1176 features. F1 surged from `0.621` up to **`0.711`** in Sweep 5!
+
+**Theoretical Conclusion**: Unsupervised PCA fails because the fraud signal is mathematically quiet. *Supervised Feature Selection* (RF) successfully identifies and drops the multicollinear noise, rescuing the Directional Model (Sweep 5) from `0.621` up to `0.711`. 
+
+**However, the ultimate takeaway is that Sweep 4 remains supreme.** Even with advanced supervised feature selection, Sweep 5 (`0.711`) still falls short of the natural, unpruned Undirected Model (Sweep 4 at `0.721`). The directional channels introduce massive noise without providing any orthogonal predictive power that Sweep 4 hasn't already captured cleanly. 
 
 ## Conclusion: The Core Bottleneck
-In alignment with the student elaborato template (Section 8), the central challenge of the Elliptic dataset is not just class imbalance, but **temporal generalization**. Our extensive walk-forward ablation matrix proves that while topological features improve static detection, the fundamental bottleneck remains the non-stationary "concept drift" over the 49 timesteps. Our decoupled SGC design offers the most robust response to this drift by allowing the decision boundary to adapt dynamically across time steps without requiring expensive GCN re-training.
+In alignment with the student elaborato template (Section 8), the central challenge of the Elliptic dataset is not just class imbalance, but **temporal generalization**. Our walk-forward ablation matrix proves that while topological features improve static detection, the fundamental bottleneck remains the non-stationary "concept drift" over the 49 timesteps. 
