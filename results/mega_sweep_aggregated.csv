@@ -1,0 +1,16 @@
+Model,Variation,Static_F1_mean,Static_F1_std,WF_Expanding_F1_mean,WF_Expanding_F1_std,WF_Sliding5_F1_mean,WF_Sliding5_F1_std
+M1: Baseline XGBoost,Base,0.792,0.0,0.877,0.0,0.858,0.0
+M2: SGC Linear (k=0),Base,0.264,0.003,0.0,0.0,0.0,0.0
+M3: SGC Linear (k=2),Base,0.307,0.004,0.0,0.0,0.0,0.0
+M4: SGC Neural (k=2),Base,0.621,0.027,0.0,0.0,0.0,0.0
+M4: SGC Neural (k=2),PCA,0.612,0.03,0.0,0.0,0.0,0.0
+M4: SGC Neural (k=2),RF_Pruned,0.633,0.02,0.0,0.0,0.0,0.0
+M5: SGC Neural + Topo,Base,0.596,0.003,0.0,0.0,0.0,0.0
+M5: SGC Neural + Topo,PCA,0.621,0.018,0.0,0.0,0.0,0.0
+M5: SGC Neural + Topo,RF_Pruned,0.628,0.008,0.0,0.0,0.0,0.0
+M6: SGC Neural + Topo + Dir,Base,0.577,0.03,0.0,0.0,0.0,0.0
+M6: SGC Neural + Topo + Dir,PCA,0.603,0.006,0.0,0.0,0.0,0.0
+M6: SGC Neural + Topo + Dir,RF_Pruned,0.578,0.012,0.0,0.0,0.0,0.0
+M7: Hybrid XGBoost (k=2),Base,0.802,0.0,0.846,0.0,0.845,0.0
+M7: Hybrid XGBoost (k=2),PCA,0.58,0.0,0.0,0.0,0.0,0.0
+M7: Hybrid XGBoost (k=2),RF_Pruned,0.802,0.0,0.0,0.0,0.0,0.0
