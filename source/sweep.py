@@ -699,14 +699,67 @@ def main():
                         
             print(f"\n  [Phase 2 Winner] {best_grid_key} achieved highest Static F1: {best_grid_f1:.3f}.")
             
+            # --- PHASE 2.5: MLP Head Tuning (Champion & Challenger) ---
+            print("\n--- PHASE 2.5: MLP Head Tuning ---")
+            champion_key = best_grid_key
+            champion_cfg = all_configs_run.get(champion_key)
+            if champion_cfg is None:
+                champion_cfg = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=1, use_directional_prop=False, use_graph_structural=False, seed=seed)
+                champion_key = "Grid: K=1, Dir=F, Topo=None"
+
+            # Challenger is highest dimensional config: K=3, Dir=T, Topo=early
+            challenger_key = f"Grid: K=3, Dir=T, Topo=early (Seed {seed}, Var {var})" if args.mode == "mega" else "Grid: K=3, Dir=T, Topo=early"
+            challenger_cfg = all_configs_run.get(challenger_key)
+            if challenger_cfg is None:
+                challenger_cfg = Config(
+                    use_mlp_head=True,
+                    use_multiscale_prop=True,
+                    sgc_k=3,
+                    use_directional_prop=True,
+                    use_graph_structural=True,
+                    topo_injection_mode='early',
+                    seed=seed
+                )
+
+            targets = [(champion_cfg, champion_key, "Champion")]
+            if challenger_key != champion_key:
+                targets.append((challenger_cfg, challenger_key, "Challenger"))
+
+            mlp_variations = [
+                ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
+                ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
+                ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True})
+            ]
+
+            for base_cfg, base_key, target_role in targets:
+                clean_prefix = base_key.replace("Grid: ", "").split(" (Seed")[0]
+                print(f"Running MLP variations for {target_role} ({clean_prefix})...")
+                for var_name, var_settings in mlp_variations:
+                    cfg_tuned = Config(
+                        use_mlp_head=True,
+                        use_multiscale_prop=base_cfg.use_multiscale_prop,
+                        sgc_k=base_cfg.sgc_k,
+                        use_directional_prop=base_cfg.use_directional_prop,
+                        use_graph_structural=base_cfg.use_graph_structural,
+                        topo_injection_mode=base_cfg.topo_injection_mode,
+                        seed=base_cfg.seed,
+                        mlp_hidden=var_settings["mlp_hidden"],
+                        use_layernorm=False,
+                        use_residual=var_settings["use_residual"]
+                    )
+                    name = f"MLP-{var_name} [{clean_prefix}]"
+                    sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
+                    execute_sweep(sweep_key, name, cfg_tuned, var)
+                    all_configs_run[sweep_key] = cfg_tuned
+            
 
     # ── PHASE 3: Walk-Forward on Best SGC Configuration ──────────────────────
     print("\n--- Walk-Forward Validation (Best SGC Sweep) ---")
     best_f1 = -1.0
     best_sweep_name = None
     for r in results:
-        # Check if it's an SGC sweep and has valid F1
-        if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"]):
+        # Check if it's an SGC sweep and has valid F1 (including MLP variants)
+        if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"] or "MLP-" in r["Sweep"]):
             f1_val = r.get("Static OOT F1", 0.0)
             if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_f1:
                 best_f1 = f1_val
@@ -744,13 +797,6 @@ def main():
             print(f"Already completed {wf_name}, skipping.")
 
 
-    # ── Persist results ────────────────────────────────────────────────────────
-    df_res   = pd.DataFrame(results, columns=list(_RESULT_KEYS))
-    out_file = os.path.join(OUTPUT_DIR, "sweep_results.csv")
-    
-    timestep_csv = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
-    if os.path.exists(timestep_csv):
-        os.remove(timestep_csv)
     df_res.to_csv(out_file, index=False)
     print(f"\nResults saved to {out_file}")
 

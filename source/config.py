@@ -20,7 +20,11 @@ def set_global_seeds(seed: int = RANDOM_SEED) -> None:
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device(
+    "cuda" if torch.cuda.is_available() else 
+    "mps" if torch.backends.mps.is_available() else 
+    "cpu"
+)
 
 @dataclass
 class Config:
@@ -31,7 +35,7 @@ class Config:
     # Original ablatable mechanisms
     use_graph_structural: bool = True
     class_weighted: bool = True
-
+11
     # Architectural modifications
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
@@ -49,6 +53,8 @@ class Config:
     focal_gamma: float = 2.0           # 0.0 == weighted CE
     mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3
+    use_layernorm: bool = False
+    use_residual: bool = False
     
     # Feature Selection & Dim. Reduction
     use_pca: bool = False

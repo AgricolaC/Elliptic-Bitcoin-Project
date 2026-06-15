@@ -179,13 +179,9 @@ class EllipticDataModule:
         # ── Step 6: Finalize tensors ───────────────────────────────────────────
         for t in self.graphs:
             x = torch.tensor(self.graphs[t]["x_np"], dtype=torch.float32)
-            if c.use_graph_structural:
+            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                 topo = torch.tensor(self.graphs[t]["topo_np"], dtype=torch.float32)
-                topo = torch.nan_to_num(topo, nan=0.0, posinf=0.0, neginf=0.0)
-                if getattr(c, 'topo_injection_mode', 'late') == 'early':
-                    x = torch.cat([x, topo], dim=1)
-                else:
-                    self.graphs[t]["topo"] = topo
+                self.graphs[t]["topo"] = torch.nan_to_num(topo, nan=0.0, posinf=0.0, neginf=0.0)
             self.graphs[t]["x"] = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
 
         self.feature_dim = self.graphs[ts_min]["x"].shape[1]
