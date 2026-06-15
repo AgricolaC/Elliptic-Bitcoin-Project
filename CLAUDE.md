@@ -4,87 +4,120 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Bitcoin transaction anomaly detection using Scalable Graph Convolution (SGC) on the Elliptic dataset. The project implements temporal walk-forward validation with systematic ablation sweeps to evaluate different architectural components.
+Bitcoin transaction anomaly detection using Scalable Graph Convolution (SGC) on the Elliptic dataset (203K nodes, 49 timesteps). Implements temporal walk-forward validation with systematic ablation sweeps to evaluate architectural components.
 
 ## Commands
 
 ```bash
-# Activate virtual environment
+# Activate virtual environment (required before any python command)
 source venv/bin/activate
 
-# Run standard ablation sweep (seed 42)
+# Run standard ablation sweep (seed 42 only, Base variation)
 python source/sweep.py --mode standard
 
-# Run mega sweep (seeds 42-44, multiple variations)
+# Run mega sweep (seeds 42-44, Base/PCA/RF_Pruned variations)
 python source/sweep.py --mode mega
+
+# Run only static OOT evaluation (skip walk-forward, faster)
+python source/sweep.py --only-static
+
+# Run only walk-forward evaluation (skip static OOT)
+python source/sweep.py --only-wf
 
 # Run all tests
 pytest tests/test_remediation.py -v
 
-# Run specific test class
+# Run a single test class
 pytest tests/test_remediation.py::TestFeatureScaling -v
+
+# Run a single test method
+pytest tests/test_remediation.py::TestFeatureScaling::test_topology_columns_are_scaled_W1 -v
 ```
 
-Results are saved to `results/sweep_results.csv`. Models are saved to `results/models/`.
+Results are saved to `results/sweep_results.csv`. Per-step walk-forward data goes to `results/walk_forward_timesteps.csv`. Models are saved to `results/models/`.
 
 ## Architecture
+
+### Import Path
+
+`source/` is the Python root. All imports within source use unqualified names (`from config import Config`, `from data.build_graph import ...`). Tests add both the repo root and `source/` to `sys.path`.
 
 ### Data Pipeline (`source/data/`)
 
 ```
-Elliptic Dataset (203K nodes, 49 timesteps)
-    ↓ load_dataset.py (downloads from Kaggle, validates temporal integrity)
-    ↓ build_graph.py: EllipticDataModule
-        - Per-timestep graph construction
-        - Base scaler: StandardScaler on 166 raw features (train steps only)
-        - Optional topology: PageRank + Clustering Coefficient
-        - Augmented scaler: Second StandardScaler on [base|topo]
-        - SGC propagation: S^k where S = D^{-1/2}(A+A^T+I)D^{-1/2}
-        - Output: [X | SX | ... | S^K X] multiscale features
+download_and_load_data()          # load_dataset.py — Kaggle cache at ~/.cache/kagglehub/
+    ↓ _validate_temporal_edges()  # W3 guard: raises on orphan or cross-timestep edges
+    ↓ EllipticDataModule.setup()  # build_graph.py
+        1. build per-timestep graphs (reindex_timestep: global txIds → contiguous [0..n-1])
+        2. scaler_base: StandardScaler on 166 raw features (train steps only)
+        3. optional topology: PageRank + Clustering Coefficient per node via NetworkX
+           - 'early' mode: append to x_np before second scaler pass
+           - 'late' mode: store separately in g["topo"], concatenated after SGC propagation
+        4. scaler_aug/scaler_topo: second StandardScaler pass (W1 fix — topology was unscaled)
+        5. SGC propagation via sgc_propagate() → stored in g["prop"]
+        6. optional PCA or RF feature selection on propagated features
+        → sets dm.sgc_input_dim from actual tensor shape (W6 fix)
 ```
 
-### Model (`source/models/`)
+Feature dimensions after propagation:
+- Undirected multiscale K=2: `166 * (K+1) = 498`
+- Directional multiscale K=2: `166 * (1 + 3*K) = 830`
+- Late topology injection adds +2 to any of the above
 
-- `layers.py`: SGC propagation with symmetric normalization, supports directional channels (in/out/undirected)
-- `classifier.py`: SGCHead - 3-layer MLP (input → 128 → 64 → 2) or linear classifier
+### SGC Propagation (`source/models/layers.py`)
 
-### Evaluation (`source/evaluation/`)
+- `gcn_norm`: symmetric D^{-1/2}(A + A^T + I)D^{-1/2} — symmetrizes the DAG
+- `_row_normalize`: D^{-1}A for directional channels
+- `sgc_propagate`: returns `[X | SX | ... | S^K X]` (multiscale) or `S^K X` (standard). With `use_directional=True`, returns `[X | S_sym X | S_out X | S_in X | ...]` per hop.
 
-- `fit_head`: Trains classifier on specified timesteps
-- `walk_forward_validation`: Expanding window validation - train on [1..tau-1], test on tau for each tau ∈ [35..49]
+### Model (`source/models/classifier.py`)
+
+`SGCHead`: either a single Linear (baseline) or a configurable MLP. MLP architecture is driven by `cfg.mlp_hidden` (tuple of hidden dims), `cfg.mlp_dropout`, and `cfg.use_residual`. Residual shortcut is `nn.Identity` if in_dim == last hidden dim, else `nn.Linear`.
+
+### Evaluation Flow (`source/evaluation/validation.py`)
+
+Two evaluation modes, both using `fit_head` → `SGCHead` trained with AdamW + CrossEntropyLoss:
+
+1. **Static OOT**: Train on all `train_steps` [1..34], test on all `test_steps` [35..49] pooled.
+2. **Walk-forward**: For each tau in [35..49], train on [1..tau-1] (or sliding window), test on tau. Class weights recomputed per-tau from the actual training window (W8 fix). Produces `walk_forward_drift_{sweep_name}.png`.
+
+`_aggregate_walk_forward` returns both pooled (concatenated) and macro-averaged F1/PR-AUC.
+
+### Sweep Runner (`source/sweep.py`)
+
+Three execution phases:
+1. **Phase 1**: Sweep 1 (linear SGC) → Sweep 2 (+ MLP head) as static-only baselines
+2. **Phase 2**: Grid search over `K ∈ {1,2,3}`, `directional ∈ {F,T}`, `topo ∈ {F,T}`, `injection ∈ {early,late}` — all static-only. Grid skips `(topo=False, injection='early')` as duplicate.
+3. **Phase 2.5**: MLP head variations (Wide/Residual/ResWide) on champion + challenger configs
+4. **Phase 3**: Walk-forward on best static-OOT SGC config only
+
+Sweep results are checkpointed to CSV after each sweep — re-runs skip already-completed sweep names. Artifact names sanitized with `re.sub(r"[^\w\-]", "_", name)` (W7 fix).
+
+`_make_result()` enforces the 11-key schema on every result dict (W5 fix).
 
 ### Configuration (`source/config.py`)
 
-Key settings in `EllipticConfig` dataclass:
-- `train_steps=range(1,35)`, `test_steps=range(35,50)`, `disruption_step=43`
-- Architecture toggles: `use_mlp_head`, `use_multiscale_prop`, `use_graph_structural`, `use_directional_prop`
-- SGC hyperparameters: `sgc_k=2`, `sgc_epochs=200`, `sgc_lr=0.01`, `sgc_weight_decay=5e-4`
-
-## Ablation Sweep Design
-
-Each sweep toggles exactly one flag relative to the previous:
-1. **Sweep 1 (Baseline):** Linear SGC head
-2. **Sweep 2 (+ MLP):** 3-layer MLP head
-3. **Sweep 3 (+ Multiscale):** [X|SX|S²X] stacking
-4. **Sweep 4 (+ Structure):** PageRank + clustering coefficients
-5. **Sweep 5 (+ Directional):** In/Out/Undirected propagation channels
+`Config` dataclass with `__post_init__` assertion that `train_steps` and `test_steps` are disjoint. `DEVICE` auto-selects CUDA → MPS → CPU. `set_global_seeds()` seeds Python/NumPy/PyTorch and sets cuDNN deterministic mode.
 
 ## Test Suite
 
-`tests/test_remediation.py` uses "axiom-falsify" pattern - tests should FAIL before fixes exist:
-- W1: Feature scaling for topology features
-- W3: Temporal leakage guards (no cross-timestep edges)
-- W5: Result dict 11-key schema standardization
-- W6: sgc_input_dim encapsulation
-- W7: Plot filename collision prevention
-- W8: Dynamic class weights per-tau
+`tests/test_remediation.py` follows the **axiom-falsify** pattern — each test was written to FAIL before the corresponding fix, then verified to PASS after. Do not remove assertions even if they seem redundant.
+
+| Class | What it guards |
+|---|---|
+| `TestFeatureScaling` | W1: topology columns (PageRank/clustering) must be StandardScaled; leakage guard that scaler is fitted on train only |
+| `TestTemporalLeakageGuard` | W3: orphan edge txIds must raise (old NaN==NaN bypass bug) |
+| `TestSGCInputDimEncapsulation` | W6: `dm.sgc_input_dim` set inside `setup()`, not by callers |
+| `TestWalkForwardPlotNaming` | W7: `walk_forward_validation` must have `sweep_name` parameter |
+| `TestDynamicClassWeights` | W8: `walk_forward_validation` must NOT accept external `cls_w` |
+| `TestSweepResultKeyStandardization` | W5: all result dicts must have the exact 11 canonical keys |
 
 ## Critical Domain Knowledge
 
-**Structural Hysteresis (Step 43):** Dark market shutdown causes graph topology shift. Models overfit to pre-disruption structure, causing performance degradation. Sliding windows (4-step memory) recover F1 by "amputating toxic geometry."
+**Label encoding**: Class `"1"` = illicit (positive, `y=1`), class `"2"` = licit (`y=0`), `"unknown"` = unlabeled (`y=-1`). Unlabeled nodes are excluded from loss and metric computation everywhere via `labeled_mask` / `y != -1`.
 
-**XGBoost Baseline:** Tabular attributes are more elastic than graph structure - XGBoost achieves 0.871 WF F1 vs SGC's 0.625 because raw features survive the topology shift.
+**Structural Hysteresis (Step 43)**: A dark market shutdown causes a topology shift at timestep 43. Graph-structural models overfit pre-disruption topology and degrade here. Sliding window walk-forward (4-step memory) partially recovers by "amputating toxic geometry."
 
-## Dependencies
+**XGBoost dominates SGC**: Raw tabular features are more topology-shift-elastic. XGBoost achieves ~0.871 walk-forward F1 vs SGC's ~0.625 because tabular features survive the step-43 disruption.
 
-PyTorch, scikit-learn, pandas, numpy, NetworkX, XGBoost, matplotlib, joblib, pytest
+**Directional propagation requires multiscale**: `sgc_propagate` asserts `multiscale=True` when `use_directional=True`. Setting `use_directional_prop=True` with `use_multiscale_prop=False` will raise at runtime.
