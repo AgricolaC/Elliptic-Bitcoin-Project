@@ -78,10 +78,14 @@ Feature dimensions after propagation:
 
 Two evaluation modes, both using `fit_head` → `SGCHead` trained with AdamW + CrossEntropyLoss:
 
-1. **Static OOT**: Train on all `train_steps` [1..34], test on all `test_steps` [35..49] pooled.
-2. **Walk-forward**: For each tau in [35..49], train on [1..tau-1] (or sliding window), test on tau. Class weights recomputed per-tau from the actual training window (W8 fix). Produces `walk_forward_drift_{sweep_name}.png`.
+1. **Static OOT**: Train on all `train_steps` [1..26], validate on `val_steps` [27..34], test on all `test_steps` [35..49] pooled. (P0-A fix: 3-way split).
+2. **Walk-forward**: For each tau in [35..49], train on [start..tau-2], calibrate threshold on tau-1, test on tau. Class weights recomputed per-tau from the actual training window (W8 fix). Produces `walk_forward_drift_{sweep_name}.png`.
 
 `_aggregate_walk_forward` returns both pooled (concatenated) and macro-averaged F1/PR-AUC.
+
+**Frozen Preprocessing in Walk-Forward.** Scalers, topology, PCA, and propagation matrices are fit once on `train_steps` and held constant across the walk-forward loop. Only the classification head is retrained per-τ. This is a stated simplification, not leakage.
+
+**Validation Split Limitation.** Validation (steps 27–34) sits entirely on the pre-disruption side of the step-43 regime change. Selection is therefore made on pre-disruption data, and we expect — and observe — a generalization gap at τ≥43. This is inherent to the dataset: the post-disruption regime can only exist in the test window.
 
 ### Sweep Runner (`source/sweep.py`)
 
@@ -121,3 +125,14 @@ Sweep results are checkpointed to CSV after each sweep — re-runs skip already-
 **XGBoost dominates SGC**: Raw tabular features are more topology-shift-elastic. XGBoost achieves ~0.871 walk-forward F1 vs SGC's ~0.625 because tabular features survive the step-43 disruption.
 
 **Directional propagation requires multiscale**: `sgc_propagate` asserts `multiscale=True` when `use_directional=True`. Setting `use_directional_prop=True` with `use_multiscale_prop=False` will raise at runtime.
+
+## Temporal Limitations and Related Work
+
+### LSTM Extrapolation Limitation
+The LSTM is trained on snapshots 1–26. At evaluation, it must produce hidden states h_τ for τ up to 49, including the step-43 regime change it never saw during training. The hidden-state dynamics in the post-disruption regime are untrained extrapolation. This is inherent to any temporal model trained on pre-disruption data and is not fixable without leaking test information into training.
+
+### Computational Cost
+The temporal module itself (LSTM forward over ~26 vectors) is cheap. However, walk-forward evaluation retrains the entire embedder+LSTM+head pipeline end-to-end from scratch for each of 15 test steps at 100 epochs each, with per-epoch loss summed over all labeled training nodes. This repeated retraining dominates runtime cost.
+
+### EvolveGCN
+Related work such as EvolveGCN models the evolution of the graph by placing an RNN over the GCN weight matrices. In contrast, our SGC-LSTM approach places the LSTM over the compressed graph-level embeddings and concatenates the output with the node-level propagated features. Our approach uses static graph convolutions (SGC) without learnable parameters during the message passing phase, which is vastly cheaper than evolving GCN weights, while still capturing macroscopic temporal shifts over the ~26 training snapshots.

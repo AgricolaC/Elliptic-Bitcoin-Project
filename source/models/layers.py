@@ -1,8 +1,12 @@
 import torch
 
 def gcn_norm(edge_index: torch.Tensor, n: int) -> torch.Tensor:
-    """Symmetric-normalized adjacency with self-loops as sparse COO (O(E)).
-    Applies graph symmetrization A = max(A, A^T) for the DAG.
+    """Symmetric-normalized adjacency: S = D^{-1/2}(max(A, Aᵀ) + I)D^{-1/2}.
+
+    Symmetrization uses max(A, Aᵀ), not sum. Self-loops (+I) are added after
+    symmetrization. The binarization step (val = (A.values() > 0).float())
+    collapses any coalesced sums back to 1, making this equivalent to the
+    union of edge sets rather than a weighted sum.
     """
     # Symmetrize A = max(A, A^T) by concatenating and taking unique (since values are 1)
     sym_idx = torch.cat([edge_index, edge_index.flip(0)], dim=1)
@@ -53,7 +57,7 @@ def sgc_propagate(
     Propagate node features.
 
     Returns [X | SX | ... | S^K X] if multiscale else S^K X.
-    S = D^{-1/2}(A + A^T + I)D^{-1/2}  (symmetric)
+    S = D^{-1/2}(max(A, Aᵀ) + I)D^{-1/2}  (symmetric)
     """
     n, d = x.shape
     assert edge_index.shape[0] == 2, "edge_index must be [2, E]"
@@ -76,8 +80,12 @@ def sgc_propagate(
     assert multiscale, "Directional propagation requires multiscale=True"
 
     S_sym = gcn_norm(edge_index, n)
-    S_out = _row_normalize(edge_index, n)
-    S_in  = _row_normalize(edge_index.flip(0), n)
+    # P2-C: Add self-loops to directional channels so sink/source nodes
+    # retain their own features instead of receiving all-zero rows.
+    loop = torch.arange(n)
+    loop_idx = torch.stack([loop, loop])
+    S_out = _row_normalize(torch.cat([edge_index, loop_idx], dim=1), n)
+    S_in  = _row_normalize(torch.cat([edge_index.flip(0), loop_idx], dim=1), n)
 
     def multi_hop(S, x, k):
         hops = []

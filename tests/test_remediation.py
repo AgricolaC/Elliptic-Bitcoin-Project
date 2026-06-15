@@ -1,14 +1,5 @@
 """
 Adversarial test suite for the GL-TVD remediation plan.
-Follows axiom-falsify: every test is written to FAIL before the fix exists,
-then verified to PASS after the fix is applied.
-
-Five fix targets:
-  W1  — mixed feature scaling (build_graph.py)
-  W3  — NaN bypass in temporal leakage guard (load_dataset.py)
-  W2  — stacking meta distribution shift (stacking.py)
-  W6  — sgc_input_dim not encapsulated (build_graph.py)
-  W7/W8 — walk-forward plot overwrite + static class weights (validation.py)
 """
 
 import sys, os
@@ -381,8 +372,12 @@ class TestSweepResultKeyStandardization:
         "Seed",
         "Variation",
         "Sweep",
+        "Feature Set",
+        "Threshold",
         "Static Time (s)",
         "Static Mem (MB)",
+        "Static Val F1",
+        "Static Val PR-AUC",
         "Static OOT F1",
         "Static OOT PR-AUC",
         "WF Time (s)",
@@ -421,6 +416,147 @@ class TestSweepResultKeyStandardization:
             mock_wf.return_value = (0.7, 0.8, [])
 
             from config import Config
-            cfg = Config(train_steps=range(1, 35), test_steps=range(35, 50))
+            cfg = Config(train_steps=range(1, 27), val_steps=range(27, 35), test_steps=range(35, 50))
             result = run_single_sweep("Test Sweep", cfg, MagicMock(), MagicMock(), [])
             self._check_keys(result, "run_single_sweep")
+
+class TestTemporalModels:
+    @pytest.fixture
+    def mock_dm(self):
+        dm = MagicMock()
+        dm.graphs = {}
+        for t in range(1, 10):
+            # 166 node features. Let's make 10 nodes per snapshot
+            x = torch.randn(10, 166)
+            prop = torch.randn(10, 32)
+            y = torch.randint(0, 2, (10,))
+            mask = torch.ones(10).bool()
+            # First element of topo is pagerank
+            topo = torch.rand(10, 2)
+            edge_index = torch.randint(0, 10, (2, 20))
+            dm.graphs[t] = {
+                "x": x, "prop": prop, "y": y, "labeled_mask": mask, "edge_index": edge_index, "topo": topo
+            }
+        
+        from config import Config
+        dm.cfg = Config(train_steps=range(1, 5))
+        dm.sgc_input_dim = 32
+        return dm
+
+    def test_tabular_lagged_features_exclude_current_and_future(self, mock_dm):
+        from source.data.temporal_features import build_snapshot_temporal_features
+        # Compute temporal features for step 5 with window=2.
+        feats_before = build_snapshot_temporal_features(mock_dm, target_step=5, window=2, label_lag=0)
+        
+        # Mutate dm.graphs[5] and dm.graphs[6].
+        mock_dm.graphs[5]["x"] *= 2.0
+        mock_dm.graphs[6]["x"] *= 2.0
+        
+        # Recompute.
+        feats_after = build_snapshot_temporal_features(mock_dm, target_step=5, window=2, label_lag=0)
+        
+        # Assert IDENTICAL.
+        np.testing.assert_array_equal(feats_before, feats_after)
+
+    def test_tabular_lagged_features_respond_to_past_positive_control(self, mock_dm):
+        from source.data.temporal_features import build_snapshot_temporal_features
+        feats_before = build_snapshot_temporal_features(mock_dm, target_step=5, window=2, label_lag=0)
+        
+        # Mutate dm.graphs[3] or dm.graphs[4].
+        mock_dm.graphs[3]["x"] += 10.0
+        mock_dm.graphs[4]["x"] += 10.0
+        
+        feats_after = build_snapshot_temporal_features(mock_dm, target_step=5, window=2, label_lag=0)
+        
+        # Assert DIFFERENT.
+        with pytest.raises(AssertionError):
+            np.testing.assert_array_equal(feats_before, feats_after)
+
+    def test_lstm_conditioning_is_causal(self):
+        from source.models.temporal_head import TemporalLSTM
+        lstm = TemporalLSTM(embed_dim=16, hidden_dim=32)
+        
+        # Build 6 embeddings. Record h_3.
+        embeddings = torch.randn(6, 16)
+        h_before = lstm(embeddings)
+        h3_before = h_before[2].clone()
+        
+        # Perturb embeddings 4 and 5 (indices 3 and 4).
+        embeddings[3] += 10.0
+        embeddings[4] += 10.0
+        
+        h_after = lstm(embeddings)
+        h3_after = h_after[2].clone()
+        
+        # Assert h_3 UNCHANGED (future invariance).
+        assert torch.allclose(h3_before, h3_after)
+
+    def test_lstm_conditioning_responds_to_past_positive_control(self):
+        from source.models.temporal_head import TemporalLSTM
+        lstm = TemporalLSTM(embed_dim=16, hidden_dim=32)
+        embeddings = torch.randn(6, 16)
+        h_before = lstm(embeddings)
+        h3_before = h_before[2].clone()
+        
+        # Perturb embeddings 1 or 2 (indices 0 or 1).
+        embeddings[0] += 10.0
+        embeddings[1] += 10.0
+        
+        h_after = lstm(embeddings)
+        h3_after = h_after[2].clone()
+        
+        # Assert h_3 CHANGES.
+        assert not torch.allclose(h3_before, h3_after)
+
+    def test_lstm_embedding_uses_no_labels(self):
+        from source.models.temporal_head import SnapshotEmbedder
+        from config import Config
+        cfg = Config(use_mlp_head=True)
+        embedder = SnapshotEmbedder(in_dim=32, embed_dim=16, cfg=cfg)
+        
+        prop_features = torch.randn(10, 32)
+        emb_before = embedder(prop_features)
+        assert emb_before.shape == (16,)
+
+    def test_lstm_embedding_responds_to_features_positive_control(self):
+        from source.models.temporal_head import SnapshotEmbedder
+        from config import Config
+        cfg = Config(use_mlp_head=True)
+        embedder = SnapshotEmbedder(in_dim=32, embed_dim=16, cfg=cfg)
+        
+        prop_features = torch.randn(10, 32)
+        emb_before = embedder(prop_features)
+        
+        prop_features_perturbed = prop_features + 10.0
+        emb_after = embedder(prop_features_perturbed)
+        
+        assert not torch.allclose(emb_before, emb_after)
+
+    def test_lstm_all_modules_receive_gradients(self, mock_dm):
+        from source.evaluation.temporal_validation import train_lstm_conditioned
+        from config import Config
+        cfg = Config()
+        
+        # The smoke test inside train_lstm_conditioned will assert p.grad is not None.
+        # If it passes, the test passes.
+        train_lstm_conditioned(mock_dm, train_steps=[1, 2], cfg=cfg, device=torch.device("cpu"), epochs=1, embed_dim=16)
+        
+    def test_conditioned_head_input_dim(self):
+        from source.models.temporal_head import LSTMConditionedHead
+        from config import Config
+        cfg = Config()
+        head = LSTMConditionedHead(node_in_dim=32, temporal_hidden_dim=64, cfg=cfg)
+        
+        if cfg.use_mlp_head:
+            first_layer = head.head.hidden_net[0]
+        else:
+            first_layer = head.head._net[0]
+            
+        assert first_layer.in_features == 96
+
+    def test_temporal_feature_shape(self, mock_dm):
+        from source.data.temporal_features import build_snapshot_temporal_features
+        for w in [1, 2, 4]:
+            feats = build_snapshot_temporal_features(mock_dm, target_step=5, window=w, label_lag=0)
+            expected_width = 31 * w - 15
+            assert feats.shape[0] == expected_width

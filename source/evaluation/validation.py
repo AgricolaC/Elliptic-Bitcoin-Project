@@ -21,6 +21,23 @@ def precision_at_k(y_true: np.ndarray, scores: np.ndarray, k: int) -> float:
     return float(y_true[top_k].sum()) / k
 
 
+def _find_best_f1_threshold(y_true: np.ndarray, scores: np.ndarray) -> float:
+    """Find threshold maximizing illicit-class F1.
+
+    Uses [:-1] slicing because precision_recall_curve returns
+    precisions/recalls of length n+1 but thresholds of length n.
+    Without this, argmax can land on the final element and index
+    out of bounds — a realistic crash on degenerate steps.
+
+    Returns 0.5 as fallback if no valid threshold can be found.
+    """
+    precisions, recalls, thresholds = precision_recall_curve(y_true, scores)
+    f1s = 2 * precisions[:-1] * recalls[:-1] / (precisions[:-1] + recalls[:-1] + 1e-8)
+    if len(f1s) == 0 or f1s.max() == 0:
+        return 0.5  # fallback
+    return float(thresholds[np.argmax(f1s)])
+
+
 def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.ndarray], score_list: List[np.ndarray]) -> Tuple[float, float, float, float, float]:
     """
     Compute pooled and macro-averaged walk-forward metrics.
@@ -128,19 +145,27 @@ def walk_forward_validation(
     sweep_name: str = "default",   # W7 FIX: parameterized filename
     return_records: bool = False,
     window: int = None,
+    eval_steps: range = None,       # P0-A: pass cfg.val_steps or cfg.test_steps
 ) -> Any:
     """
     Walk-forward temporal validation with dynamic class weights.
+
+    P1-A: Threshold is calibrated on a held-out step (τ-1), not in-sample.
+    For each τ: train on [start..τ-2], calibrate threshold on τ-1, test on τ.
+    Falls back to 0.5 when τ-1 has insufficient labeled data.
+
+    NOTE: Preprocessing (scalers, topology, propagation) is frozen from setup().
+    Only the classification head is retrained per-tau. This is a stated
+    simplification, not leakage.
 
     W7 FIX: Output filename embeds sweep_name, preventing silent overwrite when
             multiple sweeps are run sequentially.
 
     W8 FIX: Class weights are recomputed inside the tau loop from the expanding
-            training window [1..tau-1], not from a fixed static training split.
-            This corrects miscalibration as the class distribution shifts over time.
+            training window [1..tau-2], not from a fixed static training split.
 
     Defensive Notes:
-        - LEAKAGE GUARD: train_block = [1, tau-1]; assert max == tau-1 each step.
+        - LEAKAGE GUARD: train_block = [start, tau-2]; calibration on tau-1.
         - Skips tau steps with no labeled nodes or single-class labels.
         - Class weights are computed before each model fit from actual window data.
 
@@ -151,6 +176,8 @@ def walk_forward_validation(
         sweep_name:     Label embedded in the output filename.
         return_records: If True, return per-step records as third element.
         window:         If set, use a sliding window of this width. None = expanding.
+        eval_steps:     Steps to evaluate on. Defaults to cfg.test_steps.
+                        Pass cfg.val_steps for model selection.
 
     Returns:
         If return_records:  (pooled_f1, pooled_prauc, wf_records)
@@ -159,6 +186,9 @@ def walk_forward_validation(
     # Sanitize sweep_name for safe filesystem use
     safe_name = re.sub(r"[^\w\-]", "_", sweep_name)
 
+    if eval_steps is None:
+        eval_steps = cfg.test_steps
+
     wf_steps = []
     wf_f1_per_step = []
     wf_prauc_per_step = []
@@ -166,17 +196,19 @@ def walk_forward_validation(
     y_true_all, y_pred_all, s_pred_all = [], [], []
     total_wf_train_time = 0.0
 
-    for tau in cfg.test_steps:
+    for tau in eval_steps:
         start_t = max(min(dm.graphs), tau - window) if window else min(dm.graphs)
-        train_block = list(range(start_t, tau))
+        # P1-A: train on [start..tau-2], calibrate threshold on tau-1
+        train_block = list(range(start_t, tau - 1))
         train_block = [t for t in train_block if t in dm.graphs]
+        calib_step = tau - 1
 
         if not train_block:
             continue
 
         # LEAKAGE GUARD: no test-step data can be in the training window
-        assert max(train_block) < tau, \
-            f"LEAKAGE: train_block max={max(train_block)} >= tau={tau}"
+        assert max(train_block) < tau - 1, \
+            f"LEAKAGE: train_block max={max(train_block)} >= tau-1={tau-1}"
 
         Xtr_w, ytr_w = stack_prop(dm, train_block)
 
@@ -202,10 +234,24 @@ def walk_forward_validation(
         
         model.eval()
 
+        # P1-A: Calibrate threshold on held-out step tau-1 (not in-sample)
+        threshold = 0.5  # fallback
+        if calib_step in dm.graphs:
+            g_cal = dm.graphs[calib_step]
+            m_cal = g_cal["labeled_mask"]
+            if m_cal.sum() > 0:
+                y_cal = g_cal["y"][m_cal].numpy()
+                if len(np.unique(y_cal)) >= 2:
+                    with torch.no_grad():
+                        s_cal = torch.softmax(
+                            model(g_cal["prop"][m_cal].to(device)), dim=1
+                        )[:, 1].cpu().numpy()
+                    threshold = _find_best_f1_threshold(y_cal, s_cal)
+
         with torch.no_grad():
             s = torch.softmax(model(Xte_w.to(device)), dim=1)[:, 1].cpu().numpy()
 
-        y_pred = (s >= 0.5).astype(int)
+        y_pred = (s >= threshold).astype(int)
         step_f1 = float(f1_score(yte_w, y_pred, pos_label=1, zero_division=0))
         step_prauc = float(average_precision_score(yte_w, s))
 

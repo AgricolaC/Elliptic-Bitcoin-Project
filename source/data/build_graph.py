@@ -97,6 +97,7 @@ class EllipticDataModule:
         self.scaler_base = StandardScaler()
         self.scaler_aug  = StandardScaler()
         self.scaler_topo = StandardScaler()
+        self.scaler_prop = StandardScaler()   # P2-B: post-propagation rescaling
         self.feature_dim = len(feature_cols)
         self.sgc_input_dim: int = -1   # W6: will be set inside setup()
 
@@ -219,6 +220,20 @@ class EllipticDataModule:
         else:
             # Fallback for test environments where layers is unavailable
             self.sgc_input_dim = self.feature_dim
+
+        # ── Step 7.5: Post-propagation StandardScaler (P2-B hop rescaling) ─────
+        # Each S^k X hop shrinks variance systematically. Without rescaling,
+        # later hops enter the head at smaller scale and L1/weight-decay
+        # penalties are effectively unequal across hops.
+        # LEAKAGE GUARD: scaler_prop fitted on train_steps only.
+        train_props = np.concatenate(
+            [self.graphs[t]["prop"].numpy() for t in c.train_steps if t in self.graphs],
+            axis=0,
+        )
+        self.scaler_prop.fit(train_props)
+        for t in self.graphs:
+            prop_np = self.scaler_prop.transform(self.graphs[t]["prop"].numpy())
+            self.graphs[t]["prop"] = torch.tensor(prop_np, dtype=torch.float32)
 
         # ── Step 8: PCA Dimensionality Reduction ──────────────────────────────
         if getattr(c, 'use_pca', False):

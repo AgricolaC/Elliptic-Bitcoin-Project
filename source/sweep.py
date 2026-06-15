@@ -22,6 +22,7 @@ from sklearn.metrics import f1_score, average_precision_score
 from config import Config, set_global_seeds, DEVICE, OUTPUT_DIR
 from data.build_graph import EllipticDataModule
 from evaluation.validation import fit_head, stack_prop, walk_forward_validation
+from evaluation.temporal_validation import walk_forward_lstm_conditioned, walk_forward_ema_conditioned
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -29,8 +30,12 @@ _RESULT_KEYS = (
     "Seed",
     "Variation",
     "Sweep",
+    "Feature Set",
+    "Threshold",
     "Static Time (s)",
     "Static Mem (MB)",
+    "Static Val F1",
+    "Static Val PR-AUC",
     "Static OOT F1",
     "Static OOT PR-AUC",
     "WF Time (s)",
@@ -70,17 +75,26 @@ def _make_result(
     wf_mem: float | str,
     wf_f1: float | str,
     wf_prauc: float | str,
+    feature_set: str = "N/A",
+    threshold: str = "0.5",
+    val_f1: float | str = "N/A",
+    val_prauc: float | str = "N/A",
 ) -> dict:
     """
     Construct a result dict with the standardized key schema (W5 fix).
+    P1-B: Now includes Feature Set, Threshold, Static Val F1/PR-AUC columns.
     Raises AssertionError if any key would be missing.
     """
     result = {
         "Seed":                     seed,
         "Variation":                variation,
         "Sweep":                    sweep,
+        "Feature Set":              feature_set,
+        "Threshold":                threshold,
         "Static Time (s)":          static_time,
         "Static Mem (MB)":          static_mem,
+        "Static Val F1":            val_f1,
+        "Static Val PR-AUC":        val_prauc,
         "Static OOT F1":            static_f1,
         "Static OOT PR-AUC":        static_prauc,
         "WF Time (s)":              wf_time,
@@ -181,19 +195,27 @@ def run_static_only_sweep(
     df_edge: pd.DataFrame,
     feature_cols: list,
     variation: str = "Base",
+    feature_set: str = "N/A",
+    threshold: str = "0.5",
 ) -> dict:
-    """Run a fast static OOT sweep (skips walk-forward validation)."""
+    """Run a fast static sweep with both val and OOT evaluation.
+    
+    P0-C: val_steps evaluation is used for model selection.
+    test_steps evaluation is reported but NOT used for selection.
+    """
     set_global_seeds(cfg.seed)
     dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
     dm.setup()
     
     Xtr_g, ytr_g = stack_prop(dm, list(cfg.train_steps))
+    Xval_g, yval_g = stack_prop(dm, list(cfg.val_steps))
     Xte_g, yte_g = stack_prop(dm, list(cfg.test_steps))
 
     if variation == "PCA":
         from sklearn.decomposition import PCA
         pca = PCA(n_components=0.95, random_state=cfg.seed)
         Xtr_g = torch.tensor(pca.fit_transform(Xtr_g.numpy()), dtype=torch.float32)
+        Xval_g = torch.tensor(pca.transform(Xval_g.numpy()), dtype=torch.float32)
         Xte_g = torch.tensor(pca.transform(Xte_g.numpy()), dtype=torch.float32)
     elif variation == "RF_Pruned":
         from sklearn.ensemble import RandomForestClassifier
@@ -203,6 +225,7 @@ def run_static_only_sweep(
         mask = rf.feature_importances_ > 0.000
         if mask.sum() > 0:
             Xtr_g = Xtr_g[:, mask]
+            Xval_g = Xval_g[:, mask]
             Xte_g = Xte_g[:, mask]
 
     valid_ytr = ytr_g[ytr_g != -1]
@@ -212,6 +235,19 @@ def run_static_only_sweep(
     with profile_resources() as stat_res:
         model = fit_head(Xtr_g, ytr_g, dm.sgc_input_dim, cfg, cls_w, DEVICE)
         model.eval()
+        
+        # Val evaluation (P0-C: used for model selection)
+        with torch.no_grad():
+            m_val = (yval_g != -1)
+            if m_val.sum() > 0:
+                s_val = torch.softmax(model(Xval_g[m_val].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
+                y_val_true = yval_g[m_val].numpy()
+                val_f1 = f1_score(y_val_true, (s_val >= 0.5).astype(int), pos_label=1, zero_division=0)
+                val_prauc = average_precision_score(y_val_true, s_val)
+            else:
+                val_f1, val_prauc = 0.0, 0.0
+
+        # Test evaluation (reported but NOT used for selection)
         with torch.no_grad():
             m      = (yte_g != -1)
             scores = torch.softmax(model(Xte_g[m].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
@@ -240,11 +276,24 @@ def run_static_only_sweep(
         wf_mem="N/A",
         wf_f1="N/A",
         wf_prauc="N/A",
+        feature_set=feature_set,
+        threshold=threshold,
+        val_f1=round(val_f1, 3),
+        val_prauc=round(val_prauc, 3),
     )
 
 
-def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, sweep_name: str, window: int = None, use_prop: bool = False, **model_kwargs) -> tuple:
+def walk_forward_baseline(
+    dm: EllipticDataModule, cfg: Config, model_cls, sweep_name: str, 
+    window: int = None, use_prop: bool = False, use_temporal: bool = False, 
+    eval_steps: range = None, label_lag: int = 0, **model_kwargs
+) -> tuple:
     """Walk-forward evaluation for scikit-learn/XGBoost tabular models."""
+    from data.temporal_features import build_snapshot_temporal_features
+    
+    if eval_steps is None:
+        eval_steps = cfg.test_steps
+        
     y_true_all = []
     y_pred_all = []
     y_score_all = []
@@ -252,7 +301,7 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, sweep_
     wf_f1_per_step = []
     wf_prauc_per_step = []
     
-    for tau in cfg.test_steps:
+    for tau in eval_steps:
         # Train on [1, tau-1]
         Xs_tr, ys_tr = [], []
         t_start = max(1, tau - window) if window else 1
@@ -261,6 +310,12 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, sweep_
             m = g["labeled_mask"].numpy()
             if m.sum() > 0:
                 feat = g["prop"].numpy()[m] if use_prop else g["x"].numpy()[:, :166][m]
+                if use_temporal:
+                    # Append temporal lag features
+                    t_window = 4 if window is None else window
+                    t_feats = build_snapshot_temporal_features(dm, target_step=t, window=t_window, label_lag=label_lag)
+                    t_feats_bcast = np.tile(t_feats, (feat.shape[0], 1))
+                    feat = np.hstack([feat, t_feats_bcast])
                 Xs_tr.append(feat)
                 ys_tr.append(g["y"].numpy()[m])
                 
@@ -283,6 +338,12 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, sweep_
             continue
             
         Xte = g_tau["prop"].numpy()[m_tau] if use_prop else g_tau["x"].numpy()[:, :166][m_tau]
+        if use_temporal:
+            t_window = 4 if window is None else window
+            t_feats_te = build_snapshot_temporal_features(dm, target_step=tau, window=t_window, label_lag=label_lag)
+            t_feats_te_bcast = np.tile(t_feats_te, (Xte.shape[0], 1))
+            Xte = np.hstack([Xte, t_feats_te_bcast])
+            
         yte = g_tau["y"].numpy()[m_tau]
         
         # Train & Predict
@@ -342,8 +403,13 @@ def walk_forward_isoforest(dm, cfg):
         iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg.seed, n_jobs=1)
         iso.fit(Xtr)
         scores = -iso.score_samples(Xte)  # higher = more anomalous
-        actual_rate = (yte == 1).mean()
-        y_pred = (scores >= np.percentile(scores, (1 - actual_rate) * 100)).astype(int)
+        # THRESHOLD FIX (P0-B): use training prevalence, not test labels
+        ytr_labeled = np.concatenate([
+            dm.graphs[t]["y"].numpy()[dm.graphs[t]["labeled_mask"].numpy()]
+            for t in train_block
+        ])
+        train_rate = (ytr_labeled == 1).mean()
+        y_pred = (scores >= np.percentile(scores, (1 - train_rate) * 100)).astype(int)
         y_true_all.append(yte)
         y_pred_all.append(y_pred)
         y_score_all.append(scores)
@@ -378,8 +444,13 @@ def walk_forward_ae(dm, cfg, device):
             x_hat = ae(Xte)
             scores = ((Xte - x_hat) ** 2).mean(dim=1).cpu().numpy()
             
-        actual_rate = (yte == 1).mean()
-        thresh_pct = (1 - actual_rate) * 100
+        # THRESHOLD FIX (P0-B): use training prevalence, not test labels
+        ytr_labeled = np.concatenate([
+            dm.graphs[t]["y"].numpy()[dm.graphs[t]["labeled_mask"].numpy()]
+            for t in train_block
+        ])
+        train_rate = (ytr_labeled == 1).mean()
+        thresh_pct = (1 - train_rate) * 100
         y_pred = (scores >= np.percentile(scores, thresh_pct)).astype(int)
         
         y_true_all.append(yte)
@@ -393,7 +464,7 @@ def walk_forward_ae(dm, cfg, device):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega"])
+    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega", "temporal"])
     parser.add_argument("--only-static", action="store_true", help="Run only static OOT")
     parser.add_argument("--only-wf", action="store_true", help="Run only walk-forward")
     args = parser.parse_args()
@@ -436,6 +507,7 @@ def main():
             Xs_tr.append(g["x"].numpy()[:, :166][m])
             ys_tr.append(g["y"].numpy()[m])
         Xtr_b, ytr_b = np.concatenate(Xs_tr), np.concatenate(ys_tr)
+        spw_b = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
 
         Xs_te, ys_te = [], []
         for t in cfg_tabular.test_steps:
@@ -444,7 +516,7 @@ def main():
             ys_te.append(g["y"].numpy()[m])
         Xte_b, yte_b = np.concatenate(Xs_te), np.concatenate(ys_te)
 
-        if "Baseline: IsolationForest (166)" not in completed_sweeps:
+        if args.mode != "temporal" and "Baseline: IsolationForest (166)" not in completed_sweeps:
             from sklearn.ensemble import IsolationForest
             stat_iso, static_iso_f1, static_iso_prauc = {}, 0.0, 0.0
             if not args.only_wf:
@@ -479,17 +551,16 @@ def main():
             ))
             pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
         else:
-            print("Already completed Baseline: IsolationForest (166), skipping.")
+            if args.mode != "temporal": print("Already completed Baseline: IsolationForest (166), skipping.")
 
 
 
-        if "Baseline: XGBoost (166)" not in completed_sweeps:
-            spw = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
+        if args.mode != "temporal" and "Baseline: XGBoost (166)" not in completed_sweeps:
             stat_xgb, static_xgb_f1, static_xgb_prauc = {}, 0.0, 0.0
             if not args.only_wf:
                 with profile_resources() as stat_xgb:
                     xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
-                                     scale_pos_weight=spw, eval_metric="aucpr",
+                                     scale_pos_weight=spw_b, eval_metric="aucpr",
                                      random_state=cfg_tabular.seed, n_jobs=1).fit(Xtr_b, ytr_b)
                 s_xgb = xgb.predict_proba(Xte_b)[:, 1]
                 static_xgb_f1 = f1_score(yte_b, (s_xgb >= 0.5).astype(int), pos_label=1)
@@ -500,7 +571,7 @@ def main():
                 with profile_resources() as wf_xgb:
                     wf_xgb_f1, wf_xgb_prauc = walk_forward_baseline(
                         dm_base, cfg_tabular, XGBClassifier, sweep_name="Baseline: XGBoost (166)", window=None,
-                    n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw, eval_metric="aucpr", random_state=cfg_tabular.seed, n_jobs=1
+                    n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw_b, eval_metric="aucpr", random_state=cfg_tabular.seed, n_jobs=1
                 )
             
             os.makedirs(os.path.join(OUTPUT_DIR, "models"), exist_ok=True)
@@ -522,9 +593,9 @@ def main():
             ))
             pd.DataFrame(results).to_csv(out_file, index=False)
         else:
-            print("Already completed Baseline: XGBoost (166), skipping.")
+            if args.mode != "temporal": print("Already completed Baseline: XGBoost (166), skipping.")
 
-        if "Baseline: RandomForest (166)" not in completed_sweeps:
+        if args.mode != "temporal" and "Baseline: RandomForest (166)" not in completed_sweeps:
             stat_rf, static_rf_f1, static_rf_prauc = {}, 0.0, 0.0
             if not args.only_wf:
                 with profile_resources() as stat_rf:
@@ -557,9 +628,9 @@ def main():
             ))
             pd.DataFrame(results).to_csv(out_file, index=False)
         else:
-            print("Already completed Baseline: RandomForest (166), skipping.")
+            if args.mode != "temporal": print("Already completed Baseline: RandomForest (166), skipping.")
             
-        if "Ablation: XGBoost + Graph Features (500d)" not in completed_sweeps:
+        if args.mode != "temporal" and "Ablation: XGBoost + Graph Features (500d)" not in completed_sweeps:
             dm_graph = EllipticDataModule(df, df_edge, feature_cols, cfg_default)
             dm_graph.setup()
             
@@ -611,14 +682,83 @@ def main():
             ))
             pd.DataFrame(results).to_csv(out_file, index=False)
         else:
-            print("Already completed Ablation: XGBoost + Graph Features (500d), skipping.")
+            if args.mode != "temporal": print("Already completed Ablation: XGBoost + Graph Features (500d), skipping.")
+            
+        if "Baseline: Temporal XGBoost (best w, lag=0)" not in completed_sweeps:
+            if not args.only_static:
+                # 1. Tune w on val_steps
+                best_w = 4
+                best_val_f1 = -1.0
+                for w in [1, 2, 4]:
+                    val_f1, _ = walk_forward_baseline(
+                        dm_base, cfg_tabular, XGBClassifier, sweep_name=f"TempXGB-val-w{w}",
+                        window=None, use_prop=False, use_temporal=True, eval_steps=cfg_tabular.val_steps, label_lag=0,
+                        n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw_b, 
+                        eval_metric="aucpr", tree_method="hist", random_state=cfg_tabular.seed, n_jobs=1
+                    )
+                    if val_f1 > best_val_f1:
+                        best_val_f1 = val_f1
+                        best_w = w
+                
+                # 2. Evaluate best_w on test_steps with lag=0
+                with profile_resources() as wf_temp_0:
+                    wf_temp_xgb_f1_0, wf_temp_xgb_prauc_0 = walk_forward_baseline(
+                        dm_base, cfg_tabular, XGBClassifier, sweep_name="Baseline: Temporal XGBoost (lag=0)",
+                        window=None, use_prop=False, use_temporal=True, eval_steps=cfg_tabular.test_steps, label_lag=0,
+                        n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw_b, 
+                        eval_metric="aucpr", tree_method="hist", random_state=cfg_tabular.seed, n_jobs=1
+                    )
+                    
+                # 3. Evaluate best_w on test_steps with lag=2
+                with profile_resources() as wf_temp_2:
+                    wf_temp_xgb_f1_2, wf_temp_xgb_prauc_2 = walk_forward_baseline(
+                        dm_base, cfg_tabular, XGBClassifier, sweep_name="Baseline: Temporal XGBoost (lag=2)",
+                        window=None, use_prop=False, use_temporal=True, eval_steps=cfg_tabular.test_steps, label_lag=2,
+                        n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw_b, 
+                        eval_metric="aucpr", tree_method="hist", random_state=cfg_tabular.seed, n_jobs=1
+                    )
+            
+                results.append(_make_result(
+                    seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Temporal XGBoost (best w, lag=0)",
+                    static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                    wf_time=round(wf_temp_0.get("time", 0.0), 3), wf_mem=round(wf_temp_0.get("peak_mem", 0.0), 2),
+                    wf_f1=round(wf_temp_xgb_f1_0, 3), wf_prauc=round(wf_temp_xgb_prauc_0, 3),
+                    feature_set=f"Raw-166+Temporal (w={best_w})", threshold="0.5"
+                ))
+                results.append(_make_result(
+                    seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Temporal XGBoost (best w, lag=2)",
+                    static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                    wf_time=round(wf_temp_2.get("time", 0.0), 3), wf_mem=round(wf_temp_2.get("peak_mem", 0.0), 2),
+                    wf_f1=round(wf_temp_xgb_f1_2, 3), wf_prauc=round(wf_temp_xgb_prauc_2, 3),
+                    feature_set=f"Raw-166+Temporal-Lag2 (w={best_w})", threshold="0.5"
+                ))
+                pd.DataFrame(results).to_csv(out_file, index=False)
+        else:
+            print("Already completed Baseline: Temporal XGBoost, skipping.")
+            
     except Exception as e:
         print(f"  Baselines skipped: {e}")
 
     # ── W4 FIX: Phased Grid Search Matrix ──────────────────────────────────────
     import itertools
-    seeds = [42, 43, 44] if args.mode == "mega" else [42]
-    variations = ["Base", "PCA", "RF_Pruned"] if args.mode == "mega" else ["Base"]
+    if args.mode == "temporal":
+        seeds = []
+        variations = []
+        k_vals = []
+        dir_vals = []
+        topo_vals = []
+    elif args.mode == "mega":
+        seeds = [42, 43, 44]
+        variations = ["Base", "PCA", "RF_Pruned"]
+        k_vals = [1, 2, 3]
+        dir_vals = [False, True]
+        topo_vals = [None, 'late', 'early']
+    else:
+        seeds = [42]
+        variations = ["Base"]
+        k_vals = [1, 2, 3]
+        dir_vals = [False, True]
+        topo_vals = [None, 'late', 'early']
 
     # Helper to execute and record a single sweep configuration
     def execute_sweep(sweep_key, name, cfg, var):
@@ -692,12 +832,13 @@ def main():
                 res = execute_sweep(sweep_key, name, cfg, var)
                 all_configs_run[sweep_key] = cfg
                 if res and not args.only_wf:
-                    f1_val = res.get("Static OOT F1", 0.0)
-                    if pd.notna(f1_val) and f1_val > best_grid_f1:
+                    # P0-C: Select on val F1, NOT test OOT F1
+                    f1_val = res.get("Static Val F1", 0.0)
+                    if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_grid_f1:
                         best_grid_f1 = f1_val
                         best_grid_key = sweep_key
                         
-            print(f"\n  [Phase 2 Winner] {best_grid_key} achieved highest Static F1: {best_grid_f1:.3f}.")
+            print(f"\n  [Phase 2 Winner] {best_grid_key} achieved highest Val F1: {best_grid_f1:.3f}.")
             
             # --- PHASE 2.5: MLP Head Tuning (Champion & Challenger) ---
             print("\n--- PHASE 2.5: MLP Head Tuning ---")
@@ -721,19 +862,20 @@ def main():
                     seed=seed
                 )
 
-            targets = [(champion_cfg, champion_key, "Champion")]
-            if challenger_key != champion_key:
-                targets.append((challenger_cfg, challenger_key, "Challenger"))
+            if args.mode != "temporal":
+                targets = [(champion_cfg, champion_key, "Champion")]
+                if challenger_key != champion_key:
+                    targets.append((challenger_cfg, challenger_key, "Challenger"))
 
-            mlp_variations = [
-                ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
-                ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
-                ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True})
-            ]
+                mlp_variations = [
+                    ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
+                    ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
+                    ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True})
+                ]
 
-            for base_cfg, base_key, target_role in targets:
-                clean_prefix = base_key.replace("Grid: ", "").split(" (Seed")[0]
-                print(f"Running MLP variations for {target_role} ({clean_prefix})...")
+                for base_cfg, base_key, target_role in targets:
+                    clean_prefix = base_key.replace("Grid: ", "").split(" (Seed")[0]
+                    print(f"Running MLP variations for {target_role} ({clean_prefix})...")
                 for var_name, var_settings in mlp_variations:
                     cfg_tuned = Config(
                         use_mlp_head=True,
@@ -754,22 +896,35 @@ def main():
             
 
     # ── PHASE 3: Walk-Forward on Best SGC Configuration ──────────────────────
-    print("\n--- Walk-Forward Validation (Best SGC Sweep) ---")
+    if args.mode != "temporal":
+        print("\n--- Walk-Forward Validation (Best SGC Sweep) ---")
     best_f1 = -1.0
     best_sweep_name = None
     for r in results:
         # Check if it's an SGC sweep and has valid F1 (including MLP variants)
         if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"] or "MLP-" in r["Sweep"]):
-            f1_val = r.get("Static OOT F1", 0.0)
-            if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_f1:
+            f1_val = r.get("Static Val F1", "")
+            if f1_val == "" or pd.isna(f1_val):
+                f1_val = r.get("Static OOT F1", 0.0)
+            if f1_val == "" or pd.isna(f1_val):
+                f1_val = 0.0
+            f1_val = float(f1_val)
+            if f1_val > best_f1:
                 best_f1 = f1_val
                 best_sweep_name = r["Sweep"]
 
     if best_sweep_name:
         wf_name = f"Best WF: {best_sweep_name}"
-        if wf_name not in completed_sweeps:
-            print(f"\nWinning Configuration: {best_sweep_name} (Static F1: {best_f1:.3f})")
+        if args.mode != "temporal" and wf_name not in completed_sweeps:
+            print(f"\nWinning Configuration: {best_sweep_name} (Val F1: {best_f1:.3f})")
             best_cfg = all_configs_run.get(best_sweep_name)
+            
+            # If we skipped the execute loop (e.g. in temporal mode), best_cfg might be None.
+            # We can load it from disk where run_static_only_sweep saves it.
+            if best_cfg is None:
+                import joblib
+                safe_name = re.sub(r"[^\w\-]", "_", best_sweep_name)
+                best_cfg = joblib.load(os.path.join(OUTPUT_DIR, "models", f"{safe_name}_cfg.pkl"))
             
             if best_cfg is not None:
                 with profile_resources() as wf_stat:
@@ -789,15 +944,62 @@ def main():
                     wf_mem=round(wf_stat.get("peak_mem", 0.0), 2),
                     wf_f1=round(wf_f1, 3),
                     wf_prauc=round(wf_prauc, 3),
+                    feature_set="Prop-N",
+                    threshold="τ-1 calibrated",
                 )
                 results.append(wf_res)
                 pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
                 print(f"--> {wf_res}\n")
         else:
-            print(f"Already completed {wf_name}, skipping.")
+            if args.mode != "temporal": print(f"Already completed {wf_name}, skipping.")
+            
+        # Get best_cfg for EMA/LSTM if not already loaded
+        best_cfg = all_configs_run.get(best_sweep_name)
+        if best_cfg is None:
+            import joblib
+            safe_name = re.sub(r"[^\w\-]", "_", best_sweep_name)
+            best_cfg = joblib.load(os.path.join(OUTPUT_DIR, "models", f"{safe_name}_cfg.pkl"))
+            
+        # Add EMA and LSTM
+        ema_name = "EMA-Conditioned SGC Head"
+        if ema_name not in completed_sweeps:
+            print(f"\nRunning {ema_name} based on best SGC config...")
+            with profile_resources() as ema_stat:
+                dm_best = EllipticDataModule(df, df_edge, feature_cols, best_cfg)
+                dm_best.setup()
+                ema_f1, ema_prauc = walk_forward_ema_conditioned(dm_best, best_cfg, DEVICE, sweep_name=ema_name)
+            
+            ema_res = _make_result(
+                seed=best_cfg.seed, variation="Base", sweep=ema_name,
+                static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                wf_time=round(ema_stat.get("time", 0.0), 3), wf_mem=round(ema_stat.get("peak_mem", 0.0), 2),
+                wf_f1=round(ema_f1, 3), wf_prauc=round(ema_prauc, 3),
+                feature_set="Prop+EMA-h", threshold="τ-1 calibrated"
+            )
+            results.append(ema_res)
+            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+            
+        lstm_name = "LSTM-Conditioned SGC Head"
+        if lstm_name not in completed_sweeps:
+            print(f"\nRunning {lstm_name} based on best SGC config...")
+            with profile_resources() as lstm_stat:
+                dm_best = EllipticDataModule(df, df_edge, feature_cols, best_cfg)
+                dm_best.setup()
+                lstm_device = torch.device("cpu") if DEVICE.type == "mps" else DEVICE
+                lstm_f1, lstm_prauc = walk_forward_lstm_conditioned(dm_best, best_cfg, lstm_device, sweep_name=lstm_name)
+                
+            lstm_res = _make_result(
+                seed=best_cfg.seed, variation="Base", sweep=lstm_name,
+                static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                wf_time=round(lstm_stat.get("time", 0.0), 3), wf_mem=round(lstm_stat.get("peak_mem", 0.0), 2),
+                wf_f1=round(lstm_f1, 3), wf_prauc=round(lstm_prauc, 3),
+                feature_set="Prop+LSTM-h", threshold="τ-1 calibrated"
+            )
+            results.append(lstm_res)
+            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
 
 
-    df_res.to_csv(out_file, index=False)
+    pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
     print(f"\nResults saved to {out_file}")
 
     # Verify no NaN from key mismatch (W5 guard)

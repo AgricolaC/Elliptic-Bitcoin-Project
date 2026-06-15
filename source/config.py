@@ -28,20 +28,26 @@ DEVICE = torch.device(
 
 @dataclass
 class Config:
-    train_steps: range = range(1, 35)
+    train_steps: range = range(1, 27)
+    val_steps:   range = range(27, 35)
     test_steps:  range = range(35, 50)
     disruption_step: int = 43
 
     # Original ablatable mechanisms
     use_graph_structural: bool = True
     class_weighted: bool = True
-11
+
     # Architectural modifications
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
     use_xgb_head: bool = False         # XGBoost head
     use_directional_prop: bool = False # Directional DAG channels
     topo_injection_mode: str = 'late'  # 'early' (smoothed) vs 'late' (anchored)
+    
+    # Temporal (D2)
+    use_lstm_head: bool = False        # LSTM temporal conditioning
+    lstm_hidden: int = 64              # LSTM hidden size
+    use_ema_weights: bool = False      # Exponential Moving Average of weights
 
     # SGC Hyperparameters
     sgc_k: int = 2
@@ -67,5 +73,12 @@ class Config:
     seed: int = RANDOM_SEED
 
     def __post_init__(self) -> None:
-        assert set(self.train_steps).isdisjoint(self.test_steps), \
-            "Temporal leakage: train and test time steps overlap."
+        all_splits = [
+            ("train", self.train_steps),
+            ("val",   self.val_steps),
+            ("test",  self.test_steps),
+        ]
+        for i, (n1, s1) in enumerate(all_splits):
+            for n2, s2 in all_splits[i+1:]:
+                assert set(s1).isdisjoint(s2), \
+                    f"Temporal leakage: {n1} and {n2} time steps overlap."
