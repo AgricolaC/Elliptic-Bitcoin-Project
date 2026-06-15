@@ -12,7 +12,7 @@ Five fix targets:
 """
 
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "source"))
 
 import numpy as np
 import pandas as pd
@@ -349,6 +349,8 @@ class TestSweepResultKeyStandardization:
     """W5: All result dicts returned by sweeps must use identical metric key names."""
 
     REQUIRED_KEYS = {
+        "Seed",
+        "Variation",
         "Sweep",
         "Static Time (s)",
         "Static Mem (MB)",
@@ -368,14 +370,14 @@ class TestSweepResultKeyStandardization:
 
     def test_run_single_sweep_key_schema(self):
         """run_single_sweep must return the standardized key schema."""
-        from run_sweeps import run_single_sweep
+        from sweep import run_single_sweep
         # We mock the expensive internals; we only need to inspect the returned dict shape.
-        with patch("run_sweeps.EllipticDataModule") as MockDM, \
-             patch("run_sweeps.stack_prop") as mock_sp, \
-             patch("run_sweeps.fit_head") as mock_fh, \
-             patch("run_sweeps.walk_forward_validation") as mock_wf, \
-             patch("run_sweeps.joblib.dump") as mock_dump, \
-             patch("run_sweeps.torch.save") as mock_save:
+        with patch("sweep.EllipticDataModule") as MockDM, \
+             patch("sweep.stack_prop") as mock_sp, \
+             patch("sweep.fit_head") as mock_fh, \
+             patch("sweep.walk_forward_validation") as mock_wf, \
+             patch("sweep.joblib.dump") as mock_dump, \
+             patch("sweep.torch.save") as mock_save:
 
             mock_dm = MagicMock()
             mock_dm.graphs = {t: {"prop": torch.zeros(5, 10), "y": torch.zeros(5).long(),

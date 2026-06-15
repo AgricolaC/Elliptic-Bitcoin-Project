@@ -7,7 +7,7 @@ All structural transformations, batching routines, and data pipelines in this pr
 * **Global Dimensions:** * Nodes ($|V|$): $203,769$ transactions.
   * Edges ($|E|$): $234,355$ directional payment flows.
 * **Component Partitioning (Temporal Structure):** The global graph is divided into $49$ discrete, disconnected time-step graphs. 
-  * **Crucial Constraint:** There are absolutely no edges that traverse temporal boundaries (i.e., a transaction at $t=3$ cannot point to a transaction at $t=4$). 
+  * **Crucial Property:** The dataset is constructed such that all edges are intra-timestep. We verify this assertion at load time rather than assuming it. There are absolutely no edges that traverse temporal boundaries.
   * Individual time steps contain bounded sub-graphs scaling between $1,000$ and $8,000$ nodes.
 
 ## 2. Sparse Memory Footprint (COO Format)
@@ -21,15 +21,15 @@ All structural transformations, batching routines, and data pipelines in this pr
 
 ## 4. Feature Matrix ($X$) Configuration
 Each node is represented by a $166$-dimensional continuous feature vector.
-* **Local Features (Indices 0-93):** Transaction-specific metrics including time step, number of inputs/outputs, transaction fee, and output volume.
-* **Aggregated Features (Indices 94-165):** Non-local, one-hop structural information representing the maximum, minimum, standard deviation, and correlation coefficients of the neighbor transactions.
+* **Local Features:** Roughly 94 features containing transaction-specific metrics including time step, number of inputs/outputs, transaction fee, and output volume.
+* **Aggregated Features:** Roughly 72 features containing non-local, one-hop structural information representing the maximum, minimum, standard deviation, and correlation coefficients of the neighbor transactions.
 * *(Note: Explicit topological invariants calculated via NetworkX, such as PageRank, will be appended starting at index 166).*
 
 ## 5. Labels & Optimization Targets
 This dataset poses a severe semi-supervised anomaly detection challenge characterized by extreme class imbalance.
 * **Class Distribution:**
-  * **Class 1 (Illicit Anomaly):** $4,545$ nodes ($\sim 2\%$).
-  * **Class 2 (Licit Normal):** $42,019$ nodes ($\sim 21\%$).
-  * **Unknown (Unlabeled):** $157,205$ nodes ($\sim 77\%$).
-* **Masking Protocol:** "Unknown" nodes must be explicitly masked out or dropped during supervised loss calculation (e.g., Cross-Entropy Loss). However, their feature vectors and connections must remain in the adjacency tensor during the message-passing/SGC phase to preserve the structural geometry of the manifold.
+  * **Illicit Anomaly:** $4,545$ nodes ($\sim 2\%$). In the raw CSV this is "1", which our pipeline remaps to label `1`.
+  * **Licit Normal:** $42,019$ nodes ($\sim 21\%$). In the raw CSV this is "2", which our pipeline remaps to label `0`.
+  * **Unknown (Unlabeled):** $157,205$ nodes ($\sim 77\%$). In the raw CSV this is "unknown", which our pipeline remaps to label `-1`.
+* **Masking Protocol:** "Unknown" nodes must be explicitly masked out or dropped during supervised loss calculation (e.g., Cross-Entropy Loss). However, their feature vectors and connections must remain in the adjacency tensor during the message-passing/SGC phase. This is intentional: unknown nodes receive propagated messages from their unknown neighbors, and those propagated features flow into labeled nodes' neighborhood aggregations, preserving the full structural geometry of the manifold.
 * **Evaluation Metrics:** Due to the $2\%$ minority class, standard Accuracy is an invalid and misleading metric. Optimization engines and final evaluations must rely strictly on **Minority-Class F1-Score** and **Precision-Recall AUC**.
