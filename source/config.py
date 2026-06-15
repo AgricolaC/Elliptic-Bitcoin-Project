@@ -35,8 +35,8 @@ class Config:
     # Architectural modifications
     use_multiscale_prop: bool = True   # [X | S^1 X | ... | S^K X] vs S^K X only
     use_mlp_head: bool = True          # 3-layer MLP head vs single Linear
-    use_xgb_head: bool = False         # Sweep 6: Hybrid XGBoost head
-    use_directional_prop: bool = False # Sweep 5: directional DAG channels
+    use_xgb_head: bool = False         # XGBoost head
+    use_directional_prop: bool = False # Directional DAG channels
     topo_injection_mode: str = 'late'  # 'early' (smoothed) vs 'late' (anchored)
 
     # SGC Hyperparameters
@@ -45,6 +45,7 @@ class Config:
     wf_epochs: int = 100                # reduction in epoch for walk-forward loop
     sgc_lr: float = 0.01
     sgc_weight_decay: float = 5e-4
+    sgc_l1_lambda: float = 1e-4        # ElasticNet L1 penalty for feature selection
     focal_gamma: float = 2.0           # 0.0 == weighted CE
     mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3

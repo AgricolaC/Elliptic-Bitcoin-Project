@@ -91,6 +91,12 @@ def fit_head(
         opt.zero_grad()
         if mask.sum() > 0:
             loss = loss_fn(model(Xtr)[mask], ytr[mask])
+            
+            # W9 FIX: ElasticNet L1 penalty on the first layer weights
+            if getattr(cfg, 'sgc_l1_lambda', 0.0) > 0.0:
+                l1_penalty = model.net[0].weight.abs().sum()
+                loss = loss + cfg.sgc_l1_lambda * l1_penalty
+                
             loss.backward()
             opt.step()
     return model
@@ -242,6 +248,20 @@ def walk_forward_validation(
         # W7 FIX: unique filename per sweep — no overwrites
         out_file = os.path.join(OUTPUT_DIR, f"walk_forward_drift_{safe_name}.png")
         plt.savefig(out_file)
+
+        # Export timestep data to master CSV
+        import pandas as pd
+        csv_file = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
+        df_export = pd.DataFrame({
+            "Sweep": [sweep_name] * len(wf_steps),
+            "Timestep (tau)": wf_steps,
+            "F1": wf_f1_per_step,
+            "PR-AUC": wf_prauc_per_step
+        })
+        if os.path.exists(csv_file):
+            df_export.to_csv(csv_file, mode='a', header=False, index=False)
+        else:
+            df_export.to_csv(csv_file, index=False)
         plt.close()
 
     if not wf_steps:

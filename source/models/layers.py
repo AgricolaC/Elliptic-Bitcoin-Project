@@ -40,6 +40,8 @@ def _row_normalize(edge_index: torch.Tensor, n: int) -> torch.sparse.Tensor:
     vals = dinv[r]
     return torch.sparse_coo_tensor(edge_index, vals, (n, n)).coalesce()
 
+
+
 def sgc_propagate(
     x: torch.Tensor,
     edge_index: torch.Tensor,
@@ -48,21 +50,10 @@ def sgc_propagate(
     use_directional: bool = False,
 ) -> torch.Tensor:
     """
-    Propagate node features with optional directional channels.
+    Propagate node features.
 
-    Standard mode (use_directional=False):
-        Returns [X | SX | ... | S^K X] if multiscale else S^K X.
-        S = D^{-1/2}(A + A^T + I)D^{-1/2}  (symmetric, existing behavior)
-
-    Directional mode (use_directional=True, multiscale must be True):
-        Returns [X | S_sym·X | S_out·X | S_in·X] for K=1, or extends each
-        operator independently for K>1.
-
-        S_sym = symmetric operator (undirected, existing)
-        S_out = D_out^{-1} A       (forward: aggregate from predecessors)
-        S_in  = D_in^{-1} A^T     (backward: aggregate from successors)
-
-        Output shape: (N, d * (1 + 3*K))  vs current (N, d * (K+1))
+    Returns [X | SX | ... | S^K X] if multiscale else S^K X.
+    S = D^{-1/2}(A + A^T + I)D^{-1/2}  (symmetric)
     """
     n, d = x.shape
     assert edge_index.shape[0] == 2, "edge_index must be [2, E]"
@@ -82,15 +73,12 @@ def sgc_propagate(
             assert out.shape == (n, d)
         return out
 
-    assert multiscale, "Directional propagation requires multiscale=True (need all scales)"
+    assert multiscale, "Directional propagation requires multiscale=True"
 
     S_sym = gcn_norm(edge_index, n)
-    # Forward: A propagates predecessor features to each node
     S_out = _row_normalize(edge_index, n)
-    # Backward: A^T propagates successor features to each node
     S_in  = _row_normalize(edge_index.flip(0), n)
 
-    # For each operator, accumulate K hops
     def multi_hop(S, x, k):
         hops = []
         cur = x
@@ -103,13 +91,11 @@ def sgc_propagate(
     out_hops = multi_hop(S_out, x, k)
     in_hops  = multi_hop(S_in,  x, k)
 
-    # Interleave by hop depth: [X, S_sym·X, S_out·X, S_in·X, S_sym²·X, ...]
     channels = [x]
     for i in range(k):
         channels.extend([sym_hops[i], out_hops[i], in_hops[i]])
 
     out = torch.cat(channels, dim=1)
     expected_dim = d * (1 + 3 * k)
-    assert out.shape == (n, expected_dim), \
-        f"Directional propagation shape {out.shape} != (n, {expected_dim})"
+    assert out.shape == (n, expected_dim), f"Directional propagation shape {out.shape} != (n, {expected_dim})"
     return out

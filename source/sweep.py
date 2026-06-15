@@ -102,6 +102,8 @@ def run_single_sweep(
     feature_cols: list,
     window: int = None,
     variation: str = "Base",
+    only_static: bool = False,
+    only_wf: bool = False,
 ) -> dict:
     """
     Run one full sweep (static OOT + walk-forward) and return a standardized result dict.
@@ -125,21 +127,25 @@ def run_single_sweep(
     counts    = torch.bincount(valid_ytr, minlength=2).float().clamp(min=1.0)
     cls_w     = (counts.sum() / (2.0 * counts)).to(DEVICE)
 
-    with profile_resources() as stat_res:
-        model = fit_head(Xtr_g, ytr_g, dm.sgc_input_dim, cfg, cls_w, DEVICE)
-        model.eval()
-        with torch.no_grad():
-            m      = (yte_g != -1)
-            scores = torch.softmax(model(Xte_g[m].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
+    stat_res, static_f1, static_prauc = {}, 0.0, 0.0
+    if not only_wf:
+        with profile_resources() as stat_res:
+            model = fit_head(Xtr_g, ytr_g, dm.sgc_input_dim, cfg, cls_w, DEVICE)
+            model.eval()
+            with torch.no_grad():
+                m      = (yte_g != -1)
+                scores = torch.softmax(model(Xte_g[m].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
 
-        y_true       = yte_g[m].numpy()
-        static_f1    = f1_score(y_true, (scores >= 0.5).astype(int), pos_label=1, zero_division=0)
-        static_prauc = average_precision_score(y_true, scores)
+            y_true       = yte_g[m].numpy()
+            static_f1    = f1_score(y_true, (scores >= 0.5).astype(int), pos_label=1, zero_division=0)
+            static_prauc = average_precision_score(y_true, scores)
 
-    with profile_resources() as wf_res:
-        wf_f1, wf_prauc, wf_records = walk_forward_validation(
-            dm, cfg, DEVICE, sweep_name=name, return_records=True, window=window,
-        )
+    wf_res, wf_f1, wf_prauc, wf_records = {}, 0.0, 0.0, []
+    if not only_static:
+        with profile_resources() as wf_res:
+            wf_f1, wf_prauc, wf_records = walk_forward_validation(
+                dm, cfg, DEVICE, sweep_name=name, return_records=True, window=window,
+            )
 
     safe_name = re.sub(r"[^\w\-]", "_", name)
     model_dir = os.path.join(OUTPUT_DIR, "models")
@@ -148,8 +154,10 @@ def run_single_sweep(
     # Dump static OOT model, DM, and Walk-Forward records
     joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
     joblib.dump(cfg, os.path.join(model_dir, f"{safe_name}_cfg.pkl"))
-    torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
-    joblib.dump(wf_records, os.path.join(model_dir, f"{safe_name}_wf_records.pkl"))
+    if not only_wf:
+        torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
+    if not only_static:
+        joblib.dump(wf_records, os.path.join(model_dir, f"{safe_name}_wf_records.pkl"))
 
     return _make_result(
         seed=cfg.seed,
@@ -235,11 +243,14 @@ def run_static_only_sweep(
     )
 
 
-def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, window: int = None, **model_kwargs) -> tuple:
+def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, sweep_name: str, window: int = None, use_prop: bool = False, **model_kwargs) -> tuple:
     """Walk-forward evaluation for scikit-learn/XGBoost tabular models."""
     y_true_all = []
     y_pred_all = []
     y_score_all = []
+    wf_steps = []
+    wf_f1_per_step = []
+    wf_prauc_per_step = []
     
     for tau in cfg.test_steps:
         # Train on [1, tau-1]
@@ -249,7 +260,8 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, window
             g = dm.graphs[t]
             m = g["labeled_mask"].numpy()
             if m.sum() > 0:
-                Xs_tr.append(g["x"].numpy()[:, :166][m])
+                feat = g["prop"].numpy()[m] if use_prop else g["x"].numpy()[:, :166][m]
+                Xs_tr.append(feat)
                 ys_tr.append(g["y"].numpy()[m])
                 
         if len(Xs_tr) == 0:
@@ -261,13 +273,16 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, window
         if (ytr == 1).sum() == 0 or (ytr == 0).sum() == 0:
             continue
             
+        if "scale_pos_weight" in model_kwargs:
+            model_kwargs["scale_pos_weight"] = (ytr == 0).sum() / max((ytr == 1).sum(), 1)
+            
         # Test on tau
         g_tau = dm.graphs[tau]
         m_tau = g_tau["labeled_mask"].numpy()
         if m_tau.sum() == 0:
             continue
             
-        Xte = g_tau["x"].numpy()[:, :166][m_tau]
+        Xte = g_tau["prop"].numpy()[m_tau] if use_prop else g_tau["x"].numpy()[:, :166][m_tau]
         yte = g_tau["y"].numpy()[m_tau]
         
         # Train & Predict
@@ -278,9 +293,33 @@ def walk_forward_baseline(dm: EllipticDataModule, cfg: Config, model_cls, window
         y_true_all.append(yte)
         y_pred_all.append(y_pred)
         y_score_all.append(s)
+        
+        from sklearn.metrics import f1_score, average_precision_score
+        step_f1 = float(f1_score(yte, y_pred, pos_label=1, zero_division=0))
+        step_prauc = float(average_precision_score(yte, s))
+        
+        wf_steps.append(tau)
+        wf_f1_per_step.append(step_f1)
+        wf_prauc_per_step.append(step_prauc)
             
     from evaluation.validation import _aggregate_walk_forward
     pooled_f1, pooled_prauc, macro_f1, macro_prauc, pooled_pak = _aggregate_walk_forward(y_true_all, y_pred_all, y_score_all)
+    
+    import pandas as pd
+    import os
+    from config import OUTPUT_DIR
+    csv_file = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
+    df_export = pd.DataFrame({
+        "Sweep": [sweep_name] * len(wf_steps),
+        "Timestep (tau)": wf_steps,
+        "F1": wf_f1_per_step,
+        "PR-AUC": wf_prauc_per_step
+    })
+    if os.path.exists(csv_file):
+        df_export.to_csv(csv_file, mode='a', header=False, index=False)
+    else:
+        df_export.to_csv(csv_file, index=False)
+        
     return pooled_f1, pooled_prauc
 
 
@@ -355,6 +394,8 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega"])
+    parser.add_argument("--only-static", action="store_true", help="Run only static OOT")
+    parser.add_argument("--only-wf", action="store_true", help="Run only walk-forward")
     args = parser.parse_args()
 
     from data.load_dataset import download_and_load_data
@@ -367,6 +408,10 @@ def main():
     results = []
     completed_sweeps = set()
     out_file = os.path.join(OUTPUT_DIR, "sweep_results.csv")
+    
+    timestep_csv = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
+    if os.path.exists(timestep_csv):
+        os.remove(timestep_csv)
     if os.path.exists(out_file):
         try:
             df_res = pd.read_csv(out_file, keep_default_na=False)
@@ -401,8 +446,10 @@ def main():
 
         if "Baseline: IsolationForest (166)" not in completed_sweeps:
             from sklearn.ensemble import IsolationForest
-            with profile_resources() as stat_iso:
-                Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.train_steps])
+            stat_iso, static_iso_f1, static_iso_prauc = {}, 0.0, 0.0
+            if not args.only_wf:
+                with profile_resources() as stat_iso:
+                    Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.train_steps])
                 Xte_iso = Xte_b
                 iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_tabular.seed, n_jobs=1)
                 iso.fit(Xtr_iso)
@@ -412,8 +459,10 @@ def main():
                 static_iso_f1 = f1_score(yte_b, (scores >= np.percentile(scores, thresh_pct)).astype(int), pos_label=1, zero_division=0)
                 static_iso_prauc = average_precision_score(yte_b, scores)
                 
-            with profile_resources() as wf_iso:
-                wf_iso_f1, wf_iso_prauc = walk_forward_isoforest(dm_base, cfg_tabular)
+            wf_iso, wf_iso_f1, wf_iso_prauc = {}, 0.0, 0.0
+            if not args.only_static:
+                with profile_resources() as wf_iso:
+                    wf_iso_f1, wf_iso_prauc = walk_forward_isoforest(dm_base, cfg_tabular)
                 
             results.append(_make_result(
                 seed=cfg_tabular.seed,
@@ -436,22 +485,27 @@ def main():
 
         if "Baseline: XGBoost (166)" not in completed_sweeps:
             spw = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
-            with profile_resources() as stat_xgb:
-                xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+            stat_xgb, static_xgb_f1, static_xgb_prauc = {}, 0.0, 0.0
+            if not args.only_wf:
+                with profile_resources() as stat_xgb:
+                    xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
                                      scale_pos_weight=spw, eval_metric="aucpr",
                                      random_state=cfg_tabular.seed, n_jobs=1).fit(Xtr_b, ytr_b)
                 s_xgb = xgb.predict_proba(Xte_b)[:, 1]
                 static_xgb_f1 = f1_score(yte_b, (s_xgb >= 0.5).astype(int), pos_label=1)
                 static_xgb_prauc = average_precision_score(yte_b, s_xgb)
                 
-            with profile_resources() as wf_xgb:
-                wf_xgb_f1, wf_xgb_prauc = walk_forward_baseline(
-                    dm_base, cfg_tabular, XGBClassifier, window=None,
+            wf_xgb, wf_xgb_f1, wf_xgb_prauc = {}, 0.0, 0.0
+            if not args.only_static:
+                with profile_resources() as wf_xgb:
+                    wf_xgb_f1, wf_xgb_prauc = walk_forward_baseline(
+                        dm_base, cfg_tabular, XGBClassifier, sweep_name="Baseline: XGBoost (166)", window=None,
                     n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw, eval_metric="aucpr", random_state=cfg_tabular.seed, n_jobs=1
                 )
             
             os.makedirs(os.path.join(OUTPUT_DIR, "models"), exist_ok=True)
-            joblib.dump(xgb, os.path.join(OUTPUT_DIR, "models", "xgb_baseline.pkl"))
+            if not args.only_wf:
+                joblib.dump(xgb, os.path.join(OUTPUT_DIR, "models", "xgb_baseline.pkl"))
 
             results.append(_make_result(
                 seed=cfg_tabular.seed,
@@ -471,16 +525,20 @@ def main():
             print("Already completed Baseline: XGBoost (166), skipping.")
 
         if "Baseline: RandomForest (166)" not in completed_sweeps:
-            with profile_resources() as stat_rf:
-                rf = RandomForestClassifier(n_estimators=200, class_weight="balanced",
+            stat_rf, static_rf_f1, static_rf_prauc = {}, 0.0, 0.0
+            if not args.only_wf:
+                with profile_resources() as stat_rf:
+                    rf = RandomForestClassifier(n_estimators=200, class_weight="balanced",
                                             n_jobs=1, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
                 s_rf = rf.predict_proba(Xte_b)[:, 1]
                 static_rf_f1 = f1_score(yte_b, (s_rf >= 0.5).astype(int), pos_label=1)
                 static_rf_prauc = average_precision_score(yte_b, s_rf)
                 
-            with profile_resources() as wf_rf:
-                wf_rf_f1, wf_rf_prauc = walk_forward_baseline(
-                    dm_base, cfg_tabular, RandomForestClassifier, window=None,
+            wf_rf, wf_rf_f1, wf_rf_prauc = {}, 0.0, 0.0
+            if not args.only_static:
+                with profile_resources() as wf_rf:
+                    wf_rf_f1, wf_rf_prauc = walk_forward_baseline(
+                        dm_base, cfg_tabular, RandomForestClassifier, sweep_name="Baseline: RandomForest (166)", window=None,
                     n_estimators=200, class_weight="balanced", n_jobs=1, random_state=cfg_tabular.seed
                 )
 
@@ -500,83 +558,155 @@ def main():
             pd.DataFrame(results).to_csv(out_file, index=False)
         else:
             print("Already completed Baseline: RandomForest (166), skipping.")
+            
+        if "Ablation: XGBoost + Graph Features (500d)" not in completed_sweeps:
+            dm_graph = EllipticDataModule(df, df_edge, feature_cols, cfg_default)
+            dm_graph.setup()
+            
+            Xs_tr_g, ys_tr_g = [], []
+            for t in cfg_default.train_steps:
+                g = dm_graph.graphs[t]; m = g["labeled_mask"].numpy()
+                Xs_tr_g.append(g["prop"].numpy()[m])
+                ys_tr_g.append(g["y"].numpy()[m])
+            Xtr_g, ytr_g = np.concatenate(Xs_tr_g), np.concatenate(ys_tr_g)
+            
+            Xs_te_g, ys_te_g = [], []
+            for t in cfg_default.test_steps:
+                g = dm_graph.graphs[t]; m = g["labeled_mask"].numpy()
+                Xs_te_g.append(g["prop"].numpy()[m])
+                ys_te_g.append(g["y"].numpy()[m])
+            Xte_g, yte_g = np.concatenate(Xs_te_g), np.concatenate(ys_te_g)
+
+            spw_g = (ytr_g == 0).sum() / max((ytr_g == 1).sum(), 1)
+            stat_xgb_g, static_xgb_g_f1, static_xgb_g_prauc = {}, 0.0, 0.0
+            if not args.only_wf:
+                with profile_resources() as stat_xgb_g:
+                    xgb_g = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+                                     scale_pos_weight=spw_g, eval_metric="aucpr", tree_method="hist",
+                                     random_state=cfg_default.seed, n_jobs=1).fit(Xtr_g, ytr_g)
+                s_xgb_g = xgb_g.predict_proba(Xte_g)[:, 1]
+                static_xgb_g_f1 = f1_score(yte_g, (s_xgb_g >= 0.5).astype(int), pos_label=1)
+                static_xgb_g_prauc = average_precision_score(yte_g, s_xgb_g)
+                
+            wf_xgb_g, wf_xgb_g_f1, wf_xgb_g_prauc = {}, 0.0, 0.0
+            if not args.only_static:
+                with profile_resources() as wf_xgb_g:
+                    wf_xgb_g_f1, wf_xgb_g_prauc = walk_forward_baseline(
+                        dm_graph, cfg_default, XGBClassifier, window=None, use_prop=True,
+                    n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw_g, eval_metric="aucpr", tree_method="hist", random_state=cfg_default.seed, n_jobs=1
+                )
+            
+            results.append(_make_result(
+                seed=cfg_default.seed,
+                variation="Base",
+                sweep="Ablation: XGBoost + Graph Features (500d)",
+                static_time=round(stat_xgb_g.get("time", 0.0), 3),
+                static_mem=round(stat_xgb_g.get("peak_mem", 0.0), 2),
+                static_f1=round(static_xgb_g_f1, 3),
+                static_prauc=round(static_xgb_g_prauc, 3),
+                wf_time=round(wf_xgb_g.get("time", 0.0), 3),
+                wf_mem=round(wf_xgb_g.get("peak_mem", 0.0), 2),
+                wf_f1=round(wf_xgb_g_f1, 3),
+                wf_prauc=round(wf_xgb_g_prauc, 3),
+            ))
+            pd.DataFrame(results).to_csv(out_file, index=False)
+        else:
+            print("Already completed Ablation: XGBoost + Graph Features (500d), skipping.")
     except Exception as e:
         print(f"  Baselines skipped: {e}")
 
-    # ── W4 FIX: Expanded ablation matrix ──────────────────────────────────────
-    # Each sweep toggles exactly ONE mechanism relative to the previous row,
-    # enabling unambiguous attribution of gain.
-    sweeps = [
-        # name                          use_mlp  use_ms   use_topo  use_recon  use_focal
-        ("Sweep 1: SGC (baseline)",
-         Config(use_mlp_head=False, use_multiscale_prop=False,
-                use_graph_structural=False)),
-
-        ("Sweep 2: + MLP Head",
-         Config(use_mlp_head=True,  use_multiscale_prop=False,
-                use_graph_structural=False)),
-
-        ("Sweep 3: + Multiscale Prop",
-         Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=False)),
-
-        ("Sweep 4: + Graph Structure Features (PageRank + Clustering Coeff.)",
-         Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=True)),
-
-        ("Sweep 5: + Directional Channels",
-         Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=True, use_directional_prop=True))
-    ]
-
+    # ── W4 FIX: Phased Grid Search Matrix ──────────────────────────────────────
+    import itertools
     seeds = [42, 43, 44] if args.mode == "mega" else [42]
     variations = ["Base", "PCA", "RF_Pruned"] if args.mode == "mega" else ["Base"]
 
-    for seed in seeds:
-        for name, cfg in sweeps:
-            cfg.seed = seed
-            for var in variations:
-                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
-                print(f"\n{'='*55}\nRunning: {sweep_key}\n{'='*55}")
+    # Helper to execute and record a single sweep configuration
+    def execute_sweep(sweep_key, name, cfg, var):
+        if sweep_key in completed_sweeps:
+            print(f"Already completed {sweep_key}, skipping.")
+            for r in results:
+                if r["Sweep"] == sweep_key: return r
+            return None
+            
+        print(f"\n{'='*55}\nRunning: {sweep_key}\n{'='*55}")
+        
+        if args.only_static:
+            res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
+        elif args.only_wf:
+            res = run_single_sweep(name, cfg, df, df_edge, feature_cols, variation=var, only_wf=True)
+        else:
+            # During Phase 1 and Phase 2, we ONLY want to evaluate statically, regardless of mode.
+            res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
                 
-                if sweep_key in completed_sweeps:
-                    print(f"Already completed {sweep_key}, skipping.")
-                    continue
-                    
-                if args.mode == "standard":
-                    res = run_single_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
-                else:
-                    res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
-                
-                res["Sweep"] = sweep_key
-                results.append(res)
-                
-                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(os.path.join(OUTPUT_DIR, "sweep_results.csv"), index=False)
-                print(f"--> {res}\n")
-
-    print("\n--- K Ablation (Static Only) ---")
-    k_sweeps = [
-        ("Sweep K=1 (Static)", Config(sgc_k=1, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
-        ("Sweep K=2 (Static)", Config(sgc_k=2, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
-        ("Sweep K=3 (Static)", Config(sgc_k=3, use_multiscale_prop=True, use_graph_structural=True, use_mlp_head=True)),
-    ]
-    for name, cfg in k_sweeps:
-        print(f"Running: {name}")
-        if name in completed_sweeps:
-            print(f"Already completed {name}, skipping.")
-            continue
-        res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols)
+        res["Sweep"] = sweep_key
         results.append(res)
         pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(os.path.join(OUTPUT_DIR, "sweep_results.csv"), index=False)
         print(f"--> {res}\n")
+        completed_sweeps.add(sweep_key)
+        return res
 
+    all_configs_run = {}
 
-    # ── Walk-Forward on Best SGC Configuration ────────────────────────────────
+    for seed in seeds:
+        for var in variations:
+            print(f"\n{'#'*60}\nRunning Sequence for Seed {seed}, Var {var}\n{'#'*60}")
+            
+            # --- PHASE 1: Baselines ---
+            phase1_sweeps = [
+                ("Sweep 1: SGC (baseline)", Config(use_mlp_head=False, use_multiscale_prop=False, use_graph_structural=False, seed=seed)),
+                ("Sweep 2: + MLP Head", Config(use_mlp_head=True, use_multiscale_prop=False, use_graph_structural=False, seed=seed))
+            ]
+            for name, cfg in phase1_sweeps:
+                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
+                execute_sweep(sweep_key, name, cfg, var)
+                all_configs_run[sweep_key] = cfg
+                
+            # --- PHASE 2: Grid Search ---
+            best_grid_key = None
+            best_grid_f1 = -1.0
+            
+            for k, directional, topo, injection in itertools.product([1, 2, 3], [False, True], [False, True], ['late', 'early']):
+                if not topo and injection == 'early':
+                    continue # Avoid duplicates: if no topo, injection mode doesn't matter
+                    
+                cfg = Config(
+                    use_mlp_head=True,
+                    use_multiscale_prop=True,
+                    sgc_k=k,
+                    use_directional_prop=directional,
+                    use_graph_structural=topo,
+                    topo_injection_mode=injection,
+                    seed=seed
+                )
+                
+                name_parts = [f"K={k}"]
+                name_parts.append("Dir=T" if directional else "Dir=F")
+                if topo:
+                    name_parts.append(f"Topo={injection}")
+                else:
+                    name_parts.append("Topo=None")
+                    
+                name = f"Grid: {', '.join(name_parts)}"
+                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
+                
+                res = execute_sweep(sweep_key, name, cfg, var)
+                all_configs_run[sweep_key] = cfg
+                if res and not args.only_wf:
+                    f1_val = res.get("Static OOT F1", 0.0)
+                    if pd.notna(f1_val) and f1_val > best_grid_f1:
+                        best_grid_f1 = f1_val
+                        best_grid_key = sweep_key
+                        
+            print(f"\n  [Phase 2 Winner] {best_grid_key} achieved highest Static F1: {best_grid_f1:.3f}.")
+            
+
+    # ── PHASE 3: Walk-Forward on Best SGC Configuration ──────────────────────
     print("\n--- Walk-Forward Validation (Best SGC Sweep) ---")
     best_f1 = -1.0
     best_sweep_name = None
     for r in results:
-        if isinstance(r.get("Sweep"), str) and r["Sweep"].startswith("Sweep ") and "K=" not in r["Sweep"]:
+        # Check if it's an SGC sweep and has valid F1
+        if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"]):
             f1_val = r.get("Static OOT F1", 0.0)
             if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_f1:
                 best_f1 = f1_val
@@ -586,7 +716,7 @@ def main():
         wf_name = f"Best WF: {best_sweep_name}"
         if wf_name not in completed_sweeps:
             print(f"\nWinning Configuration: {best_sweep_name} (Static F1: {best_f1:.3f})")
-            best_cfg = next((cfg for name, cfg in sweeps if name == best_sweep_name), None)
+            best_cfg = all_configs_run.get(best_sweep_name)
             
             if best_cfg is not None:
                 with profile_resources() as wf_stat:
@@ -617,6 +747,10 @@ def main():
     # ── Persist results ────────────────────────────────────────────────────────
     df_res   = pd.DataFrame(results, columns=list(_RESULT_KEYS))
     out_file = os.path.join(OUTPUT_DIR, "sweep_results.csv")
+    
+    timestep_csv = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
+    if os.path.exists(timestep_csv):
+        os.remove(timestep_csv)
     df_res.to_csv(out_file, index=False)
     print(f"\nResults saved to {out_file}")
 
