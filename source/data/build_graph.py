@@ -161,7 +161,7 @@ class EllipticDataModule:
         #
         # LEAKAGE GUARD: scaler_aug fitted on train_steps augmented data only.
         if c.use_graph_structural:
-            if getattr(c, 'topo_injection_mode', 'early') == 'early':
+            if getattr(c, 'topo_injection_mode', 'late') == 'early':
                 train_X_full = np.concatenate(
                     [self.graphs[t]["x_np"] for t in c.train_steps if t in self.graphs], axis=0
                 )
@@ -180,7 +180,7 @@ class EllipticDataModule:
         for t in self.graphs:
             x = torch.tensor(self.graphs[t]["x_np"], dtype=torch.float32)
             self.graphs[t]["x"] = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
-            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                 topo = torch.tensor(self.graphs[t]["topo_np"], dtype=torch.float32)
                 self.graphs[t]["topo"] = torch.nan_to_num(topo, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -195,7 +195,7 @@ class EllipticDataModule:
                 prop = sgc_propagate(
                     g["x"], g["edge_index"], c.sgc_k, c.use_multiscale_prop, c.use_directional_prop
                 )
-                if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+                if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                     prop = torch.cat([prop, g["topo"]], dim=1)
                 g["prop"] = prop
             # SHAPE GUARD: verify dim from actual tensor
@@ -208,7 +208,7 @@ class EllipticDataModule:
             else:
                 expected_dim = self.feature_dim
                 
-            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'early') == 'late':
+            if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                 expected_dim += 2
                 
             assert sample_prop.shape[1] == expected_dim, (

@@ -42,7 +42,7 @@ def main():
                 g = dm_xgb.graphs[t]
                 m = g["labeled_mask"]
                 if m.sum() > 0:
-                    Xs_tr.append(g.get("prop", g["x"])[m].numpy())
+                    Xs_tr.append(g["x"][m, :166].numpy())
                     ys_tr.append(g["y"][m].numpy())
                     
         if len(Xs_tr) == 0: continue
@@ -61,7 +61,7 @@ def main():
             print(f"Skipping tau={tau} due to no labeled test data.")
             continue
             
-        Xte = g_test.get("prop", g_test["x"])[m_test].numpy()
+        Xte = g_test["x"][m_test, :166].numpy()
         yte = g_test["y"][m_test].numpy()
         
         n_labeled = len(yte)
@@ -113,7 +113,20 @@ def main():
         pool_pr_auc = float(average_precision_score(y_true_all, s_pred_all))
         pool_f1 = float(f1_score(y_true_all, y_pred_all, pos_label=1, zero_division=0))
         print(f"[t=35-49] Pooled F1={pool_f1:.3f}, Pooled PR-AUC={pool_pr_auc:.3f}")
-        print("These should match the WF expanding F1/PR-AUC for M1 Baseline XGBoost in mega sweep.\n")
+        
+        csv_results_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "sweep_results.csv")
+        if os.path.exists(csv_results_path):
+            sweep_df = pd.read_csv(csv_results_path)
+            xgb_row = sweep_df[sweep_df["Sweep"] == "Baseline: XGBoost (166)"]
+            if len(xgb_row) > 0:
+                sweep_f1 = float(xgb_row["Walk-Forward Mean F1"].values[0])
+                assert abs(pool_f1 - sweep_f1) < 0.01, f"Reconciliation failed: pooled F1 {pool_f1:.3f} != sweep F1 {sweep_f1:.3f}"
+                print("Reconciliation gate passed: plot pooled F1 matches canonical sweep_results.csv F1.")
+            else:
+                print("Reconciliation check skipped: XGBoost baseline not found in sweep_results.csv.")
+        else:
+            print("Reconciliation check skipped: sweep_results.csv not found.")
+        print("\n")
         
     df_res = pd.DataFrame(results)
     os.makedirs(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results"), exist_ok=True)

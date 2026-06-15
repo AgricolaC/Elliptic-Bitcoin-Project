@@ -381,18 +381,19 @@ def main():
     try:
         from xgboost import XGBClassifier
         from sklearn.ensemble import RandomForestClassifier
-        dm_base = EllipticDataModule(df, df_edge, feature_cols, cfg_default)
+        cfg_tabular = Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=cfg_default.seed)
+        dm_base = EllipticDataModule(df, df_edge, feature_cols, cfg_tabular)
         dm_base.setup()
 
         Xs_tr, ys_tr = [], []
-        for t in cfg_default.train_steps:
+        for t in cfg_tabular.train_steps:
             g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
             Xs_tr.append(g["x"].numpy()[:, :166][m])
             ys_tr.append(g["y"].numpy()[m])
         Xtr_b, ytr_b = np.concatenate(Xs_tr), np.concatenate(ys_tr)
 
         Xs_te, ys_te = [], []
-        for t in cfg_default.test_steps:
+        for t in cfg_tabular.test_steps:
             g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
             Xs_te.append(g["x"].numpy()[:, :166][m])
             ys_te.append(g["y"].numpy()[m])
@@ -401,9 +402,9 @@ def main():
         if "Baseline: IsolationForest (166)" not in completed_sweeps:
             from sklearn.ensemble import IsolationForest
             with profile_resources() as stat_iso:
-                Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_default.train_steps])
+                Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.train_steps])
                 Xte_iso = Xte_b
-                iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_default.seed, n_jobs=1)
+                iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_tabular.seed, n_jobs=1)
                 iso.fit(Xtr_iso)
                 scores = -iso.score_samples(Xte_iso)
                 actual_illicit_rate = (yte_b == 1).mean()
@@ -412,10 +413,10 @@ def main():
                 static_iso_prauc = average_precision_score(yte_b, scores)
                 
             with profile_resources() as wf_iso:
-                wf_iso_f1, wf_iso_prauc = walk_forward_isoforest(dm_base, cfg_default)
+                wf_iso_f1, wf_iso_prauc = walk_forward_isoforest(dm_base, cfg_tabular)
                 
             results.append(_make_result(
-                seed=cfg_default.seed,
+                seed=cfg_tabular.seed,
                 variation="Base",
                 sweep="Baseline: IsolationForest (166)",
                 static_time=round(stat_iso.get("time", 0.0), 3),
@@ -438,22 +439,22 @@ def main():
             with profile_resources() as stat_xgb:
                 xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
                                      scale_pos_weight=spw, eval_metric="aucpr",
-                                     random_state=cfg_default.seed, n_jobs=1).fit(Xtr_b, ytr_b)
+                                     random_state=cfg_tabular.seed, n_jobs=1).fit(Xtr_b, ytr_b)
                 s_xgb = xgb.predict_proba(Xte_b)[:, 1]
                 static_xgb_f1 = f1_score(yte_b, (s_xgb >= 0.5).astype(int), pos_label=1)
                 static_xgb_prauc = average_precision_score(yte_b, s_xgb)
                 
             with profile_resources() as wf_xgb:
                 wf_xgb_f1, wf_xgb_prauc = walk_forward_baseline(
-                    dm_base, cfg_default, XGBClassifier, window=None,
-                    n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw, eval_metric="aucpr", random_state=cfg_default.seed, n_jobs=1
+                    dm_base, cfg_tabular, XGBClassifier, window=None,
+                    n_estimators=300, max_depth=6, learning_rate=0.1, scale_pos_weight=spw, eval_metric="aucpr", random_state=cfg_tabular.seed, n_jobs=1
                 )
             
             os.makedirs(os.path.join(OUTPUT_DIR, "models"), exist_ok=True)
             joblib.dump(xgb, os.path.join(OUTPUT_DIR, "models", "xgb_baseline.pkl"))
 
             results.append(_make_result(
-                seed=cfg_default.seed,
+                seed=cfg_tabular.seed,
                 variation="Base",
                 sweep="Baseline: XGBoost (166)",
                 static_time=round(stat_xgb.get("time", 0.0), 3),
@@ -472,19 +473,19 @@ def main():
         if "Baseline: RandomForest (166)" not in completed_sweeps:
             with profile_resources() as stat_rf:
                 rf = RandomForestClassifier(n_estimators=200, class_weight="balanced",
-                                            n_jobs=1, random_state=cfg_default.seed).fit(Xtr_b, ytr_b)
+                                            n_jobs=1, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
                 s_rf = rf.predict_proba(Xte_b)[:, 1]
                 static_rf_f1 = f1_score(yte_b, (s_rf >= 0.5).astype(int), pos_label=1)
                 static_rf_prauc = average_precision_score(yte_b, s_rf)
                 
             with profile_resources() as wf_rf:
                 wf_rf_f1, wf_rf_prauc = walk_forward_baseline(
-                    dm_base, cfg_default, RandomForestClassifier, window=None,
-                    n_estimators=200, class_weight="balanced", n_jobs=1, random_state=cfg_default.seed
+                    dm_base, cfg_tabular, RandomForestClassifier, window=None,
+                    n_estimators=200, class_weight="balanced", n_jobs=1, random_state=cfg_tabular.seed
                 )
 
             results.append(_make_result(
-                seed=cfg_default.seed,
+                seed=cfg_tabular.seed,
                 variation="Base",
                 sweep="Baseline: RandomForest (166)",
                 static_time=round(stat_rf.get("time", 0.0), 3),
@@ -525,8 +526,7 @@ def main():
 
         ("Sweep 5: + Directional Channels",
          Config(use_mlp_head=True,  use_multiscale_prop=True,
-                use_graph_structural=True, use_directional_prop=True,
-                topo_injection_mode='early', sgc_weight_decay=5e-3))
+                use_graph_structural=True, use_directional_prop=True))
     ]
 
     seeds = [42, 43, 44] if args.mode == "mega" else [42]
@@ -536,20 +536,18 @@ def main():
         for name, cfg in sweeps:
             cfg.seed = seed
             for var in variations:
-                sweep_key = f"{name} (Seed {seed}, Var {var})"
+                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
                 print(f"\n{'='*55}\nRunning: {sweep_key}\n{'='*55}")
-                # We skip completed checks for mega sweeps for brevity, but here it is:
+                
                 if sweep_key in completed_sweeps:
                     print(f"Already completed {sweep_key}, skipping.")
                     continue
                     
-                # We do expanding WF only on "Base" for Sweep 4 to save time, else static
                 if args.mode == "standard":
-                    res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
+                    res = run_single_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
                 else:
                     res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
                 
-                # Because we changed sweep to sweep_key, let's override it
                 res["Sweep"] = sweep_key
                 results.append(res)
                 

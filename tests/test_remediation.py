@@ -12,7 +12,14 @@ Five fix targets:
 """
 
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "source"))
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(TEST_DIR, ".."))
+SOURCE_DIR = os.path.join(REPO_ROOT, "source")
+
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+if SOURCE_DIR not in sys.path:
+    sys.path.insert(0, SOURCE_DIR)
 
 import numpy as np
 import pandas as pd
@@ -90,9 +97,12 @@ class TestFeatureScaling:
         PageRank raw values are O(1e-4); unscaled they dominate at the wrong scale.
         """
         dm, cfg = self._make_minimal_dm(use_graph_structural=True)
-        Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
-        n_base = 10   # synthetic feature count
-        topo_cols = Xs[:, n_base: n_base + 2]   # pagerank + clustering
+        if getattr(cfg, 'topo_injection_mode', 'early') == 'early':
+            Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
+            n_base = 10   # synthetic feature count
+            topo_cols = Xs[:, n_base: n_base + 2]   # pagerank + clustering
+        else:
+            topo_cols = np.concatenate([dm.graphs[t]["topo"].numpy() for t in cfg.train_steps])
 
         topo_means = np.abs(topo_cols.mean(axis=0))
         topo_stds  = topo_cols.std(axis=0)
@@ -103,6 +113,25 @@ class TestFeatureScaling:
         assert topo_stds.min() > 0.1, (
             f"W1: Topology columns appear constant — std={topo_stds}."
         )
+
+    def test_late_injection_correctness(self):
+        """Verify that topo_injection_mode='late' bypasses SGC propagation and appends correctly."""
+        from config import Config
+        cfg = Config(train_steps=range(1, 4), test_steps=range(4, 7), use_graph_structural=True, topo_injection_mode='late')
+        dm, cfg_out = self._make_minimal_dm(use_graph_structural=True)
+        # Re-run setup with late explicitly
+        dm.cfg.topo_injection_mode = 'late'
+        dm.setup()
+        
+        t = dm.cfg.train_steps[0]
+        assert "topo" in dm.graphs[t], "Topology tensor not found in late mode."
+        
+        topo_shape = dm.graphs[t]["topo"].shape
+        assert topo_shape[1] == 2, "Topology should have exactly 2 dimensions."
+        
+        prop_shape = dm.graphs[t]["prop"].shape
+        # Base=10, K=2, multiscale=True -> 30 dimensions from base propagation + 2 from late injection = 32
+        assert prop_shape[1] == 32, f"Propagated shape mismatch: {prop_shape[1]} != 32."
 
     def test_second_scaler_fitted_on_train_only_no_leakage(self):
         """
@@ -370,14 +399,14 @@ class TestSweepResultKeyStandardization:
 
     def test_run_single_sweep_key_schema(self):
         """run_single_sweep must return the standardized key schema."""
-        from sweep import run_single_sweep
+        from source.sweep import run_single_sweep
         # We mock the expensive internals; we only need to inspect the returned dict shape.
-        with patch("sweep.EllipticDataModule") as MockDM, \
-             patch("sweep.stack_prop") as mock_sp, \
-             patch("sweep.fit_head") as mock_fh, \
-             patch("sweep.walk_forward_validation") as mock_wf, \
-             patch("sweep.joblib.dump") as mock_dump, \
-             patch("sweep.torch.save") as mock_save:
+        with patch("source.sweep.EllipticDataModule") as MockDM, \
+             patch("source.sweep.stack_prop") as mock_sp, \
+             patch("source.sweep.fit_head") as mock_fh, \
+             patch("source.sweep.walk_forward_validation") as mock_wf, \
+             patch("source.sweep.joblib.dump") as mock_dump, \
+             patch("source.sweep.torch.save") as mock_save:
 
             mock_dm = MagicMock()
             mock_dm.graphs = {t: {"prop": torch.zeros(5, 10), "y": torch.zeros(5).long(),
