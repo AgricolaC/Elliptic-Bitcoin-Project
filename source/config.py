@@ -49,8 +49,6 @@ class Config:
     mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3
     
-    topo_injection_mode: str = 'early' # 'early' or 'late'
-    
     # Feature Selection & Dim. Reduction
     use_pca: bool = False
     pca_variance: float = 0.99         # % of variance to retain when use_pca=True
