@@ -115,6 +115,9 @@ Sweep results are checkpointed to CSV after each sweep — re-runs skip already-
 | `TestWalkForwardPlotNaming` | W7: `walk_forward_validation` must have `sweep_name` parameter |
 | `TestDynamicClassWeights` | W8: `walk_forward_validation` must NOT accept external `cls_w` |
 | `TestSweepResultKeyStandardization` | W5: all result dicts must have the exact 11 canonical keys |
+| `TestTemporalModels` | Temporal causality (future-invariance + past positive controls), label-free embedder, grad flow, and that the temporal loss is gated by `labeled_mask` (`test_temporal_loss_respects_labeled_mask`) |
+| `TestMLPVariationExpansion` | Phase 2.5 emits every (target × MLP variation) — guards the loop-nesting bug that tuned only one target |
+| `TestWalkForwardBlocks` | `_walk_forward_blocks` enforces the τ window invariant (train < τ-1, calib = τ-1) shared by both temporal evaluators |
 
 ## Critical Domain Knowledge
 
@@ -130,6 +133,9 @@ Sweep results are checkpointed to CSV after each sweep — re-runs skip already-
 
 ### LSTM Extrapolation Limitation
 The LSTM is trained on snapshots 1–26. At evaluation, it must produce hidden states h_τ for τ up to 49, including the step-43 regime change it never saw during training. The hidden-state dynamics in the post-disruption regime are untrained extrapolation. This is inherent to any temporal model trained on pre-disruption data and is not fixable without leaking test information into training.
+
+### Temporal Conditioning is Filtering, Not One-Step-Ahead
+When classifying snapshot τ, the conditioning hidden state `h_τ` deliberately **includes τ's own snapshot embedding** (`_filtered_state` in `evaluation/temporal_validation.py` runs the embedder over `[..τ-1, τ]` and takes the last state). This is *filtering*: a node at τ is classified using the most up-to-date structural summary available at τ. Because snapshot embeddings are graph-level mean pools that use **no labels**, folding τ's embedding into `h_τ` leaks no target information. Calibration (classifying τ-1) and test (classifying τ) call the same helper with the step-to-classify as the final element, so the two states are constructed identically — there is no calibration/inference mismatch. The alternative (one-step-ahead, excluding τ) was considered and rejected: it discards available label-free topology for no leakage benefit.
 
 ### Computational Cost
 The temporal module itself (LSTM forward over ~26 vectors) is cheap. However, walk-forward evaluation retrains the entire embedder+LSTM+head pipeline end-to-end from scratch for each of 15 test steps at 100 epochs each, with per-epoch loss summed over all labeled training nodes. This repeated retraining dominates runtime cost.

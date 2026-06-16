@@ -1,6 +1,5 @@
 import torch
 import time
-import re
 import numpy as np
 from typing import List, Tuple, Any
 from sklearn.metrics import f1_score, average_precision_score
@@ -26,6 +25,27 @@ def _walk_forward_blocks(available_steps, tau):
     assert all(t < tau - 1 for t in train_block), \
         f"train_block leaks calib/test step: max={max(train_block)} tau={tau}"
     return train_block, calib_step
+
+
+def _filtered_state(embedder, temporal, steps, dm, device):
+    """Return the *filtering* hidden state for the last step in ``steps``.
+
+    Runs the (label-free) snapshot embedder over ``steps`` in order, passes the
+    sequence through ``temporal`` (TemporalLSTM or SnapshotEMA — identical
+    ``(T, D) -> (T, H)`` interface), and returns the hidden state AFTER consuming
+    the final step. Steps absent from ``dm.graphs`` are skipped.
+
+    DESIGN — Filtering, not one-step-ahead. The returned state deliberately
+    incorporates the final step's own snapshot embedding so we classify a
+    snapshot using the most up-to-date structural information available at that
+    snapshot. Because snapshot embeddings use NO labels, this folds in no target
+    information — it is sound filtering, not leakage. Calibration (classifying
+    τ-1) and test (classifying τ) both call this with the step-to-classify as the
+    final element, so they use an identical construction.
+    """
+    embeddings = [embedder(dm.graphs[t]["prop"].to(device)) for t in steps if t in dm.graphs]
+    hidden_states = temporal(torch.stack(embeddings))
+    return hidden_states[-1]
 
 
 def train_lstm_conditioned(
@@ -106,11 +126,11 @@ def train_lstm_conditioned(
                 h_t = hidden_states[i]
                 logits = head(g["prop"][m].to(device), h_t)
                 total_loss += loss_fn(logits, g["y"][m].to(device))
-                
+
         if total_loss > 0:
             total_loss.backward()
             opt.step()
-            
+
     return embedder, lstm, head
 
 
@@ -123,10 +143,8 @@ def walk_forward_lstm_conditioned(
     epochs: int = 100,
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of LSTM conditioned head."""
-    safe_name = re.sub(r"[^\w\-]", "_", sweep_name)
-    
     y_true_all, y_pred_all, s_pred_all = [], [], []
-    
+
     for tau in cfg.test_steps:
         train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
 
@@ -141,50 +159,31 @@ def walk_forward_lstm_conditioned(
         embedder, lstm, head = train_lstm_conditioned(
             dm, train_block, cfg, device, epochs=epochs, embed_dim=embed_dim
         )
-        
+
         embedder.eval()
         lstm.eval()
         head.eval()
-        
+
         threshold = 0.5
-        # Calibrate threshold on tau-1
+        # Calibrate threshold on tau-1 (filtering: state includes tau-1's embedding)
         if calib_step in dm.graphs:
-            cal_block = train_block + [calib_step]
             g_cal = dm.graphs[calib_step]
             m_cal = g_cal["labeled_mask"]
             if m_cal.sum() > 0:
                 y_cal = g_cal["y"][m_cal].numpy()
                 if len(np.unique(y_cal)) >= 2:
                     with torch.no_grad():
-                        # We need the LSTM state for calib_step.
-                        # This requires running the embedder on train_block + calib_step
-                        embeddings = []
-                        for t in cal_block:
-                            emb = embedder(dm.graphs[t]["prop"].to(device))
-                            embeddings.append(emb)
-                        embeddings_tensor = torch.stack(embeddings)
-                        hidden_states = lstm(embeddings_tensor)
-                        h_cal = hidden_states[-1]
-                        
+                        h_cal = _filtered_state(embedder, lstm, train_block + [calib_step], dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
                     threshold = _find_best_f1_threshold(y_cal, s_cal)
-                    
-        # Test on tau
+
+        # Test on tau (filtering: state includes tau's own embedding — see _filtered_state)
         with torch.no_grad():
-            test_block = train_block + [calib_step, tau] if calib_step in dm.graphs else train_block + [tau]
-            embeddings = []
-            for t in test_block:
-                if t in dm.graphs:
-                    emb = embedder(dm.graphs[t]["prop"].to(device))
-                    embeddings.append(emb)
-            embeddings_tensor = torch.stack(embeddings)
-            hidden_states = lstm(embeddings_tensor)
-            h_tau = hidden_states[-1]
-            
+            h_tau = _filtered_state(embedder, lstm, train_block + [calib_step, tau], dm, device)
             logits_te = head(g["prop"][m].to(device), h_tau)
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
-            
+
         y_pred = (s >= threshold).astype(int)
         y_true_all.append(yte_w)
         y_pred_all.append(y_pred)
@@ -265,10 +264,8 @@ def walk_forward_ema_conditioned(
     alpha: float = 0.3,
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of EMA conditioned head."""
-    safe_name = re.sub(r"[^\w\-]", "_", sweep_name)
-    
     y_true_all, y_pred_all, s_pred_all = [], [], []
-    
+
     for tau in cfg.test_steps:
         train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
 
@@ -283,45 +280,30 @@ def walk_forward_ema_conditioned(
         embedder, ema, head = train_ema_conditioned(
             dm, train_block, cfg, device, epochs=epochs, embed_dim=embed_dim, alpha=alpha
         )
-        
+
         embedder.eval()
         head.eval()
-        
+
         threshold = 0.5
+        # Calibrate threshold on tau-1 (filtering: state includes tau-1's embedding)
         if calib_step in dm.graphs:
-            cal_block = train_block + [calib_step]
             g_cal = dm.graphs[calib_step]
             m_cal = g_cal["labeled_mask"]
             if m_cal.sum() > 0:
                 y_cal = g_cal["y"][m_cal].numpy()
                 if len(np.unique(y_cal)) >= 2:
                     with torch.no_grad():
-                        embeddings = []
-                        for t in cal_block:
-                            emb = embedder(dm.graphs[t]["prop"].to(device))
-                            embeddings.append(emb)
-                        embeddings_tensor = torch.stack(embeddings)
-                        hidden_states = ema(embeddings_tensor)
-                        h_cal = hidden_states[-1]
-                        
+                        h_cal = _filtered_state(embedder, ema, train_block + [calib_step], dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
                     threshold = _find_best_f1_threshold(y_cal, s_cal)
-                    
+
+        # Test on tau (filtering: state includes tau's own embedding — see _filtered_state)
         with torch.no_grad():
-            test_block = train_block + [calib_step, tau] if calib_step in dm.graphs else train_block + [tau]
-            embeddings = []
-            for t in test_block:
-                if t in dm.graphs:
-                    emb = embedder(dm.graphs[t]["prop"].to(device))
-                    embeddings.append(emb)
-            embeddings_tensor = torch.stack(embeddings)
-            hidden_states = ema(embeddings_tensor)
-            h_tau = hidden_states[-1]
-            
+            h_tau = _filtered_state(embedder, ema, train_block + [calib_step, tau], dm, device)
             logits_te = head(g["prop"][m].to(device), h_tau)
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
-            
+
         y_pred = (s >= threshold).astype(int)
         y_true_all.append(yte_w)
         y_pred_all.append(y_pred)

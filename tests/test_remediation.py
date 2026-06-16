@@ -561,6 +561,49 @@ class TestTemporalModels:
             expected_width = 31 * w - 15
             assert feats.shape[0] == expected_width
 
+    def test_temporal_loss_respects_labeled_mask(self):
+        """Axiom-falsify: the temporal training loss must be gated by
+        ``labeled_mask`` — perturbing the labels of masked-out nodes (which a
+        correct pipeline excludes) must leave the trained head bit-identical.
+        The embedder is label-free, so labels enter only through the loss."""
+        from source.evaluation.temporal_validation import train_lstm_conditioned
+        from config import Config, set_global_seeds
+
+        def make_dm():
+            dm = MagicMock()
+            dm.graphs = {}
+            gen = torch.Generator().manual_seed(7)
+            for t in range(1, 5):
+                prop = torch.randn(12, 32, generator=gen)
+                y = torch.randint(0, 2, (12,), generator=gen)  # valid labels everywhere
+                mask = torch.ones(12).bool()
+                mask[6:] = False  # last 6 nodes are unlabeled regardless of y value
+                dm.graphs[t] = {"prop": prop, "y": y, "labeled_mask": mask}
+            dm.sgc_input_dim = 32
+            return dm
+
+        cfg = Config()
+
+        dm1 = make_dm()
+        set_global_seeds(123)
+        _, _, head1 = train_lstm_conditioned(dm1, [1, 2, 3], cfg,
+                                             torch.device("cpu"), epochs=5, embed_dim=16)
+        p1 = torch.cat([p.flatten() for p in head1.parameters()])
+
+        # Flip the labels of the masked-out nodes only. A mask-respecting loss
+        # never sees these, so training must be unaffected.
+        dm2 = make_dm()
+        for t in dm2.graphs:
+            m = dm2.graphs[t]["labeled_mask"]
+            dm2.graphs[t]["y"][~m] = 1 - dm2.graphs[t]["y"][~m]
+        set_global_seeds(123)
+        _, _, head2 = train_lstm_conditioned(dm2, [1, 2, 3], cfg,
+                                             torch.device("cpu"), epochs=5, embed_dim=16)
+        p2 = torch.cat([p.flatten() for p in head2.parameters()])
+
+        assert torch.allclose(p1, p2), \
+            "Masked-out nodes leaked into the temporal training loss"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Phase 2.5 MLP-variation expansion — every (target × variation) must be emitted

@@ -939,9 +939,15 @@ def main():
             # If we skipped the execute loop (e.g. in temporal mode), best_cfg might be None.
             # We can load it from disk where run_static_only_sweep saves it.
             if best_cfg is None:
-                import joblib
                 safe_name = re.sub(r"[^\w\-]", "_", best_sweep_name)
-                best_cfg = joblib.load(os.path.join(OUTPUT_DIR, "models", f"{safe_name}_cfg.pkl"))
+                cfg_path = os.path.join(OUTPUT_DIR, "models", f"{safe_name}_cfg.pkl")
+                if not os.path.exists(cfg_path):
+                    raise FileNotFoundError(
+                        f"Cannot run Phase 3 walk-forward: config for best sweep "
+                        f"'{best_sweep_name}' was neither retained in memory nor persisted at "
+                        f"{cfg_path}. Ensure it ran through run_static_only_sweep this session."
+                    )
+                best_cfg = joblib.load(cfg_path)
             
             if best_cfg is not None:
                 with profile_resources() as wf_stat:
