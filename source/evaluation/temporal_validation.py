@@ -10,6 +10,24 @@ from models.temporal_head import SnapshotEmbedder, TemporalLSTM, SnapshotEMA, LS
 from evaluation.validation import _compute_class_weights, _find_best_f1_threshold, _aggregate_walk_forward
 from models.classifier import build_loss
 
+
+def _walk_forward_blocks(available_steps, tau):
+    """Compute the training/calibration split for walk-forward step ``tau``.
+
+    Returns ``(train_block, calib_step)`` where ``calib_step == tau - 1`` and
+    every step in ``train_block`` is strictly before ``tau - 1`` — i.e. training
+    never sees the calibration step or τ itself. Steps not present in
+    ``available_steps`` are skipped. Shared by both the LSTM and EMA evaluators
+    so their windows cannot drift apart.
+    """
+    available = set(available_steps)
+    calib_step = tau - 1
+    train_block = [t for t in range(min(available_steps), tau - 1) if t in available]
+    assert all(t < tau - 1 for t in train_block), \
+        f"train_block leaks calib/test step: max={max(train_block)} tau={tau}"
+    return train_block, calib_step
+
+
 def train_lstm_conditioned(
     dm: Any,
     train_steps: List[int],
@@ -110,18 +128,16 @@ def walk_forward_lstm_conditioned(
     y_true_all, y_pred_all, s_pred_all = [], [], []
     
     for tau in cfg.test_steps:
-        train_block = list(range(min(dm.graphs), tau - 1))
-        train_block = [t for t in train_block if t in dm.graphs]
-        calib_step = tau - 1
-        
+        train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
+
         if not train_block: continue
-        
+
         g = dm.graphs[tau]
         m = g["labeled_mask"]
         if m.sum() == 0: continue
         yte_w = g["y"][m].numpy()
         if len(np.unique(yte_w)) < 2: continue
-        
+
         embedder, lstm, head = train_lstm_conditioned(
             dm, train_block, cfg, device, epochs=epochs, embed_dim=embed_dim
         )
@@ -254,18 +270,16 @@ def walk_forward_ema_conditioned(
     y_true_all, y_pred_all, s_pred_all = [], [], []
     
     for tau in cfg.test_steps:
-        train_block = list(range(min(dm.graphs), tau - 1))
-        train_block = [t for t in train_block if t in dm.graphs]
-        calib_step = tau - 1
-        
+        train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
+
         if not train_block: continue
-        
+
         g = dm.graphs[tau]
         m = g["labeled_mask"]
         if m.sum() == 0: continue
         yte_w = g["y"][m].numpy()
         if len(np.unique(yte_w)) < 2: continue
-        
+
         embedder, ema, head = train_ema_conditioned(
             dm, train_block, cfg, device, epochs=epochs, embed_dim=embed_dim, alpha=alpha
         )

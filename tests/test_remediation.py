@@ -560,3 +560,92 @@ class TestTemporalModels:
             feats = build_snapshot_temporal_features(mock_dm, target_step=5, window=w, label_lag=0)
             expected_width = 31 * w - 15
             assert feats.shape[0] == expected_width
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 2.5 MLP-variation expansion — every (target × variation) must be emitted
+# Guards the loop-nesting bug where variations ran for only one target.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMLPVariationExpansion:
+    """
+    Phase 2.5 tunes MLP heads on BOTH the Champion and Challenger configs across
+    three variations (Wide / Residual / ResWide). A loop-nesting bug emitted the
+    variations for only the last-bound target. The expansion must be a pure
+    function producing one spec per (target × variation).
+    """
+
+    def _make_targets(self):
+        from config import Config
+        champ = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=1,
+                       use_directional_prop=False, use_graph_structural=False, seed=42)
+        chall = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=3,
+                       use_directional_prop=True, use_graph_structural=True,
+                       topo_injection_mode='early', seed=42)
+        return [(champ, "Grid: K=1, Dir=F, Topo=None", "Champion"),
+                (chall, "Grid: K=3, Dir=T, Topo=early", "Challenger")]
+
+    def _variations(self):
+        return [
+            ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
+            ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
+            ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True}),
+        ]
+
+    def test_every_target_gets_every_variation(self):
+        from sweep import build_mlp_variation_specs
+        specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
+                                          seed=42, var="Base", mode="standard")
+        assert len(specs) == 6  # 2 targets × 3 variations
+
+    def test_each_variation_inherits_its_own_base_cfg(self):
+        from sweep import build_mlp_variation_specs
+        specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
+                                          seed=42, var="Base", mode="standard")
+        champ_specs = [c for (_, name, c) in specs if "K=1" in name]
+        chall_specs = [c for (_, name, c) in specs if "K=3" in name]
+        assert len(champ_specs) == 3
+        assert len(chall_specs) == 3
+        assert all(c.sgc_k == 1 and not c.use_directional_prop for c in champ_specs)
+        assert all(c.sgc_k == 3 and c.use_directional_prop for c in chall_specs)
+
+    def test_mega_mode_qualifies_sweep_key_with_seed_and_var(self):
+        from sweep import build_mlp_variation_specs
+        specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
+                                          seed=43, var="PCA", mode="mega")
+        assert all("(Seed 43, Var PCA)" in key for (key, _, _) in specs)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Walk-forward window invariant — training must never see calib (τ-1) or τ.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestWalkForwardBlocks:
+    """
+    The temporal walk-forward window for step τ must train on [..τ-2], calibrate
+    on τ-1, and test on τ. A single helper enforces this so both the LSTM and EMA
+    evaluators cannot drift apart.
+    """
+
+    def test_train_block_excludes_calib_and_tau(self):
+        from source.evaluation.temporal_validation import _walk_forward_blocks
+        steps = list(range(1, 50))
+        train_block, calib_step = _walk_forward_blocks(steps, tau=43)
+        assert calib_step == 42
+        assert max(train_block) == 41
+        assert 42 not in train_block and 43 not in train_block
+
+    def test_invariant_holds_for_all_test_steps(self):
+        from source.evaluation.temporal_validation import _walk_forward_blocks
+        steps = list(range(1, 50))
+        for tau in range(35, 50):
+            train_block, calib_step = _walk_forward_blocks(steps, tau)
+            assert calib_step == tau - 1
+            assert all(t < tau - 1 for t in train_block)
+
+    def test_skips_missing_steps(self):
+        from source.evaluation.temporal_validation import _walk_forward_blocks
+        steps = [1, 2, 5, 6, 7]  # 3 and 4 absent
+        train_block, calib_step = _walk_forward_blocks(steps, tau=7)
+        assert calib_step == 6
+        assert train_block == [1, 2, 5]  # 3,4 missing; 6 (calib) and 7 (τ) excluded

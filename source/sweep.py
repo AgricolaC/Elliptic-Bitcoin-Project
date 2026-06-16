@@ -108,6 +108,35 @@ def _make_result(
     return result
 
 
+def build_mlp_variation_specs(targets, mlp_variations, seed, var, mode):
+    """Expand (target × MLP variation) into a flat list of sweep specs.
+
+    Returns a list of (sweep_key, name, cfg) tuples — one per variation per
+    target — so Phase 2.5 tunes the MLP head on every target (Champion AND
+    Challenger), not just the last one.
+    """
+    specs = []
+    for base_cfg, base_key, target_role in targets:
+        clean_prefix = base_key.replace("Grid: ", "").split(" (Seed")[0]
+        for var_name, var_settings in mlp_variations:
+            cfg_tuned = Config(
+                use_mlp_head=True,
+                use_multiscale_prop=base_cfg.use_multiscale_prop,
+                sgc_k=base_cfg.sgc_k,
+                use_directional_prop=base_cfg.use_directional_prop,
+                use_graph_structural=base_cfg.use_graph_structural,
+                topo_injection_mode=base_cfg.topo_injection_mode,
+                seed=base_cfg.seed,
+                mlp_hidden=var_settings["mlp_hidden"],
+                use_layernorm=False,
+                use_residual=var_settings["use_residual"],
+            )
+            name = f"MLP-{var_name} [{clean_prefix}]"
+            sweep_key = f"{name} (Seed {seed}, Var {var})" if mode == "mega" else name
+            specs.append((sweep_key, name, cfg_tuned))
+    return specs
+
+
 def run_single_sweep(
     name: str,
     cfg: Config,
@@ -873,24 +902,12 @@ def main():
                     ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True})
                 ]
 
-                for base_cfg, base_key, target_role in targets:
+                for _, base_key, target_role in targets:
                     clean_prefix = base_key.replace("Grid: ", "").split(" (Seed")[0]
                     print(f"Running MLP variations for {target_role} ({clean_prefix})...")
-                for var_name, var_settings in mlp_variations:
-                    cfg_tuned = Config(
-                        use_mlp_head=True,
-                        use_multiscale_prop=base_cfg.use_multiscale_prop,
-                        sgc_k=base_cfg.sgc_k,
-                        use_directional_prop=base_cfg.use_directional_prop,
-                        use_graph_structural=base_cfg.use_graph_structural,
-                        topo_injection_mode=base_cfg.topo_injection_mode,
-                        seed=base_cfg.seed,
-                        mlp_hidden=var_settings["mlp_hidden"],
-                        use_layernorm=False,
-                        use_residual=var_settings["use_residual"]
-                    )
-                    name = f"MLP-{var_name} [{clean_prefix}]"
-                    sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
+
+                specs = build_mlp_variation_specs(targets, mlp_variations, seed, var, args.mode)
+                for sweep_key, name, cfg_tuned in specs:
                     execute_sweep(sweep_key, name, cfg_tuned, var)
                     all_configs_run[sweep_key] = cfg_tuned
             
