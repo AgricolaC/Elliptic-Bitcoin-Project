@@ -1022,7 +1022,8 @@ def main():
             pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
 
 
-    pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+    df_res = pd.DataFrame(results, columns=list(_RESULT_KEYS))
+    df_res.to_csv(out_file, index=False)
     print(f"\nResults saved to {out_file}")
 
     # Verify no NaN from key mismatch (W5 guard)
