@@ -38,6 +38,26 @@ def _find_best_f1_threshold(y_true: np.ndarray, scores: np.ndarray) -> float:
     return float(thresholds[np.argmax(f1s)])
 
 
+def _calibrate_threshold(y_cal: np.ndarray, s_cal: np.ndarray,
+                         global_illicit_rate: float, epsilon: int = 10) -> Tuple[float, bool]:
+    """Pick the operating threshold from the calibration step.
+
+    Under prevalence collapse (the τ=43 regime shift) the calibration step can
+    have almost no positives, making the supervised F1-threshold pure noise
+    (World C). When the calibration step has fewer than ``epsilon`` positives,
+    fall back to an UNSUPERVISED quantile: the ``1 - global_illicit_rate``
+    quantile of the calibration score distribution (i.e. predict the top
+    global-base-rate fraction as illicit).
+
+    Returns ``(threshold, fallback_fired)``.
+    """
+    n_pos = int((y_cal == 1).sum())
+    if n_pos < epsilon:
+        q = float(np.quantile(s_cal, 1.0 - global_illicit_rate))
+        return q, True
+    return float(_find_best_f1_threshold(y_cal, s_cal)), False
+
+
 def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.ndarray], score_list: List[np.ndarray]) -> Tuple[float, float, float, float, float]:
     """
     Compute pooled and macro-averaged walk-forward metrics.

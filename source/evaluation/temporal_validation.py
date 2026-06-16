@@ -6,7 +6,17 @@ from sklearn.metrics import f1_score, average_precision_score
 
 from config import Config
 from models.temporal_head import SnapshotEmbedder, TemporalLSTM, SnapshotEMA, LSTMConditionedHead
-from evaluation.validation import _compute_class_weights, _find_best_f1_threshold, _aggregate_walk_forward
+from evaluation.validation import _compute_class_weights, _find_best_f1_threshold, _aggregate_walk_forward, _calibrate_threshold
+
+
+def _train_illicit_rate(dm, cfg):
+    """Global illicit base rate over the training window (for the ε-fallback)."""
+    ys = [dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]].numpy()
+          for t in cfg.train_steps if t in dm.graphs]
+    if not ys:
+        return 0.5
+    y = np.concatenate(ys)
+    return float((y == 1).mean()) if len(y) else 0.5
 from models.classifier import build_loss
 
 
@@ -27,21 +37,36 @@ def _walk_forward_blocks(available_steps, tau):
     return train_block, calib_step
 
 
-def _filtered_state(embedder, temporal, steps, dm, device):
-    """Return the *filtering* hidden state for the last step in ``steps``.
+def _onestep_blocks(available_steps, tau):
+    """One-step-ahead walk-forward blocks for step ``tau``.
 
-    Runs the (label-free) snapshot embedder over ``steps`` in order, passes the
-    sequence through ``temporal`` (TemporalLSTM or SnapshotEMA — identical
-    ``(T, D) -> (T, H)`` interface), and returns the hidden state AFTER consuming
-    the final step. Steps absent from ``dm.graphs`` are skipped.
+    Returns ``(train_block, calib_step, calib_state_steps, infer_state_steps)``.
 
-    DESIGN — Filtering, not one-step-ahead. The returned state deliberately
-    incorporates the final step's own snapshot embedding so we classify a
-    snapshot using the most up-to-date structural information available at that
-    snapshot. Because snapshot embeddings use NO labels, this folds in no target
-    information — it is sound filtering, not leakage. Calibration (classifying
-    τ-1) and test (classifying τ) both call this with the step-to-classify as the
-    final element, so they use an identical construction.
+    DESIGN — One-step-ahead (P0a). The hidden state that classifies a step is
+    built ONLY from steps strictly before it, so the model never sees the
+    snapshot it is scoring (removes the self-conditioning confound, review #2):
+      - ``infer_state_steps`` classifies τ   = train_block + [calib_step]  (excludes τ)
+      - ``calib_state_steps`` classifies τ-1 = train_block                 (excludes τ-1)
+    Shared by the LSTM and EMA evaluators so their windows cannot drift apart.
+    """
+    train_block, calib_step = _walk_forward_blocks(available_steps, tau)
+    calib_state_steps = list(train_block)
+    infer_state_steps = train_block + [calib_step]
+    assert tau not in infer_state_steps, f"τ={tau} leaked into the state that classifies τ"
+    assert calib_step not in calib_state_steps, \
+        f"calib step {calib_step} leaked into the state that classifies τ-1"
+    return train_block, calib_step, calib_state_steps, infer_state_steps
+
+
+def _temporal_state(embedder, temporal, steps, dm, device):
+    """Run the (label-free) embedder over ``steps`` in order, pass the sequence
+    through ``temporal`` (TemporalLSTM or SnapshotEMA — identical
+    ``(T, D) -> (T, H)`` interface), and return the hidden state after the last
+    step. Steps absent from ``dm.graphs`` are skipped.
+
+    One-step-ahead: callers pass the history EXCLUDING the step being classified
+    (see ``_onestep_blocks``), so the returned state never incorporates the
+    scored snapshot's own embedding.
     """
     embeddings = [embedder(dm.graphs[t]["prop"].to(device)) for t in steps if t in dm.graphs]
     hidden_states = temporal(torch.stack(embeddings))
@@ -144,9 +169,10 @@ def walk_forward_lstm_conditioned(
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of LSTM conditioned head."""
     y_true_all, y_pred_all, s_pred_all = [], [], []
+    global_illicit_rate = _train_illicit_rate(dm, cfg)
 
     for tau in cfg.test_steps:
-        train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
+        train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
 
         if not train_block: continue
 
@@ -165,7 +191,7 @@ def walk_forward_lstm_conditioned(
         head.eval()
 
         threshold = 0.5
-        # Calibrate threshold on tau-1 (filtering: state includes tau-1's embedding)
+        # Calibrate threshold on tau-1 (one-step-ahead: state excludes tau-1)
         if calib_step in dm.graphs:
             g_cal = dm.graphs[calib_step]
             m_cal = g_cal["labeled_mask"]
@@ -173,14 +199,15 @@ def walk_forward_lstm_conditioned(
                 y_cal = g_cal["y"][m_cal].numpy()
                 if len(np.unique(y_cal)) >= 2:
                     with torch.no_grad():
-                        h_cal = _filtered_state(embedder, lstm, train_block + [calib_step], dm, device)
+                        h_cal = _temporal_state(embedder, lstm, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold = _find_best_f1_threshold(y_cal, s_cal)
+                    threshold, _fallback_fired = _calibrate_threshold(
+                        y_cal, s_cal, global_illicit_rate)
 
-        # Test on tau (filtering: state includes tau's own embedding — see _filtered_state)
+        # Test on tau (one-step-ahead: state excludes tau — see _onestep_blocks)
         with torch.no_grad():
-            h_tau = _filtered_state(embedder, lstm, train_block + [calib_step, tau], dm, device)
+            h_tau = _temporal_state(embedder, lstm, infer_state, dm, device)
             logits_te = head(g["prop"][m].to(device), h_tau)
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
 
@@ -265,9 +292,10 @@ def walk_forward_ema_conditioned(
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of EMA conditioned head."""
     y_true_all, y_pred_all, s_pred_all = [], [], []
+    global_illicit_rate = _train_illicit_rate(dm, cfg)
 
     for tau in cfg.test_steps:
-        train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
+        train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
 
         if not train_block: continue
 
@@ -285,7 +313,7 @@ def walk_forward_ema_conditioned(
         head.eval()
 
         threshold = 0.5
-        # Calibrate threshold on tau-1 (filtering: state includes tau-1's embedding)
+        # Calibrate threshold on tau-1 (one-step-ahead: state excludes tau-1)
         if calib_step in dm.graphs:
             g_cal = dm.graphs[calib_step]
             m_cal = g_cal["labeled_mask"]
@@ -293,14 +321,15 @@ def walk_forward_ema_conditioned(
                 y_cal = g_cal["y"][m_cal].numpy()
                 if len(np.unique(y_cal)) >= 2:
                     with torch.no_grad():
-                        h_cal = _filtered_state(embedder, ema, train_block + [calib_step], dm, device)
+                        h_cal = _temporal_state(embedder, ema, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold = _find_best_f1_threshold(y_cal, s_cal)
+                    threshold, _fallback_fired = _calibrate_threshold(
+                        y_cal, s_cal, global_illicit_rate)
 
-        # Test on tau (filtering: state includes tau's own embedding — see _filtered_state)
+        # Test on tau (one-step-ahead: state excludes tau — see _onestep_blocks)
         with torch.no_grad():
-            h_tau = _filtered_state(embedder, ema, train_block + [calib_step, tau], dm, device)
+            h_tau = _temporal_state(embedder, ema, infer_state, dm, device)
             logits_te = head(g["prop"][m].to(device), h_tau)
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
 

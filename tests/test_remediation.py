@@ -692,3 +692,136 @@ class TestWalkForwardBlocks:
         train_block, calib_step = _walk_forward_blocks(steps, tau=7)
         assert calib_step == 6
         assert train_block == [1, 2, 5]  # 3,4 missing; 6 (calib) and 7 (τ) excluded
+
+
+class TestOneStepAheadBlocks:
+    """
+    P0a — De-confound the thesis: the hidden state that classifies step S must be
+    built ONLY from steps strictly before S (one-step-ahead), so the model never
+    sees the snapshot it is scoring. This removes the self-conditioning confound
+    (review #2). The SAME helper drives both the LSTM and EMA evaluators.
+
+    Convention: _onestep_blocks returns
+        (train_block, calib_step, calib_state_steps, infer_state_steps)
+    where calib_state_steps classifies τ-1 (so excludes τ-1) and infer_state_steps
+    classifies τ (so excludes τ).
+    """
+
+    def test_inference_state_excludes_tau(self):
+        from source.evaluation.temporal_validation import _onestep_blocks
+        steps = list(range(1, 50))
+        _, _, calib_state, infer_state = _onestep_blocks(steps, tau=43)
+        assert 43 not in infer_state          # τ excluded from the state that classifies τ
+        assert max(infer_state) == 42         # state runs up to τ-1 only
+
+    def test_calibration_state_excludes_calib_step(self):
+        from source.evaluation.temporal_validation import _onestep_blocks
+        steps = list(range(1, 50))
+        _, calib_step, calib_state, _ = _onestep_blocks(steps, tau=43)
+        assert calib_step == 42
+        assert 42 not in calib_state          # τ-1 excluded from the state that classifies τ-1
+        assert max(calib_state) == 41
+
+    def test_both_states_one_step_apart_for_all_tau(self):
+        from source.evaluation.temporal_validation import _onestep_blocks
+        steps = list(range(1, 50))
+        for tau in range(35, 50):
+            _, calib_step, calib_state, infer_state = _onestep_blocks(steps, tau)
+            # inference state = calibration state + the calib step (one step further)
+            assert infer_state == calib_state + [calib_step]
+            assert tau not in infer_state and calib_step not in calib_state
+
+
+class TestSnapshotTopology:
+    """P0a — ground-truth snapshot topology, computed from raw data only."""
+
+    def _toy(self):
+        rows = []
+        txid = 0
+        # ts -> (n_illicit, n_licit, n_unknown)
+        for t, (ni, nl, nu) in {1: (4, 4, 2), 2: (0, 5, 5), 3: (3, 3, 0)}.items():
+            for lab, cnt in ((1, ni), (0, nl), (-1, nu)):
+                for _ in range(cnt):
+                    rows.append({"txId": txid, "ts": t, "label": lab}); txid += 1
+        df = pd.DataFrame(rows)
+        df_edge = pd.DataFrame({"txId1": [0, 1], "txId2": [1, 2]})  # 2 edges in ts=1
+        return df, df_edge
+
+    def test_schema_and_counts(self):
+        from source.data.snapshot_topology import build_snapshot_topology
+        out = build_snapshot_topology(*self._toy())
+        required = {"Tau", "N_nodes", "N_edges", "N_illicit", "N_licit", "N_unknown",
+                    "N_labeled", "Illicit_Rate", "Mean_Degree", "Graph_Density", "Regime"}
+        assert required.issubset(set(out.columns))
+        r1 = out[out.Tau == 1].iloc[0]
+        assert r1.N_illicit == 4 and r1.N_licit == 4 and r1.N_unknown == 2
+        assert r1.N_labeled == 8 and abs(r1.Illicit_Rate - 0.5) < 1e-9
+        assert r1.N_edges == 2
+
+    def test_regime_labels(self):
+        from source.data.snapshot_topology import build_snapshot_topology
+        rows, txid = [], 0
+        for t in (42, 43, 44):
+            for _ in range(3):
+                rows.append({"txId": txid, "ts": t, "label": 0}); txid += 1
+        out = build_snapshot_topology(pd.DataFrame(rows),
+                                      pd.DataFrame({"txId1": [], "txId2": []}))
+        reg = dict(zip(out.Tau, out.Regime))
+        assert reg[42] == "pre_shock" and reg[43] == "shock" and reg[44] == "recovery"
+
+
+class TestEpsilonFallback:
+    """P0c — when the calibration step has < ε positives, the supervised
+    F1-threshold is unreliable; fall back to an unsupervised quantile."""
+
+    def test_fallback_fires_under_few_positives(self):
+        from source.evaluation.validation import _calibrate_threshold
+        y_cal = np.array([1, 1, 1] + [0] * 97)          # 3 positives < ε=10
+        s_cal = np.linspace(0.0, 1.0, 100)
+        thr, fired = _calibrate_threshold(y_cal, s_cal, global_illicit_rate=0.1, epsilon=10)
+        assert fired is True
+        assert abs(thr - np.quantile(s_cal, 0.9)) < 1e-9   # 1 - 0.1 quantile
+
+    def test_fallback_silent_with_enough_positives(self):
+        from source.evaluation.validation import _calibrate_threshold
+        y_cal = np.array([1] * 20 + [0] * 80)            # 20 positives >= ε
+        s_cal = np.linspace(0.0, 1.0, 100)
+        _, fired = _calibrate_threshold(y_cal, s_cal, global_illicit_rate=0.1, epsilon=10)
+        assert fired is False
+
+
+class TestPagerankAudit:
+    """P0e — is the PageRank feature actually alive under early injection?"""
+
+    def _early_dm(self):
+        from config import Config
+        from data.build_graph import EllipticDataModule
+        n_nodes, n_ts, n_feat = 40, 5, 6
+        rng = np.random.default_rng(1)
+        rows, edge_rows = [], []
+        for t in range(1, n_ts + 1):
+            ids = [t * 1000 + i for i in range(n_nodes)]
+            for i in range(n_nodes):
+                row = {"txId": ids[i], "ts": t, "label": rng.choice([0, 1, -1])}
+                for f in range(n_feat):
+                    row[f"f{f}"] = rng.normal()
+                rows.append(row)
+            # hub-and-spoke so PageRank genuinely varies across nodes
+            for i in range(1, n_nodes):
+                edge_rows.append({"txId1": ids[0], "txId2": ids[i]})
+        df = pd.DataFrame(rows)
+        feature_cols = [f"f{f}" for f in range(n_feat)]
+        cfg = Config(train_steps=range(1, 4), test_steps=range(4, 6),
+                     use_graph_structural=True, topo_injection_mode="early")
+        dm = EllipticDataModule(df, pd.DataFrame(edge_rows), feature_cols, cfg)
+        dm.setup()
+        return dm, cfg, n_feat
+
+    def test_pagerank_column_has_variance_under_early_injection(self):
+        dm, cfg, n_feat = self._early_dm()
+        # early injection appends [pagerank, clustering] right after the n_feat base cols
+        Xs = np.concatenate([dm.graphs[t]["x"].numpy() for t in cfg.train_steps])
+        pagerank_col = Xs[:, n_feat]
+        assert pagerank_col.std() > 0.01, (
+            f"PageRank column appears dead (std={pagerank_col.std():.4g}) under early injection"
+        )

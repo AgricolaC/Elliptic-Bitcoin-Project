@@ -1,0 +1,6 @@
+Test_ID,Test_Name,World_Eliminated,Readout_Metric,Decision_Rule,Observed_Value,Verdict,Sweep_Refs,Notes
+F0a,Snapshot ground truth + τ=43 illicit collapse,none (ground truth),N_illicit[43] / N_illicit[42],N_illicit[43] < N_illicit[42] / 5,0.1004,PASS,,"N_illicit: τ42=239, τ43=24"
+F0b,"Self-conditioning fixed (one-step-ahead, exclude τ)",World C-confound,test passes,inference state excludes τ; calib state excludes τ-1,1.0,PASS,,tests/test_remediation.py::TestOneStepAheadBlocks
+F0c,ε-fallback threshold under prevalence collapse,enables World-C isolation,test passes,fallback fires when calib positives < ε=10,1.0,PASS,,tests/test_remediation.py::TestEpsilonFallback
+F0d,Label masking: y=-1 excluded from loss,measurement validity,test passes,perturbing masked labels leaves trained head identical,1.0,PASS,,tests/test_remediation.py::TestTemporalModels::test_temporal_loss_respects_labeled_mask
+F0e,PageRank feature alive under early injection,feeds F4a interpretation,test passes,PageRank column std > 0.01 across nodes,1.0,PASS,,tests/test_remediation.py::TestPagerankAudit

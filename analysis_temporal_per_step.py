@@ -30,7 +30,7 @@ from data.load_dataset import download_and_load_data
 from data.build_graph import EllipticDataModule
 from evaluation.temporal_validation import (
     train_lstm_conditioned, train_ema_conditioned,
-    _walk_forward_blocks, _filtered_state,
+    _onestep_blocks, _temporal_state,
 )
 from evaluation.validation import _find_best_f1_threshold
 
@@ -43,7 +43,7 @@ def _per_step(dm, cfg, device, epochs, embed_dim, kind):
     """
     rows = []
     for tau in cfg.test_steps:
-        train_block, calib_step = _walk_forward_blocks(dm.graphs, tau)
+        train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
         if not train_block:
             continue
 
@@ -75,14 +75,14 @@ def _per_step(dm, cfg, device, epochs, embed_dim, kind):
                 y_cal = g_cal["y"][m_cal].numpy()
                 if len(np.unique(y_cal)) >= 2:
                     with torch.no_grad():
-                        h_cal = _filtered_state(embedder, temporal, train_block + [calib_step], dm, device)
+                        h_cal = _temporal_state(embedder, temporal, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
                     threshold = _find_best_f1_threshold(y_cal, s_cal)
 
-        # Test on tau (filtering state includes tau itself, per the design)
+        # Test on tau (one-step-ahead: state excludes tau)
         with torch.no_grad():
-            h_tau = _filtered_state(embedder, temporal, train_block + [calib_step, tau], dm, device)
+            h_tau = _temporal_state(embedder, temporal, infer_state, dm, device)
             logits_te = head(g["prop"][m].to(device), h_tau)
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
 
