@@ -1,0 +1,76 @@
+Sweep,Seed,Tau,N_labeled,N_illicit,N_licit,Low_Confidence,Regime,Train_Window_Size,Calib_Threshold,Calib_Fallback,F1,PRAUC,Precision,Recall,Selfcond_Bug
+F1: Base XGBoost WF [v2],42,35,1341,182,1159,False,pre_shock,33,0.4451,False,0.9568,0.9932,0.9415,0.9725,fixed
+F1: Base XGBoost WF [v2],42,36,1708,33,1675,False,pre_shock,34,0.9076,False,0.9697,0.9983,0.9697,0.9697,fixed
+F1: Base XGBoost WF [v2],42,37,498,40,458,False,pre_shock,35,0.913,False,0.75,0.9156,1.0,0.6,fixed
+F1: Base XGBoost WF [v2],42,38,756,111,645,False,pre_shock,36,0.0703,False,0.9395,0.9588,0.9712,0.9099,fixed
+F1: Base XGBoost WF [v2],42,39,1183,81,1102,False,pre_shock,37,0.6123,False,0.8844,0.9618,0.9848,0.8025,fixed
+F1: Base XGBoost WF [v2],42,40,1211,112,1099,False,pre_shock,38,0.3863,False,0.7739,0.7936,0.8851,0.6875,fixed
+F1: Base XGBoost WF [v2],42,41,1132,116,1016,False,pre_shock,39,0.4995,False,0.9565,0.9704,0.9649,0.9483,fixed
+F1: Base XGBoost WF [v2],42,42,2154,239,1915,False,pre_shock,40,0.7114,False,0.8767,0.9273,0.9648,0.8033,fixed
+F1: Base XGBoost WF [v2],42,43,1370,24,1346,False,shock,41,0.734,False,0.0,0.1732,0.0,0.0,fixed
+F1: Base XGBoost WF [v2],42,44,1591,24,1567,False,recovery,42,0.0919,False,0.274,0.1872,0.2041,0.4167,fixed
+F1: Base XGBoost WF [v2],42,45,1221,5,1216,True,recovery,43,0.1581,False,0.0,0.048,0.0,0.0,fixed
+F1: Base XGBoost WF [v2],42,46,712,2,710,True,recovery,44,0.0069,True,0.0635,0.5233,0.0328,1.0,fixed
+F1: Base XGBoost WF [v2],42,47,846,22,824,False,recovery,45,0.0066,True,0.2516,0.5067,0.146,0.9091,fixed
+F1: Base XGBoost WF [v2],42,48,471,36,435,False,recovery,46,0.0724,False,0.4364,0.564,0.6316,0.3333,fixed
+F1: Base XGBoost WF [v2],42,49,476,56,420,False,recovery,47,0.268,False,0.7692,0.9845,1.0,0.625,fixed
+F1: Temporal XGBoost WF [v2],42,35,1341,182,1159,False,pre_shock,33,0.7526,False,0.9697,0.9932,0.9724,0.967,fixed
+F1: Temporal XGBoost WF [v2],42,36,1708,33,1675,False,pre_shock,34,0.802,False,0.9706,0.9982,0.9429,1.0,fixed
+F1: Temporal XGBoost WF [v2],42,37,498,40,458,False,pre_shock,35,0.7508,False,0.7879,0.9153,1.0,0.65,fixed
+F1: Temporal XGBoost WF [v2],42,38,756,111,645,False,pre_shock,36,0.0396,False,0.9266,0.9618,0.9439,0.9099,fixed
+F1: Temporal XGBoost WF [v2],42,39,1183,81,1102,False,pre_shock,37,0.6934,False,0.8904,0.9659,1.0,0.8025,fixed
+F1: Temporal XGBoost WF [v2],42,40,1211,112,1099,False,pre_shock,38,0.3043,False,0.7739,0.7857,0.8851,0.6875,fixed
+F1: Temporal XGBoost WF [v2],42,41,1132,116,1016,False,pre_shock,39,0.5232,False,0.9604,0.9725,0.982,0.9397,fixed
+F1: Temporal XGBoost WF [v2],42,42,2154,239,1915,False,pre_shock,40,0.7195,False,0.8811,0.9189,0.9947,0.7908,fixed
+F1: Temporal XGBoost WF [v2],42,43,1370,24,1346,False,shock,41,0.6689,False,0.0,0.2185,0.0,0.0,fixed
+F1: Temporal XGBoost WF [v2],42,44,1591,24,1567,False,recovery,42,0.0391,False,0.1778,0.1307,0.1081,0.5,fixed
+F1: Temporal XGBoost WF [v2],42,45,1221,5,1216,True,recovery,43,0.2342,False,0.0,0.0238,0.0,0.0,fixed
+F1: Temporal XGBoost WF [v2],42,46,712,2,710,True,recovery,44,0.0097,True,0.0909,0.5303,0.0476,1.0,fixed
+F1: Temporal XGBoost WF [v2],42,47,846,22,824,False,recovery,45,0.0073,True,0.2721,0.455,0.16,0.9091,fixed
+F1: Temporal XGBoost WF [v2],42,48,471,36,435,False,recovery,46,0.103,False,0.4912,0.6186,0.6667,0.3889,fixed
+F1: Temporal XGBoost WF [v2],42,49,476,56,420,False,recovery,47,0.0999,False,0.78,0.8861,0.8864,0.6964,fixed
+F1: SGC+MLP static WF [v2],42,35,1341,182,1159,False,pre_shock,33,0.8313,False,0.9176,0.94,0.9176,0.9176,fixed
+F1: SGC+MLP static WF [v2],42,36,1708,33,1675,False,pre_shock,34,0.3692,False,0.5195,0.6305,0.4545,0.6061,fixed
+F1: SGC+MLP static WF [v2],42,37,498,40,458,False,pre_shock,35,0.8651,False,0.6333,0.8022,0.95,0.475,fixed
+F1: SGC+MLP static WF [v2],42,38,756,111,645,False,pre_shock,36,0.7306,False,0.9014,0.9593,0.9412,0.8649,fixed
+F1: SGC+MLP static WF [v2],42,39,1183,81,1102,False,pre_shock,37,0.5699,False,0.8462,0.905,0.88,0.8148,fixed
+F1: SGC+MLP static WF [v2],42,40,1211,112,1099,False,pre_shock,38,0.8872,False,0.7594,0.7894,0.9467,0.6339,fixed
+F1: SGC+MLP static WF [v2],42,41,1132,116,1016,False,pre_shock,39,0.6649,False,0.9058,0.9431,0.9439,0.8707,fixed
+F1: SGC+MLP static WF [v2],42,42,2154,239,1915,False,pre_shock,40,0.9691,False,0.8178,0.8248,0.9259,0.7322,fixed
+F1: SGC+MLP static WF [v2],42,43,1370,24,1346,False,shock,41,0.747,False,0.0,0.0363,0.0,0.0,fixed
+F1: SGC+MLP static WF [v2],42,44,1591,24,1567,False,recovery,42,0.2683,False,0.0645,0.0308,0.04,0.1667,fixed
+F1: SGC+MLP static WF [v2],42,45,1221,5,1216,True,recovery,43,0.5166,False,0.0,0.014,0.0,0.0,fixed
+F1: SGC+MLP static WF [v2],42,46,712,2,710,True,recovery,44,0.0059,True,0.0,0.0102,0.0,0.0,fixed
+F1: SGC+MLP static WF [v2],42,47,846,22,824,False,recovery,45,0.0749,True,0.0926,0.0722,0.0581,0.2273,fixed
+F1: SGC+MLP static WF [v2],42,48,471,36,435,False,recovery,46,0.0031,False,0.495,0.3543,0.3846,0.6944,fixed
+F1: SGC+MLP static WF [v2],42,49,476,56,420,False,recovery,47,0.0306,False,0.4667,0.4616,0.4375,0.5,fixed
+F1: SGC-LSTM WF [v2-fixed],42,35,1341,182,1159,False,pre_shock,33,0.1181,False,0.7404,0.5916,0.6284,0.9011,fixed
+F1: SGC-LSTM WF [v2-fixed],42,36,1708,33,1675,False,pre_shock,34,0.8145,False,0.4691,0.3308,0.3958,0.5758,fixed
+F1: SGC-LSTM WF [v2-fixed],42,37,498,40,458,False,pre_shock,35,0.942,False,0.5484,0.7455,0.7727,0.425,fixed
+F1: SGC-LSTM WF [v2-fixed],42,38,756,111,645,False,pre_shock,36,0.0006,False,0.6901,0.9456,0.5347,0.973,fixed
+F1: SGC-LSTM WF [v2-fixed],42,39,1183,81,1102,False,pre_shock,37,0.916,False,0.8143,0.8418,0.9661,0.7037,fixed
+F1: SGC-LSTM WF [v2-fixed],42,40,1211,112,1099,False,pre_shock,38,0.6987,False,0.7447,0.7908,0.9211,0.625,fixed
+F1: SGC-LSTM WF [v2-fixed],42,41,1132,116,1016,False,pre_shock,39,0.7109,False,0.8739,0.9283,0.9151,0.8362,fixed
+F1: SGC-LSTM WF [v2-fixed],42,42,2154,239,1915,False,pre_shock,40,0.9534,False,0.8309,0.8817,0.9829,0.7197,fixed
+F1: SGC-LSTM WF [v2-fixed],42,43,1370,24,1346,False,shock,41,0.7087,False,0.0,0.0326,0.0,0.0,fixed
+F1: SGC-LSTM WF [v2-fixed],42,44,1591,24,1567,False,recovery,42,0.0427,False,0.0491,0.0657,0.0288,0.1667,fixed
+F1: SGC-LSTM WF [v2-fixed],42,45,1221,5,1216,True,recovery,43,0.7719,False,0.0,0.0193,0.0,0.0,fixed
+F1: SGC-LSTM WF [v2-fixed],42,46,712,2,710,True,recovery,44,0.0034,True,0.0,0.0051,0.0,0.0,fixed
+F1: SGC-LSTM WF [v2-fixed],42,47,846,22,824,False,recovery,45,0.0111,True,0.1176,0.0621,0.0676,0.4545,fixed
+F1: SGC-LSTM WF [v2-fixed],42,48,471,36,435,False,recovery,46,0.0262,False,0.4225,0.3615,0.4286,0.4167,fixed
+F1: SGC-LSTM WF [v2-fixed],42,49,476,56,420,False,recovery,47,0.0008,False,0.5512,0.5038,0.493,0.625,fixed
+F1: SGC-EMA WF [v2-fixed],42,35,1341,182,1159,False,pre_shock,33,0.0869,False,0.7703,0.5996,0.6667,0.9121,fixed
+F1: SGC-EMA WF [v2-fixed],42,36,1708,33,1675,False,pre_shock,34,0.5279,False,0.451,0.261,0.3333,0.697,fixed
+F1: SGC-EMA WF [v2-fixed],42,37,498,40,458,False,pre_shock,35,0.9291,False,0.5846,0.7521,0.76,0.475,fixed
+F1: SGC-EMA WF [v2-fixed],42,38,756,111,645,False,pre_shock,36,0.0021,False,0.8154,0.9429,0.7114,0.955,fixed
+F1: SGC-EMA WF [v2-fixed],42,39,1183,81,1102,False,pre_shock,37,0.7871,False,0.8679,0.8987,0.8846,0.8519,fixed
+F1: SGC-EMA WF [v2-fixed],42,40,1211,112,1099,False,pre_shock,38,0.9819,False,0.6108,0.754,0.9273,0.4554,fixed
+F1: SGC-EMA WF [v2-fixed],42,41,1132,116,1016,False,pre_shock,39,0.654,False,0.8263,0.9029,0.9072,0.7586,fixed
+F1: SGC-EMA WF [v2-fixed],42,42,2154,239,1915,False,pre_shock,40,0.9657,False,0.7809,0.8664,0.981,0.6485,fixed
+F1: SGC-EMA WF [v2-fixed],42,43,1370,24,1346,False,shock,41,0.6514,False,0.0,0.0303,0.0,0.0,fixed
+F1: SGC-EMA WF [v2-fixed],42,44,1591,24,1567,False,recovery,42,0.0296,False,0.05,0.0721,0.0294,0.1667,fixed
+F1: SGC-EMA WF [v2-fixed],42,45,1221,5,1216,True,recovery,43,0.4274,False,0.0,0.0157,0.0,0.0,fixed
+F1: SGC-EMA WF [v2-fixed],42,46,712,2,710,True,recovery,44,0.0011,True,0.0,0.0054,0.0,0.0,fixed
+F1: SGC-EMA WF [v2-fixed],42,47,846,22,824,False,recovery,45,0.003,True,0.1287,0.076,0.0738,0.5,fixed
+F1: SGC-EMA WF [v2-fixed],42,48,471,36,435,False,recovery,46,0.0001,False,0.4274,0.297,0.3086,0.6944,fixed
+F1: SGC-EMA WF [v2-fixed],42,49,476,56,420,False,recovery,47,0.0787,False,0.2059,0.4961,0.5833,0.125,fixed
