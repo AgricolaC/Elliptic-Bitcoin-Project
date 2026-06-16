@@ -47,6 +47,17 @@ def _validate_temporal_edges(df: pd.DataFrame, df_edge: pd.DataFrame) -> None:
 
 import os, glob
 
+
+def _select_feature_cols(columns) -> List:
+    """Model feature columns = everything after txId, EXCLUDING the timestep.
+
+    The timestep ('ts') is the walk-forward split variable, not a feature. Used
+    as a model input it is a monotonic proxy for position in the test window
+    (a leak), so it is dropped here for every consumer of feature_cols.
+    """
+    return [c for c in list(columns)[1:] if c != "ts"]
+
+
 def download_and_load_data() -> Tuple[pd.DataFrame, pd.DataFrame, int, List[str]]:
     """Download and load Elliptic dataset from Kaggle."""
     import os
@@ -66,7 +77,7 @@ def download_and_load_data() -> Tuple[pd.DataFrame, pd.DataFrame, int, List[str]
     df_edge  = pd.read_csv(edge_path)
 
     df_feat = df_feat.rename(columns={0: "txId", 1: "ts"})
-    feature_cols = list(df_feat.columns[1:])
+    feature_cols = _select_feature_cols(df_feat.columns)
     
     class_map = {"1": 1, "2": 0, "unknown": -1}
     df_class["label"] = df_class["class"].astype(str).map(class_map)

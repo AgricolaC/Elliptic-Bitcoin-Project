@@ -2,9 +2,9 @@
 run_sweeps.py — Ablation sweep runner.
 
 W4 FIX: Expanded ablation matrix that isolates each mechanism independently.
-W5 FIX: All result dicts use the standardized key schema:
-         {"Sweep", "Static OOT F1", "Static OOT PR-AUC",
-          "Walk-Forward Mean F1", "Walk-Forward Mean PR-AUC"}
+W5 FIX: All result dicts use the standardized key schema (see _RESULT_KEYS).
+        v2 (CSV-1): regime-stratified WF columns (Pre43/Shock/Recovery, pooled +
+        macro), Threshold_Method, and Selfcond_Bug provenance.
 """
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -30,18 +30,28 @@ _RESULT_KEYS = (
     "Seed",
     "Variation",
     "Sweep",
-    "Feature Set",
-    "Threshold",
-    "Static Time (s)",
-    "Static Mem (MB)",
-    "Static Val F1",
-    "Static Val PR-AUC",
-    "Static OOT F1",
-    "Static OOT PR-AUC",
-    "WF Time (s)",
-    "WF Mem (MB)",
-    "Walk-Forward Mean F1",
-    "Walk-Forward Mean PR-AUC",
+    "Feature_Set",
+    "Threshold_Method",
+    "Static_Time_s",
+    "Static_Mem_MB",
+    "Static_Val_F1",
+    "Static_Val_PRAUC",
+    "Static_OOT_F1",
+    "Static_OOT_PRAUC",
+    "WF_Time_s",
+    "WF_Mem_MB",
+    "WF_Pooled_F1",
+    "WF_Pooled_PRAUC",
+    "WF_Macro_F1",
+    "WF_Macro_PRAUC",
+    "WF_Pre43_Pooled_F1",
+    "WF_Pre43_PRAUC",
+    "WF_Shock_F1",
+    "WF_Shock_PRAUC",
+    "WF_Recovery_Pooled_F1",
+    "WF_Recovery_PRAUC",
+    "Selfcond_Bug",
+    "Notes",
 )
 
 import tracemalloc
@@ -73,34 +83,60 @@ def _make_result(
     static_prauc: float | str,
     wf_time: float | str,
     wf_mem: float | str,
-    wf_f1: float | str,
+    wf_f1: float | str,            # back-compat: old "Walk-Forward Mean" → WF_Macro
     wf_prauc: float | str,
     feature_set: str = "N/A",
-    threshold: str = "0.5",
+    threshold: str = "0.5",        # back-compat alias for threshold_method
     val_f1: float | str = "N/A",
     val_prauc: float | str = "N/A",
+    # ── v2 schema additions (CSV-1) ──────────────────────────────────────────
+    threshold_method: str | None = None,
+    wf_pooled_f1: float | str = "N/A",
+    wf_pooled_prauc: float | str = "N/A",
+    wf_pre43_pooled_f1: float | str = "N/A",
+    wf_pre43_prauc: float | str = "N/A",
+    wf_shock_f1: float | str = "N/A",
+    wf_shock_prauc: float | str = "N/A",
+    wf_recovery_pooled_f1: float | str = "N/A",
+    wf_recovery_prauc: float | str = "N/A",
+    selfcond_bug: str = "fixed",
+    notes: str = "",
 ) -> dict:
     """
-    Construct a result dict with the standardized key schema (W5 fix).
-    P1-B: Now includes Feature Set, Threshold, Static Val F1/PR-AUC columns.
+    Construct a result dict with the standardized v2 key schema (CSV-1).
+
+    Back-compat: the legacy ``wf_f1``/``wf_prauc`` params (the old single
+    "Walk-Forward Mean") map to the MACRO columns; ``threshold`` aliases
+    ``threshold_method``. New regime-stratified columns default to "N/A".
+    ``selfcond_bug`` records provenance: "present" (pre-fix) | "fixed".
     Raises AssertionError if any key would be missing.
     """
     result = {
-        "Seed":                     seed,
-        "Variation":                variation,
-        "Sweep":                    sweep,
-        "Feature Set":              feature_set,
-        "Threshold":                threshold,
-        "Static Time (s)":          static_time,
-        "Static Mem (MB)":          static_mem,
-        "Static Val F1":            val_f1,
-        "Static Val PR-AUC":        val_prauc,
-        "Static OOT F1":            static_f1,
-        "Static OOT PR-AUC":        static_prauc,
-        "WF Time (s)":              wf_time,
-        "WF Mem (MB)":              wf_mem,
-        "Walk-Forward Mean F1":     wf_f1,
-        "Walk-Forward Mean PR-AUC": wf_prauc,
+        "Seed":                  seed,
+        "Variation":             variation,
+        "Sweep":                 sweep,
+        "Feature_Set":           feature_set,
+        "Threshold_Method":      threshold_method if threshold_method is not None else threshold,
+        "Static_Time_s":         static_time,
+        "Static_Mem_MB":         static_mem,
+        "Static_Val_F1":         val_f1,
+        "Static_Val_PRAUC":      val_prauc,
+        "Static_OOT_F1":         static_f1,
+        "Static_OOT_PRAUC":      static_prauc,
+        "WF_Time_s":             wf_time,
+        "WF_Mem_MB":             wf_mem,
+        "WF_Pooled_F1":          wf_pooled_f1,
+        "WF_Pooled_PRAUC":       wf_pooled_prauc,
+        "WF_Macro_F1":           wf_f1,
+        "WF_Macro_PRAUC":        wf_prauc,
+        "WF_Pre43_Pooled_F1":    wf_pre43_pooled_f1,
+        "WF_Pre43_PRAUC":        wf_pre43_prauc,
+        "WF_Shock_F1":           wf_shock_f1,
+        "WF_Shock_PRAUC":        wf_shock_prauc,
+        "WF_Recovery_Pooled_F1": wf_recovery_pooled_f1,
+        "WF_Recovery_PRAUC":     wf_recovery_prauc,
+        "Selfcond_Bug":          selfcond_bug,
+        "Notes":                 notes,
     }
     # SHAPE GUARD: verify key completeness on every call
     assert set(result.keys()) == set(_RESULT_KEYS), \
@@ -862,7 +898,7 @@ def main():
                 all_configs_run[sweep_key] = cfg
                 if res and not args.only_wf:
                     # P0-C: Select on val F1, NOT test OOT F1
-                    f1_val = res.get("Static Val F1", 0.0)
+                    f1_val = res.get("Static_Val_F1", 0.0)
                     if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_grid_f1:
                         best_grid_f1 = f1_val
                         best_grid_key = sweep_key
@@ -920,9 +956,9 @@ def main():
     for r in results:
         # Check if it's an SGC sweep and has valid F1 (including MLP variants)
         if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"] or "MLP-" in r["Sweep"]):
-            f1_val = r.get("Static Val F1", "")
+            f1_val = r.get("Static_Val_F1", "")
             if f1_val == "" or pd.isna(f1_val):
-                f1_val = r.get("Static OOT F1", 0.0)
+                f1_val = r.get("Static_OOT_F1", 0.0)
             if f1_val == "" or pd.isna(f1_val):
                 f1_val = 0.0
             f1_val = float(f1_val)
@@ -1037,8 +1073,8 @@ def main():
     for r in results:
         print(
             f"{r['Sweep']:35s} | "
-            f"Stat [Time:{str(r['Static Time (s)']):>5s}s, Mem:{str(r['Static Mem (MB)']):>5s}MB] F1={str(r['Static OOT F1']):<5s} | "
-            f"WF [Time:{str(r['WF Time (s)']):>5s}s, Mem:{str(r['WF Mem (MB)']):>5s}MB] F1={str(r['Walk-Forward Mean F1']):<5s}"
+            f"Stat [Time:{str(r['Static_Time_s']):>5s}s, Mem:{str(r['Static_Mem_MB']):>5s}MB] F1={str(r['Static_OOT_F1']):<5s} | "
+            f"WF [Time:{str(r['WF_Time_s']):>5s}s, Mem:{str(r['WF_Mem_MB']):>5s}MB] F1={str(r['WF_Macro_F1']):<5s}"
         )
 
 

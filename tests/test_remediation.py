@@ -369,21 +369,12 @@ class TestSweepResultKeyStandardization:
     """W5: All result dicts returned by sweeps must use identical metric key names."""
 
     REQUIRED_KEYS = {
-        "Seed",
-        "Variation",
-        "Sweep",
-        "Feature Set",
-        "Threshold",
-        "Static Time (s)",
-        "Static Mem (MB)",
-        "Static Val F1",
-        "Static Val PR-AUC",
-        "Static OOT F1",
-        "Static OOT PR-AUC",
-        "WF Time (s)",
-        "WF Mem (MB)",
-        "Walk-Forward Mean F1",
-        "Walk-Forward Mean PR-AUC",
+        "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
+        "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
+        "Static_OOT_F1", "Static_OOT_PRAUC", "WF_Time_s", "WF_Mem_MB",
+        "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
+        "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC", "WF_Shock_F1", "WF_Shock_PRAUC",
+        "WF_Recovery_Pooled_F1", "WF_Recovery_PRAUC", "Selfcond_Bug", "Notes",
     }
 
     def _check_keys(self, result: dict, source: str):
@@ -825,3 +816,85 @@ class TestPagerankAudit:
         assert pagerank_col.std() > 0.01, (
             f"PageRank column appears dead (std={pagerank_col.std():.4g}) under early injection"
         )
+
+
+class TestStratifiedWFMetrics:
+    """F1 foundation: walk-forward metrics stratified into pre_shock(τ≤42) /
+    shock(τ=43) / recovery(τ≥44), pooled + macro, threshold-free PRAUC primary,
+    with Low_Confidence flagging for τ with < 10 illicit."""
+
+    def _records(self):
+        return [
+            {"tau": 41, "y_true": np.array([1, 1, 0, 0, 1, 0]), "scores": np.array([.9, .8, .1, .2, .7, .3])},
+            {"tau": 43, "y_true": np.array([1, 0, 0, 0]),       "scores": np.array([.6, .4, .3, .2])},
+            {"tau": 46, "y_true": np.array([1, 0, 0]),          "scores": np.array([.55, .45, .1])},
+        ]
+
+    def test_regime_labels_and_low_confidence(self):
+        from source.evaluation.wf_metrics import stratified_wf_metrics
+        agg, rows = stratified_wf_metrics(self._records())
+        rmap = {r["Tau"]: r for r in rows}
+        assert rmap[41]["Regime"] == "pre_shock"
+        assert rmap[43]["Regime"] == "shock"
+        assert rmap[46]["Regime"] == "recovery"
+        assert all(r["Low_Confidence"] for r in rows)          # all have <10 illicit
+        assert rmap[41]["N_illicit"] == 3 and rmap[41]["N_labeled"] == 6
+
+    def test_aggregate_has_regime_stratified_keys(self):
+        from source.evaluation.wf_metrics import stratified_wf_metrics
+        agg, _ = stratified_wf_metrics(self._records())
+        for k in ("WF_Pooled_PRAUC", "WF_Macro_PRAUC", "WF_Pre43_PRAUC",
+                  "WF_Shock_PRAUC", "WF_Recovery_PRAUC", "WF_Pooled_F1"):
+            assert k in agg
+
+    def test_pre43_pool_excludes_shock_and_recovery(self):
+        from source.evaluation.wf_metrics import stratified_wf_metrics
+        from sklearn.metrics import average_precision_score
+        recs = self._records()
+        agg, _ = stratified_wf_metrics(recs)
+        # pre43 pool = only τ=41 here
+        expected = average_precision_score(recs[0]["y_true"], recs[0]["scores"])
+        assert abs(agg["WF_Pre43_PRAUC"] - expected) < 1e-9
+
+
+class TestTimestepNotAFeature:
+    """Pre-F1 cleanup: the timestep column is the split variable, NOT a model
+    feature. As a live feature it is a monotonic proxy for position in the
+    walk-forward window (a leak). feature_cols must exclude it."""
+
+    def test_select_feature_cols_excludes_timestep(self):
+        from source.data.load_dataset import _select_feature_cols
+        cols = ["txId", "ts", 2, 3, 4]
+        selected = _select_feature_cols(cols)
+        assert "ts" not in selected
+        assert selected == [2, 3, 4]      # txId dropped (id), ts dropped (split var)
+
+
+class TestResultSchemaV2:
+    """CSV-1 schema rewrite: regime-stratified PRAUC columns + Selfcond_Bug
+    provenance. Every column must be present and non-null on every result dict."""
+
+    NEW_KEYS = {
+        "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
+        "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
+        "Static_OOT_F1", "Static_OOT_PRAUC", "WF_Time_s", "WF_Mem_MB",
+        "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
+        "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC", "WF_Shock_F1", "WF_Shock_PRAUC",
+        "WF_Recovery_Pooled_F1", "WF_Recovery_PRAUC", "Selfcond_Bug", "Notes",
+    }
+
+    def test_make_result_has_v2_schema(self):
+        from source.sweep import _make_result, _RESULT_KEYS
+        assert set(_RESULT_KEYS) == self.NEW_KEYS, "Canonical _RESULT_KEYS != v2 schema"
+        r = _make_result(
+            seed=42, variation="Base", sweep="x",
+            static_time=1.0, static_mem=1.0, static_f1=0.8, static_prauc=0.9,
+            wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
+            selfcond_bug="fixed",
+        )
+        assert set(r.keys()) == self.NEW_KEYS
+        assert all(v is not None for v in r.values()), "no result field may be None"
+        assert r["Selfcond_Bug"] == "fixed"
+        assert r["Static_OOT_F1"] == 0.8
+        # old WF mean maps to MACRO under the new schema
+        assert "WF_Macro_F1" in r and "WF_Pre43_PRAUC" in r
