@@ -74,21 +74,16 @@ def run():
     print(f"Multiscale (K=2): {id_k2:.2f}")
     print(f"Multiscale (K=3): {id_k3:.2f}")
 
-    md = f"""# Empirical Manifold Hypothesis (Intrinsic Dimension)
-
-At timestep $t={t_target}$ (immediately prior to the dark market shutdown), we evaluate the intrinsic dimensionality $\hat{{d}}$ of the node representations using the TwoNN estimator.
-
-| Representation (Multiscale) | Intrinsic Dimension (TwoNN) | F1 Score (Static Ablation) |
-| :--- | :--- | :--- |
-| Raw Features ($K=0$) | {id_raw:.2f} | 0.575 (Sweep 2) |
-| Propagated ($K=1$) | {id_k1:.2f} | 0.586 (Sweep K=1) |
-| Propagated ($K=2$) | {id_k2:.2f} | 0.707 (Sweep K=2) |
-| Propagated ($K=3$) | {id_k3:.2f} | 0.719 (Sweep K=3) |
-
-**Conclusion:** The graph propagation mechanism acts as a manifold compressor. By mixing neighborhood context iteratively ($K=1 \\rightarrow 3$), the intrinsic dimensionality of the representations decreases significantly. This provides geometric evidence that SGC projects the nodes onto a lower-dimensional manifold where the linear MLP boundary becomes highly effective.
-"""
-    with open("/Users/berkcalisir/.gemini/antigravity-ide/brain/6e83e897-1ee9-4c13-b984-0c34ff55e6bb/intrinsic_dimension_analysis.md", "w") as f:
-        f.write(md)
+    import pandas as pd
+    from config import OUTPUT_DIR
+    df_id = pd.DataFrame({
+        "Hops (K)": [0, 1, 2, 3],
+        "Intrinsic Dimension": [id_raw, id_k1, id_k2, id_k3],
+        "F1 Score (Static)": [0.575, 0.586, 0.707, 0.719]
+    })
+    csv_path = os.path.join(OUTPUT_DIR, "eda_intrinsic_dim.csv")
+    df_id.to_csv(csv_path, index=False)
+    print(f"Saved intrinsic dimension results to {csv_path}")
         
 if __name__ == "__main__":
     run()

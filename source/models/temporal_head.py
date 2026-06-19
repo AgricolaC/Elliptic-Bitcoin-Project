@@ -5,13 +5,22 @@ from config import Config
 
 class SnapshotEmbedder(nn.Module):
     """
-    Compresses a full snapshot's aggregate graph features into a single summary vector.
+    Compresses a full snapshot's aggregate graph features into a single summary vector
+    using Attention-Based Pooling to focus on anomalous node signatures.
     
     If use_mlp_head is True, this is a 2-layer MLP. Otherwise, a single Linear layer.
     """
     def __init__(self, in_dim: int, embed_dim: int, cfg: Config):
         super().__init__()
         self.use_mlp = cfg.use_mlp_head
+        
+        # Attention mechanism to weight nodes instead of naive mean pooling
+        self.attention = nn.Sequential(
+            nn.Linear(in_dim, in_dim // 2),
+            nn.Tanh(),
+            nn.Linear(in_dim // 2, 1)
+        )
+        
         if self.use_mlp:
             self.net = nn.Sequential(
                 nn.Linear(in_dim, in_dim // 2),
@@ -28,12 +37,17 @@ class SnapshotEmbedder(nn.Module):
         Returns:
             (embed_dim,) tensor representing the snapshot embedding.
         """
-        # Graph-level mean pooling over all nodes in the snapshot
+        # Calculate attention scores for each node
+        attn_scores = self.attention(prop_features)  # (N, 1)
+        attn_weights = torch.softmax(attn_scores, dim=0)  # (N, 1)
+        
+        # Weighted sum of node features based on attention (attention-based pooling)
         # LEAKAGE GUARD: prop_features must NOT include future information.
         # This is ensured because the graph is snapshot-specific and 
         # only labels from < tau are used.
-        snapshot_mean = prop_features.mean(dim=0)
-        return self.net(snapshot_mean)
+        snapshot_summary = (prop_features * attn_weights).sum(dim=0)
+        
+        return self.net(snapshot_summary)
 
 
 class TemporalLSTM(nn.Module):

@@ -532,6 +532,7 @@ def main():
     parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega", "temporal"])
     parser.add_argument("--only-static", action="store_true", help="Run only static OOT")
     parser.add_argument("--only-wf", action="store_true", help="Run only walk-forward")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
     from data.load_dataset import download_and_load_data
@@ -539,7 +540,7 @@ def main():
     print("Loading raw dataset...")
     df, df_edge, _, feature_cols = download_and_load_data()
 
-    cfg_default = Config()
+    cfg_default = Config(seed=args.seed)
 
     results = []
     completed_sweeps = set()

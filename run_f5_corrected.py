@@ -64,14 +64,16 @@ class GCN2(nn.Module):
         return self.c2(h, edge_index)
 
 
-def run_gcn(dm, device, epochs=200, hidden=64):
+def run_gcn(dm, device, epochs=1000, hidden=100):
     set_global_seeds(42)
     in_dim = dm.graphs[min(dm.graphs)]["x"].shape[1]
     model = GCN2(in_dim, hidden).to(device)
     ytr = torch.cat([dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]] for t in TRAIN if t in dm.graphs])
-    cls_w = _compute_class_weights(ytr, device)
+    # Weber et al. (2019) used specific 0.3/0.7 weights for licit/illicit
+    cls_w = torch.tensor([0.3, 0.7], dtype=torch.float32, device=device)
     loss_fn = nn.CrossEntropyLoss(weight=cls_w)
-    opt = torch.optim.AdamW(model.parameters(), lr=0.01, weight_decay=5e-4)
+    # Weber et al. (2019) used Adam with lr=0.001
+    opt = torch.optim.Adam(model.parameters(), lr=0.001)
 
     edges = {t: to_undirected(dm.graphs[t]["edge_index"]).to(device) for t in dm.graphs}
     for _ in range(epochs):
@@ -106,13 +108,19 @@ def run_gcn(dm, device, epochs=200, hidden=64):
 
 
 def main():
-    set_global_seeds(42)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    args = parser.parse_args()
+    seed = args.seed
+    
+    set_global_seeds(seed)
     print("Loading raw dataset...")
     df, df_edge, _, feature_cols = download_and_load_data()
 
     cfg = Config(train_steps=TRAIN, val_steps=range(35, 35), test_steps=TEST,
                  sgc_k=2, use_multiscale_prop=True, use_mlp_head=True,
-                 use_graph_structural=False, use_directional_prop=False, seed=42)
+                 use_graph_structural=False, use_directional_prop=False, seed=seed)
     dm = EllipticDataModule(df, df_edge, feature_cols, cfg)
     dm.setup()
 
@@ -127,7 +135,7 @@ def main():
         m = yte != -1
         s = torch.softmax(model(Xte[m].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
     f5c_f1, f5c_prauc = _pooled(s, yte[m].numpy())
-    _append(_make_result(seed=42, variation="Base", sweep="F5c: SGC+MLP K=2 [corrected]",
+    _append(_make_result(seed=seed, variation="Base", sweep="F5c: SGC+MLP K=2 [corrected]",
                          static_time=round(time.time() - t0, 3), static_mem="N/A",
                          static_f1=f5c_f1, static_prauc=f5c_prauc,
                          wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
@@ -140,13 +148,13 @@ def main():
     t0 = time.time()
     gcn_device = torch.device("cpu")
     f5d_f1, f5d_prauc = run_gcn(dm, gcn_device)
-    _append(_make_result(seed=42, variation="Base", sweep="F5d: GCN reference [2-layer]",
+    _append(_make_result(seed=seed, variation="Base", sweep="F5d: GCN reference [2-layer]",
                          static_time=round(time.time() - t0, 3), static_mem="N/A",
                          static_f1=f5d_f1, static_prauc=f5d_prauc,
                          wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
-                         feature_set="2-layer GCNConv (PyG, undirected, hidden=64)",
+                         feature_set="2-layer GCNConv (PyG, undirected, hidden=100)",
                          threshold_method="fixed-0.5", selfcond_bug="fixed",
-                         notes="F5d GCN reference, static OOT pooled 35-49"))
+                         notes="F5d GCN reference (Weber et al), static OOT pooled 35-49"))
     print(f"  [F5d] GCN 2-layer  F1={f5d_f1:.4f}  PRAUC={f5d_prauc:.4f}")
 
     # ── Verdicts ──────────────────────────────────────────────────────────────

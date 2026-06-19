@@ -47,7 +47,11 @@ from sweep import _make_result, _RESULT_KEYS
 
 SWEEP_CSV = os.path.join(OUTPUT_DIR, "sweep_results.csv")
 TS_CSV = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
-SEED = 42
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", type=int, default=42, help="Random seed")
+args = parser.parse_args()
+SEED = args.seed
 TWIN, TLAG = 4, 0  # temporal-feature window / label lag
 
 CSV2_COLS = ["Sweep", "Seed", "Tau", "N_labeled", "N_illicit", "N_licit",
