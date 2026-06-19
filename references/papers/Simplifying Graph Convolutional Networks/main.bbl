@@ -1,0 +1,405 @@
+\begin{thebibliography}{59}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{Abu-El-Haija} et~al.(2018){Abu-El-Haija}, Kapoor, Perozzi, and
+  Lee]{n-gcn}
+{Abu-El-Haija}, S., Kapoor, A., Perozzi, B., and Lee, J.
+\newblock {N-GCN}: Multi-scale graph convolution for semi-supervised node
+  classification.
+\newblock \emph{arXiv preprint arXiv:1802.08888}, 2018.
+
+\bibitem[Atwood \& Towsley(2016)Atwood and Towsley]{dcnn}
+Atwood, J. and Towsley, D.
+\newblock Diffusion-convolutional neural networks.
+\newblock In Lee, D.~D., Sugiyama, M., Luxburg, U.~V., Guyon, I., and Garnett,
+  R. (eds.), \emph{Advances in Neural Information Processing Systems 29}, pp.\
+  1993--2001. Curran Associates, Inc., 2016.
+
+\bibitem[Battaglia et~al.(2018)Battaglia, Hamrick, Bapst, Sanchez-Gonzalez,
+  Zambaldi, Malinowski, Tacchetti, Raposo, Santoro, Faulkner,
+  et~al.]{battaglia2018relational}
+Battaglia, P.~W., Hamrick, J.~B., Bapst, V., Sanchez-Gonzalez, A., Zambaldi,
+  V., Malinowski, M., Tacchetti, A., Raposo, D., Santoro, A., Faulkner, R.,
+  et~al.
+\newblock Relational inductive biases, deep learning, and graph networks.
+\newblock \emph{arXiv preprint arXiv:1806.01261}, 2018.
+
+\bibitem[Belkin \& Niyogi(2004)Belkin and Niyogi]{Belkin04b}
+Belkin, M. and Niyogi, P.
+\newblock Semi-supervised learning on riemannian manifolds.
+\newblock \emph{Machine Learning}, 56\penalty0 (1-3):\penalty0 209--239, 2004.
+
+\bibitem[Belkin et~al.(2006)Belkin, Niyogi, and Sindhwani]{Belkin2006}
+Belkin, M., Niyogi, P., and Sindhwani, V.
+\newblock Manifold regularization: A geometric framework for learning from
+  labeled and unlabeled examples.
+\newblock \emph{Journal of Machine Learning Research}, 7:\penalty0 2399--2434,
+  2006.
+
+\bibitem[Bergstra et~al.(2015)Bergstra, Komer, Eliasmith, Yamins, and
+  Cox]{hyperopt}
+Bergstra, J., Komer, B., Eliasmith, C., Yamins, D., and Cox, D.~D.
+\newblock Hyperopt: A python library for optimizing the hyperparameters of
+  machine learning algorithms.
+\newblock \emph{Computational Science \& Discovery}, 8\penalty0 (1), 2015.
+
+\bibitem[Bottou(2010)]{bottou2010large}
+Bottou, L.
+\newblock Large-scale machine learning with stochastic gradient descent.
+\newblock In \emph{Proceedings of 19th International Conference on
+  Computational Statistics}, pp.\  177--186. Springer, 2010.
+
+\bibitem[Bruna et~al.(2014)Bruna, Zaremba, Szlam, and Lecun]{Bruna13}
+Bruna, J., Zaremba, W., Szlam, A., and Lecun, Y.
+\newblock Spectral networks and locally connected networks on graphs.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2014)}, 2014.
+
+\bibitem[Cai \& Wang(2018)Cai and Wang]{cai2018simple}
+Cai, C. and Wang, Y.
+\newblock A simple yet effective baseline for non-attribute graph
+  classification, 2018.
+
+\bibitem[Changpinyo et~al.(2018)Changpinyo, Chao, Gong, and Sha]{EXEM}
+Changpinyo, S., Chao, W.-L., Gong, B., and Sha, F.
+\newblock Classifier and exemplar synthesis for zero-shot learning.
+\newblock \emph{arXiv preprint arXiv:1812.06423}, 2018.
+
+\bibitem[{Chen} et~al.(2018){Chen}, {Ma}, and {Xiao}]{FastGCN}
+{Chen}, J., {Ma}, T., and {Xiao}, C.
+\newblock {{FastGCN}: Fast Learning with Graph Convolutional Networks via
+  Importance Sampling}.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2018)}, 2018.
+
+\bibitem[Defferrard et~al.(2016)Defferrard, Bresson, and
+  Vandergheynst]{Defferrard16}
+Defferrard, M., Bresson, X., and Vandergheynst, P.
+\newblock Convolutional neural networks on graphs with fast localized spectral
+  filtering.
+\newblock In Lee, D.~D., Sugiyama, M., Luxburg, U.~V., Guyon, I., and Garnett,
+  R. (eds.), \emph{Advances in Neural Information Processing Systems 29}, pp.\
+  3844--3852. Curran Associates, Inc., 2016.
+
+\bibitem[Duran \& Niepert(2017)Duran and Niepert]{EP17}
+Duran, A.~G. and Niepert, M.
+\newblock Learning graph representations with embedding propagation.
+\newblock In Guyon, I., Luxburg, U.~V., Bengio, S., Wallach, H., Fergus, R.,
+  Vishwanathan, S., and Garnett, R. (eds.), \emph{Advances in Neural
+  Information Processing Systems 30}, pp.\  5119--5130. Curran Associates,
+  Inc., 2017.
+
+\bibitem[Eisenstein et~al.(2010)Eisenstein, O'Connor, Smith, and
+  Xing]{eisenstein2010latent}
+Eisenstein, J., O'Connor, B., Smith, N.~A., and Xing, E.~P.
+\newblock A latent variable model for geographic lexical variation.
+\newblock In \emph{Proceedings of the 2010 Conference on Empirical Methods in
+  Natural Language Processing}, pp.\  1277--1287. Association for Computational
+  Linguistics, 2010.
+
+\bibitem[Eliav \& Cohen(2018)Eliav and Cohen]{Buchnik18}
+Eliav, B. and Cohen, E.
+\newblock Bootstrapped graph diffusions: Exposing the power of nonlinearity.
+\newblock \emph{Proceedings of the ACM on Measurement and Analysis of Computing
+  Systems}, 2\penalty0 (1):\penalty0 10:1--10:19, 2018.
+
+\bibitem[Hamilton et~al.(2017)Hamilton, Ying, and Leskovec]{Hamilton17}
+Hamilton, W., Ying, Z., and Leskovec, J.
+\newblock Inductive representation learning on large graphs.
+\newblock In Guyon, I., Luxburg, U.~V., Bengio, S., Wallach, H., Fergus, R.,
+  Vishwanathan, S., and Garnett, R. (eds.), \emph{Advances in Neural
+  Information Processing Systems 30}, pp.\  1024--1034. Curran Associates,
+  Inc., 2017.
+
+\bibitem[Han et~al.(2012)Han, Cook, and Baldwin]{han2012geolocation}
+Han, B., Cook, P., and Baldwin, T.
+\newblock Geolocation prediction in social media data by finding location
+  indicative words.
+\newblock In \emph{Proceedings of the 24th International Conference on
+  Computational Linguistics}, pp.\  1045--1062, 2012.
+
+\bibitem[Hariharan et~al.(2015)Hariharan, Arbel{\'a}ez, Girshick, and
+  Malik]{hariharan2015hypercolumns}
+Hariharan, B., Arbel{\'a}ez, P., Girshick, R., and Malik, J.
+\newblock Hypercolumns for object segmentation and fine-grained localization.
+\newblock In \emph{Proceedings of the IEEE conference on computer vision and
+  pattern recognition}, pp.\  447--456, 2015.
+
+\bibitem[Harris \& Stephens(1988)Harris and Stephens]{harris1988combined}
+Harris, C. and Stephens, M.
+\newblock A combined corner and edge detector.
+\newblock In \emph{Proceedings of the 4th Alvey Vision Conference}, pp.\
+  147--151, 1988.
+
+\bibitem[Hochreiter \& Schmidhuber(1997)Hochreiter and Schmidhuber]{LSTM}
+Hochreiter, S. and Schmidhuber, J.
+\newblock Long {S}hort-{T}erm {M}emory.
+\newblock \emph{Neural Computation}, 9:\penalty0 1735--1780, 1997.
+
+\bibitem[Huang et~al.(2016)Huang, Sun, Liu, Sedra, and
+  Weinberger]{huang2016deep}
+Huang, G., Sun, Y., Liu, Z., Sedra, D., and Weinberger, K.~Q.
+\newblock Deep networks with stochastic depth.
+\newblock In \emph{European Conference on Computer Vision}, pp.\  646--661.
+  Springer, 2016.
+
+\bibitem[Kampffmeyer et~al.(2018)Kampffmeyer, Chen, Liang, Wang, Zhang, and
+  Xing]{ADGPM}
+Kampffmeyer, M., Chen, Y., Liang, X., Wang, H., Zhang, Y., and Xing, E.~P.
+\newblock Rethinking knowledge graph propagation for zero-shot learning.
+\newblock \emph{arXiv preprint arXiv:1805.11724}, 2018.
+
+\bibitem[Kingma \& Ba(2015)Kingma and Ba]{adam}
+Kingma, D.~P. and Ba, J.
+\newblock Adam: {A} method for stochastic optimization.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2015)}, 2015.
+
+\bibitem[Kipf \& Welling(2017)Kipf and Welling]{gcn}
+Kipf, T.~N. and Welling, M.
+\newblock Semi-supervised classification with graph convolutional networks.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2017)}, 2017.
+
+\bibitem[Klicpera et~al.(2019)Klicpera, Bojchevski, and
+  G{\"{u}}nnemann]{Klicpera19}
+Klicpera, J., Bojchevski, A., and G{\"{u}}nnemann, S.
+\newblock Predict then propagate: Graph neural networks meet personalized
+  pagerank.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2019)}, 2019.
+
+\bibitem[LeCun et~al.(1989)LeCun, Boser, Denker, Henderson, Howard, Hubbard,
+  and Jackel]{lecun1989backpropagation}
+LeCun, Y., Boser, B., Denker, J.~S., Henderson, D., Howard, R.~E., Hubbard, W.,
+  and Jackel, L.~D.
+\newblock Backpropagation applied to handwritten zip code recognition.
+\newblock \emph{Neural Computation}, 1\penalty0 (4):\penalty0 541--551, 1989.
+
+\bibitem[Lee et~al.(2018)Lee, Rossi, Kim, Ahmed, and Koh]{attention-survey}
+Lee, J.~B., Rossi, R.~A., Kim, S., Ahmed, N.~K., and Koh, E.
+\newblock Attention models in graphs: A survey.
+\newblock \emph{arXiv e-prints}, 2018.
+
+\bibitem[Li et~al.(2018)Li, Han, and Wu]{Li18}
+Li, Q., Han, Z., and Wu, X.
+\newblock Deeper insights into graph convolutional networks for semi-supervised
+  learning.
+\newblock \emph{CoRR}, abs/1801.07606, 2018.
+
+\bibitem[Li et~al.(2019)Li, Wu, Liu, Zhang, and Guan]{Li2019LabelES}
+Li, Q., Wu, X.-M., Liu, H., Zhang, X., and Guan, Z.
+\newblock Label efficient semi-supervised learning via graph filtering.
+\newblock In \emph{IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition (CVPR)}, 2019.
+
+\bibitem[Liao et~al.(2019)Liao, Zhao, Urtasun, and Zemel]{liao2018lanczosnet}
+Liao, R., Zhao, Z., Urtasun, R., and Zemel, R.
+\newblock Lanczosnet: Multi-scale deep graph convolutional networks.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2019)}, 2019.
+
+\bibitem[Liu \& Nocedal(1989)Liu and Nocedal]{lbfgs}
+Liu, D.~C. and Nocedal, J.
+\newblock On the limited memory {BFGS} method for large scale optimization.
+\newblock \emph{Mathematical Programming}, 45\penalty0 (1-3):\penalty0
+  503--528, 1989.
+
+\bibitem[Miller(1995)]{miller1995wordnet}
+Miller, G.~A.
+\newblock Wordnet: a lexical database for english.
+\newblock \emph{Communications of the ACM}, 38\penalty0 (11):\penalty0 39--41,
+  1995.
+
+\bibitem[Monti et~al.(2017)Monti, Boscaini, Masci, Rodol{\`{a}}, Svoboda, and
+  Bronstein]{Monet}
+Monti, F., Boscaini, D., Masci, J., Rodol{\`{a}}, E., Svoboda, J., and
+  Bronstein, M.~M.
+\newblock Geometric deep learning on graphs and manifolds using mixture model
+  cnns.
+\newblock In \emph{2017 {IEEE} Conference on Computer Vision and Pattern
+  Recognition, {CVPR} 2017, Honolulu, HI, USA, July 21-26, 2017}, pp.\
+  5425--5434, 2017.
+
+\bibitem[Perozzi et~al.(2014)Perozzi, {Al-Rfou}, and Skiena]{Perozzi14}
+Perozzi, B., {Al-Rfou}, R., and Skiena, S.
+\newblock Deepwalk: Online learning of social representations.
+\newblock In \emph{Proceedings of the 20th ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, KDD'14, pp.\  701--710. ACM, 2014.
+
+\bibitem[Rahimi et~al.(2018)Rahimi, Cohn, and Baldwin]{Rahimi18}
+Rahimi, S., Cohn, T., and Baldwin, T.
+\newblock Semi-supervised user geolocation via graph convolutional networks.
+\newblock In \emph{Proceedings of the 56th Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, pp.\  2009--2019.
+  Association for Computational Linguistics, 2018.
+
+\bibitem[Ramakrishnan et~al.(2015)Ramakrishnan, Hartmann, Tapavicza, and von
+  Lilienfeld]{ramakrishnan2015electronic}
+Ramakrishnan, R., Hartmann, M., Tapavicza, E., and von Lilienfeld, O.~A.
+\newblock Electronic spectra from {TDDFT} and machine learning in chemical
+  space.
+\newblock \emph{The Journal of chemical physics}, 143\penalty0 (8):\penalty0
+  084111, 2015.
+
+\bibitem[Roller et~al.(2012)Roller, Speriosu, Rallapalli, Wing, and
+  Baldridge]{roller2012supervised}
+Roller, S., Speriosu, M., Rallapalli, S., Wing, B., and Baldridge, J.
+\newblock Supervised text-based geolocation using language models on an
+  adaptive grid.
+\newblock In \emph{Proceedings of the 2012 Joint Conference on Empirical
+  Methods in Natural Language Processing and Computational Natural Language
+  Learning}, pp.\  1500--1510. Association for Computational Linguistics, 2012.
+
+\bibitem[Rosenblatt(1958)]{rosenblatt1958perceptron}
+Rosenblatt, F.
+\newblock The {P}erceptron: a probabilistic model for information storage and
+  organization in the brain.
+\newblock \emph{Psychological review}, 65\penalty0 (6):\penalty0 386, 1958.
+
+\bibitem[Rosenblatt(1961)]{rosenblatt1961principles}
+Rosenblatt, F.
+\newblock Principles of neurodynamics: {P}erceptrons and the theory of brain
+  mechanisms.
+\newblock Technical report, Cornell Aeronautical Lab Inc, 1961.
+
+\bibitem[Sen et~al.(2008)Sen, Namata, Bilgic, Getoor, Galligher, and
+  Eliassi-Rad]{sen2008collective}
+Sen, P., Namata, G., Bilgic, M., Getoor, L., Galligher, B., and Eliassi-Rad, T.
+\newblock Collective classification in network data.
+\newblock \emph{AI magazine}, 29\penalty0 (3):\penalty0 93, 2008.
+
+\bibitem[Sobel \& Feldman(1968)Sobel and Feldman]{sobel19683x3}
+Sobel, I. and Feldman, G.
+\newblock A 3x3 isotropic gradient operator for image processing.
+\newblock \emph{A talk at the Stanford Artificial Project}, pp.\  271--272,
+  1968.
+
+\bibitem[Thekumparampil et~al.(2018)Thekumparampil, Wang, {Oh}, and Li]{agnn}
+Thekumparampil, K.~K., Wang, C., {Oh}, S., and Li, L.
+\newblock Attention-based graph neural network for semi-supervised learning.
+\newblock \emph{arXiv e-prints}, 2018.
+
+\bibitem[Velickovic et~al.(2018)Velickovic, Cucurull, Casanova, Romero,
+  Li{\`o}, and Bengio]{gat}
+Velickovic, P., Cucurull, G., Casanova, A., Romero, A., Li{\`o}, P., and
+  Bengio, Y.
+\newblock {G}raph {A}ttention {N}etworks.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2018)}, 2018.
+
+\bibitem[Veličković et~al.(2019)Veličković, Fedus, Hamilton, Liò, Bengio,
+  and Hjelm]{infomax}
+Veličković, P., Fedus, W., Hamilton, W.~L., Liò, P., Bengio, Y., and Hjelm,
+  R.~D.
+\newblock {D}eep {G}raph {I}nfo{M}ax.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2019)}, 2019.
+
+\bibitem[Waibel et~al.(1989)Waibel, Hanazawa, and Hinton]{waibel1989phoneme}
+Waibel, A., Hanazawa, T., and Hinton, G.
+\newblock Phoneme recognition using time-delay neural networks.
+\newblock \emph{IEEE Transactions on Acoustics, Speech. and Signal Processing},
+  37\penalty0 (3), 1989.
+
+\bibitem[Wang et~al.(2018)Wang, Ye, and Gupta]{wang2018zero}
+Wang, X., Ye, Y., and Gupta, A.
+\newblock Zero-shot recognition via semantic embeddings and knowledge graphs.
+\newblock In \emph{{Computer Vision and Pattern Recognition (CVPR)}}, pp.\
+  6857--6866. {IEEE} Computer Society, 2018.
+
+\bibitem[Weston et~al.(2008)Weston, Ratle, and Collobert]{Weston2008}
+Weston, J., Ratle, F., and Collobert, R.
+\newblock Deep learning via semi-supervised embedding.
+\newblock In \emph{Proceedings of the 25th International Conference on Machine
+  Learning}, ICML '08, pp.\  1168--1175, 2008.
+
+\bibitem[Wu et~al.(2019)Wu, Pan, Chen, Long, Zhang, and
+  Yu]{wu2019comprehensive}
+Wu, Z., Pan, S., Chen, F., Long, G., Zhang, C., and Yu, P.~S.
+\newblock A comprehensive survey on graph neural networks.
+\newblock \emph{arXiv preprint arXiv:1901.00596}, 2019.
+
+\bibitem[Xu et~al.(2019)Xu, Hu, Leskovec, and Jegelka]{xu2018how}
+Xu, K., Hu, W., Leskovec, J., and Jegelka, S.
+\newblock How powerful are graph neural networks?
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR'2019)}, 2019.
+
+\bibitem[Yanardag \& Vishwanathan(2015)Yanardag and
+  Vishwanathan]{yanardag2015deep}
+Yanardag, P. and Vishwanathan, S.
+\newblock Deep graph kernels.
+\newblock In \emph{Proceedings of the 21th ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pp.\  1365--1374. ACM, 2015.
+
+\bibitem[Yang et~al.(2016)Yang, Cohen, and Salakhutdinov]{Yang16}
+Yang, Z., Cohen, W.~W., and Salakhutdinov, R.
+\newblock Revisiting semi-supervised learning with graph embeddings.
+\newblock In \emph{Proceedings of the 33rd International Conference on
+  International Conference on Machine Learning - Volume 48}, ICML'16, pp.\
+  40--48, 2016.
+
+\bibitem[Yao et~al.(2019)Yao, Mao, and Luo]{textGCN}
+Yao, L., Mao, C., and Luo, Y.
+\newblock Graph convolutional networks for text classification.
+\newblock In \emph{Proceedings of the 33rd AAAI Conference on Artificial
+  Intelligence (AAAI'19)}, 2019.
+
+\bibitem[Zhang et~al.(2018{\natexlab{a}})Zhang, Shi, Xie, Ma, King, and
+  Yeung]{zhang2018gaan}
+Zhang, J., Shi, X., Xie, J., Ma, H., King, I., and Yeung, D.
+\newblock Gaan: Gated attention networks for learning on large and
+  spatiotemporal graphs.
+\newblock In \emph{Proceedings of the Thirty-Fourth Conference on Uncertainty
+  in Artificial Intelligence (UAI'2018)}, pp.\  339--349. {AUAI} Press,
+  2018{\natexlab{a}}.
+
+\bibitem[Zhang et~al.(2018{\natexlab{b}})Zhang, Cui, Neumann, and
+  Chen]{zhang2018end}
+Zhang, M., Cui, Z., Neumann, M., and Chen, Y.
+\newblock An end-to-end deep learning architecture for graph classification.
+\newblock 2018{\natexlab{b}}.
+
+\bibitem[Zhang et~al.(2017)Zhang, Zhong, Chen, Angeli, and Manning]{TACRED}
+Zhang, Y., Zhong, V., Chen, D., Angeli, G., and Manning, C.~D.
+\newblock Position-aware attention and supervised data improve slot filling.
+\newblock In \emph{Proceedings of the 2017 Conference on Empirical Methods in
+  Natural Language Processing}, pp.\  35--45. Association for Computational
+  Linguistics, 2017.
+
+\bibitem[Zhang et~al.(2018{\natexlab{c}})Zhang, Qi, and
+  Manning]{relation-extraction}
+Zhang, Y., Qi, P., and Manning, C.~D.
+\newblock Graph convolution over pruned dependency trees improves relation
+  extraction.
+\newblock In \emph{Empirical Methods in Natural Language Processing (EMNLP)},
+  2018{\natexlab{c}}.
+
+\bibitem[Zhou et~al.(2004)Zhou, Bousquet, Thomas, Weston, and
+  Sch\"{o}lkopf]{Zhou04}
+Zhou, D., Bousquet, O., Thomas, N.~L., Weston, J., and Sch\"{o}lkopf, B.
+\newblock Learning with local and global consistency.
+\newblock In Thrun, S., Saul, L.~K., and Sch\"{o}lkopf, B. (eds.),
+  \emph{Advances in Neural Information Processing Systems 16}, pp.\  321--328.
+  MIT Press, 2004.
+
+\bibitem[{Zhou} et~al.(2018){Zhou}, {Cui}, {Zhang}, {Yang}, {Liu}, and
+  {Sun}]{gnn_review}
+{Zhou}, J., {Cui}, G., {Zhang}, Z., {Yang}, C., {Liu}, Z., and {Sun}, M.
+\newblock {Graph Neural Networks: A Review of Methods and Applications}.
+\newblock \emph{arXiv e-prints}, 2018.
+
+\bibitem[Zhu et~al.(2003)Zhu, Ghahramani, and Lafferty]{Zhu03}
+Zhu, X., Ghahramani, Z., and Lafferty, J.
+\newblock Semi-supervised learning using gaussian fields and harmonic
+  functions.
+\newblock In \emph{Proceedings of the Twentieth International Conference on
+  International Conference on Machine Learning}, ICML'03, pp.\  912--919. AAAI
+  Press, 2003.
+
+\end{thebibliography}

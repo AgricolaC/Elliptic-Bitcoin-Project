@@ -1,0 +1,891 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2022
+
+
+% ready for submission
+% \usepackage{neurips_2022}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+\usepackage[preprint]{neurips_2022}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2022}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2022}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+\usepackage{amsmath, bm, amsthm, xfrac}
+\usepackage{algorithm, algorithmic}
+\usepackage{hyperref}
+\usepackage{graphicx}
+% \usepackage[skip=10pt]{caption}
+
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\tp}{{\scriptscriptstyle +}}
+\newcommand{\tm}{{\scriptscriptstyle -}}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{innercustomthm}{Theorem}
+\newenvironment{customthm}[1]
+  {\renewcommand\theinnercustomthm{#1}\innercustomthm}
+  {\endinnercustomthm}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\diag}{diag} 
+\newcommand{\Dan}[1]{\textcolor{cyan}{Dan: #1}}
+\newcommand{\Cam}[1]{\textcolor{blue}{Cam: #1}}
+
+\title{Simplified Graph Convolution with Heterophily}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Sudhanshu Chanpuriya \\
+  University of Massachusetts Amherst\\
+  \texttt{schanpuriya@cs.umass.edu} \\
+   \And
+  Cameron Musco \\
+  University of Massachusetts Amherst\\
+  \texttt{cmusco@cs.umass.edu} \\
+}
+
+
+% \usepackage{selectp}
+% \outputonly{1-13}
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+Recent work has shown that a simple, fast method called Simple Graph Convolution (SGC)~\citep{wu2019simplifying}, which eschews deep learning, is competitive with deep methods like graph convolutional networks (GCNs)~\citep{kipf2016semi} in common graph machine learning benchmarks. 
+The use of graph data in SGC implicitly assumes the common but not universal graph characteristic of homophily, wherein nodes link to nodes which are similar. Here we confirm that SGC is indeed ineffective for heterophilous (i.e., non-homophilous) graphs via experiments on synthetic and real-world datasets. We propose Adaptive Simple Graph Convolution (ASGC), which we show can adapt to both homophilous and heterophilous graph structure. Like SGC, ASGC is not a deep model, and hence is fast, scalable, and interpretable; further, we can prove performance guarantees on natural synthetic data models.
+Empirically, ASGC is often competitive with recent deep models at node classification on a benchmark of real-world datasets.
+The SGC paper questioned whether the complexity of graph neural networks is warranted for common graph problems involving homophilous networks; our results similarly suggest that, while deep learning often achieves the highest performance, heterophilous structure alone does not necessitate these more involved methods.
+\end{abstract}
+
+
+\section{Introduction}
+Data involving relationships between entities arises in biology, sociology, and many other fields, and such data is often best expressed as a graph. Therefore, models of graph data that yield algorithms for common graph machine learning tasks, like node classification, have wide-reaching impact.
+% feature extraction -> deep learning automatically does it
+Deep learning~\citep{lecun2015deep} has enjoyed great success in modeling image and text data, and graph convolutional networks (GCNs)~\citep{kipf2016semi} attempt to extend this success to graph data.
+Various deep models branch off from GCNs, offering additional speed, accuracy, or other features.
+However, like other deep models, these algorithms involve repeated nonlinear transformations of inputs and are therefore time and memory intensive to train. 
+
+Recent work has shown that a much simpler model, simple graph convolution (SGC)~\citep{wu2019simplifying}, is competitive with GCNs in common graph machine learning benchmarks. SGC is much faster than GCNs, partly because the role of the graph in SGC is restricted to a feature extraction step in which node features are smoothed across the graph; by contrast, GCNs include graph convolution steps as part of an end-to-end model, resulting in expensive backpropagation calculations. However, the feature smoothing operation in SGC implicity assumes the common but not universal graph characteristic of homophily, wherein nodes mostly link to similar nodes; indeed, recent work~\citep{nt2019revisiting} suggests that  many GCNs may assume such structure. We ask whether a feature extraction approach, that, like SGC, is free of deep learning, can tackle non-homophilous, that is, heterophilous graph structure.
+
+% Here, we first show that SGC can indeed be ineffective for non-homophilous, that is, heterophilous features via experiments on synthetic datasets. We propose adaptive simple graph convolution (ASGC), which we show can adapt to both homophilous and heterophilous structures using the same datasets. Like SGC, ASGC is not a deep model, and hence is relatively fast, scalable, and interpretable.
+% % One more sentence about how great / unexpected this is? e.g. surprising that heterophily can be modeled so simply
+% We suspect that ASGC can be a starting point for a non-deep model capable of competing with the performance of much larger and slower state-of-the-art GCNs on large-scale, real-world graph datasets with heterophilous structure.
+
+% Heterophily
+% Commonality with SGC: Getting rid of backproping through propagation/smoothing steps
+% Difference: Adapting smoothing to graph and feature
+
+We confirm that SGC, which uses a fixed smoothing filter, can indeed be ineffective for heterophilous features via experiments on synthetic and real-world datasets. We propose adaptive simple graph convolution (ASGC), which fits a different filter for each feature. These filters can be smoothing or non-smoothing, and thus can adapt to both homophilous and heterophilous structures. Like SGC, ASGC is not a deep model, instead being based on linear least squares, and hence is fast, scalable, and interpretable. 
+We propose a natural synthetic model for networks with a node feature, Featured Stochastic Block Models (FSBMs), and prove that ASGC denoises the network feature regardless of whether the model is set to produce homophilous or heterophilous networks, in contrast to SGC, which we show is inappropriate for the heterophilous setting.
+Finally, we show that the performance of ASGC is superior to that of SGC at node classification on real-world heterophilous networks, and generally competitive with recent deep methods on a benchmark of both heterophilous and homophilous networks.
+% Just as SGC showed that simple method can be reasonably performant relative to deep methods on common homophilous , along with the 
+The SGC paper suggested that deep learning is not necessarily required for good performance on common graph learning tasks and benchmarks involving homophilous networks; our results suggest that simple methods can also be competitive for heterophilous networks.
+% In combination with SGC, our work calls into question the necessity of deep methods for certain graph learning tasks and benchmarks.
+
+% \Dan{Further, features generated by ASGC can be linearly combined with those from SGC to achieve superior classification performance, across a benchmark of homophilous and heterophilous datasets, to either method alone. This performance often exceeds that of state-of-the-art deep models at node classification on a benchmark of real-world datasets.\\
+% In combination with SGC, our work calls into question the necessity of deep methods for certain graph learning tasks and benchmarks.}
+
+% \Cam{I would have a discussion paragraph here making the point which I think is important: in combination with SGC, our work calls into question the necessity of deep methods for graph learning.}
+
+\section{Background}
+\paragraph{Preliminaries} We first establish common notation for working with graphs. 
+% An undirected, unweighted graph on $n$ nodes can be represented by its symmetric adjacency matrix $\bm{A} \in \{0,1\}^{n \times n}$. All content in this paper also applies to graphs with weighted edges, for which $\bm{A} \in \mathbb{R}_{\geq 0}^{n \times n}$.
+An undirected, possibly weighted graph on $n$ nodes can be represented by its symmetric adjacency matrix $\bm{A} \in \mathbb{R}_{\geq 0}^{n \times n}$.
+Letting $\bm{1}$ denote an all-ones column vector, $\bm{d} = \bm{A}\bm{1}$ is the vector of degrees of the nodes; the degree matrix $\bm{D}$ is the diagonal matrix with $\bm{d}$ along the diagonal. The normalized adjacency matrix is given by $\bm{S} = \bm{D}^{-1/2} \bm{A} \bm{D}^{-1/2}$, while the symmetric normalized graph Laplacian is $\bm{L} = \bm{I} - \bm{S}$, where $\bm{I}$ is an identity matrix. Note that the eigenvectors of $\bm{L}$ are exactly the eigenvectors of $\bm{S}$. It is a well known fact that the eigenvalues of $\bm{S}$ are contained within $[-1,+1]$. It follows that the eigenvalues of $\bm{L}$ are within $[0,2]$, so $\bm{L}$ is positive semidefinite.
+
+Consider a feature $\bm{x} \in \mathbb{R}^n$ on the graph, that is, a real-valued vector where each entry is associated with a node. The quadratic form over $\bm{L}$ is known to have the following equivalency: 
+%
+\begin{equation*}
+    % \bm{x}^\top \bm{L} \bm{x} = \frac{1}{2} \sum_{(i,j) \in [n]^2} \bm{A}_{i,j} \left( \frac{\bm{x}_i}{\sqrt{\bm{d}_i}} - \frac{\bm{x}_j}{\sqrt{\bm{d}_j}}\right)^2 . \text{\Dan{could make this smaller if needed}}
+    % \bm{x}^\top \bm{L} \bm{x} = \tfrac{1}{2} \sum\nolimits_{(i,j) \in [n]^2} \bm{A}_{i,j} \left( \tfrac{\bm{x}_i}{\sqrt{\bm{d}_i}} - \tfrac{\bm{x}_j}{\sqrt{\bm{d}_j}}\right)^2 . 
+    % % \bm{x}^\top \bm{L} \bm{x} = \tfrac{1}{2} \sum\nolimits_{(i,j) \in [n]^2} A_{ij} \left( { \frac{x_i}{\sqrt{d_i}} - \frac{x_i}{\sqrt{d_j}} } \right)^2 . 
+    % \bm{x}^\top \bm{L} \bm{x} = \tfrac{1}{2} \sum\nolimits_{(i,j) \in [n]^2} A_{ij} \left( { d_i^{-\sfrac{1}{2}} x_i - d_j^{-\sfrac{1}{2}} x_j } \right)^2 . 
+    \bm{x}^\top \bm{L} \bm{x} = \tfrac{1}{2} \sum\nolimits_{(i,j) \in [n]^2} A_{ij} \left( \tfrac{1}{ \sqrt{\smash[b]{d_i}} } x_i - \tfrac{1}{\smash[b]{\sqrt{\smash[b]{d_j}}}} x_j  \right)^2 .
+    % \bm{x}^\top \bm{L} \bm{x} = \tfrac{1}{2} \sum\nolimits_{(i,j) \in [n]^2} A_{ij} \left( \left( \sfrac{1}{\sqrt{d_i}} \right) x_i - \left( \sfrac{1}{\sqrt{d_j}} \right) x_j  \right)^2 . 
+\end{equation*}
+%
+%For reference, this fact is proved in \citet{wu2019simplifying}, among other works. 
+Up to a reweighting based on the nodes' degrees, this expression is the sum of squared differences of the feature's values between adjacent nodes. Hence, the quadratic form has a low value, near $0$, if the feature $\bm{x}$ is `smooth' across the graph, that is, if adjacent nodes have generally similar values of the feature. Similarly, the quadratic has a high value if the feature is `rough' across the graph, if adjacent nodes have generally differing values of the feature. When $\bm{x}$ is an eigenvector of $\bm{L}$, these `smooth' and `rough' cases correspond to the eigenvalue being low or high, respectively. (In terms of eigenvalues of $\bm{S}$, the opposite is true, with positive eigenvalues being smooth and negative eigenvalues being rough.)
+% More generally, the eigenvectors of $\bm{L}$ form a basis for any feature on the nodes, and decomposition of the feature as a linear combination of these eigenvectors separates the feature into components ranging from `smooth' to `rough' across the graph.
+More generally, decomposition of an arbitrary feature vector $\bm{x}$ as a linear combination of the eigenvectors of $\bm{L}$ separates $\bm{x}$ into components ranging from `smooth' to `rough' across the graph.
+In the graph signal processing literature~\citep{ortega2018graph,huang2016graph,stankovic2019introduction}, these smooth and rough components are also called low and high frequency `modes,' respectively, based on the eigenvalues of $\bm{L}$.
+
+\paragraph{Simple graph convolution} Our work is primarily inspired by the simple graph convolution (SGC) algorithm~\citep{wu2019simplifying}.
+SGC comprises logistic regression after the following feature extraction step, which can be interpreted as smoothing the nodes' features across the graph's edges:
+%
+\begin{align}~\label{eqn:sgc}
+    \bm{x}_{\text{SGC}} = \tilde{\bm{S}}^K \bm{x}.
+\end{align}
+%
+This equation shows how a single raw feature $\mathbf{x}$ is filtered to produce the smoothed feature $\bm{x}_{\text{SGC}}$. Here $\tilde{\bm{S}} \in \mathbb{R}^{n\times n}$ is the normalized adjacency matrix after addition of a self-loop to each node (that is, addition of the identity matrix to the adjacency matrix), and $K\in \mathbb{Z}_+$ is a hyperparameter; $K$ determines the radius of the filter, that is, the maximum number of hops between two nodes whose features can directly influence others' features in the filtering process.
+\citet{wu2019simplifying} show that the addition of the self-loop increases the minimum eigenvalue of $\bm{S}$; intuitively, the self-loop limits the extent to which a feature can be `rough' across the graph.
+% ; since the difference of the feature across the self-loops is zero, these terms in the quadratic form summation are zero, while the other terms are attenuated due to increased node degrees. 
+This results in the highest magnitude eigenvalues of the normalized adjacency $\tilde{\bm{S}}$ tending to be positive (smooth). Because the eigenvalues of $\tilde{\bm{S}}$ all have magnitude at most $1$, powering up $\tilde{\bm{S}}$ results in a filter which generally attenuates the feature $\bm{x}$, but does so least along these high magnitude, smooth eigenvectors. Hence the SGC filter smooths out the feature locally along the edges. Since it attenuates the high-frequency modes more than the low-frequency ones, SGC is described as a `low-pass' filter.
+
+% \Cam{I feel that the paragraph skips are really big. Especially if low on space I prefer smallskip and then noindenttextbf to basically implement paragraphs with smaller spacing.}
+
+\paragraph{Heterophily} If node features are used for node classification or regression, smoothing the features of nodes along edges encourages similar predictions along locally connected nodes. This seems sensible when locally connected nodes should be generally similar in terms of features and labels; if the variance in features and labels between connected nodes is generally attributable to noise, then this smoothing procedure acts as a useful denoising step. Graphs in which connected nodes tend to be similar are called homophilous or assortative. An example would be a citation network of papers on various topics: papers concerning the same topic tend to cite each other. Much of the existing work on graph models has an underlying assumption of network homophily, and there has been significant recent interest (discussed further in Section~\ref{sec:related}) on the limitations of graph models at addressing network heterophily/disassortativity, wherein connections tend to be between dissimilar nodes. An example would be a network based on adjacencies of words in text, where the labels are based on the part of speech: adjacent words tend to be of different parts of speech. For disassortative networks, smoothing a feature across connections as in SGC may not be sensible, since encouraging predictions of connected nodes to be similar is contrary to disassortativity.
+% {\color{red} At a high level, rather than using a fixed, smoothing polynomial filter $\tilde{\bm{S}}^K$ as in SGC, our adaptive SGC constructs several smoothed versions of each feature by propagating the feature once, twice, up to $K$ times across the graph. We then use least squares regression to approximate the input feature as a linear combination of these smoothed features. The end result is a polynomial filter, which may or may not be smoothing, based on the feature and graph.}
+
+\section{Methodology}~\label{sec:method}
+%
+\paragraph{Adaptive SGC} In our method, we replace the fixed feature propagation step of SGC (Equation~\ref{eqn:sgc}) with an adaptive one, which may or may not be smoothing based on the feature and graph. We produce a filtered version $\bm{x}_\text{ASGC}$ of the raw feature $\bm{x}$ by multiplying $\bm{x}$ with a learned polynomial of the normalized adjacency matrix $\bm{S}$; this polynomial is set so that $\bm{x}_\text{ASGC} \approx \bm{x}$:
+%
+\begin{align} \label{eqn:poly_filter}
+% \begin{split}
+    % \bm{x}_\text{ASGC} = \left(\sum_{k=0}^K c_k \bm{S}^k \right) \bm{x} \approx \bm{x},
+    \bm{x}_\text{ASGC} = \left(\sum\nolimits_{k=0}^K \beta_k \bm{S}^k \right) \bm{x} \approx \bm{x},
+% \end{split}
+\end{align}
+%
+where $K$ is a hyperparameter which, as in SGC, controls the radius of feature propagation, and the coefficients $\bm{\beta} \in \mathbb{R}^{K+1}$ are learned by minimizing the approximation error in a least squares sense. Note that, unlike SGC, we do not add self-loops to $\bm{S}$. This approximation error would be trivially minimized with $\beta_0 = 1$ and all other coefficients set to zero, resulting in $\bm{x}_\text{ASGC} = \bm{S}^0 \bm{x} = \bm{x}$, so we regularize the magnitude of $\beta_0$.
+
+More concretely, let $\bm{T} \in \mathbb{R}^{n \times (K+1)}$ denote the Krylov matrix generated by multiplying a feature vector $\bm{x} \in \mathbb{R}^n$ by the normalized adjacency matrix $\bm{S}$ up to some $K\in \mathbb{Z}_{>0}$ times:
+%
+\begin{align}\label{eqn:krylov_matrix}
+    \bm{T} &= \begin{pmatrix} \bm{S}^0 \bm{x} ; \bm{S}^1 \bm{x} ; \bm{S}^2 \bm{x} ; \dots ; \bm{S}^K \bm{x} \end{pmatrix}.
+\end{align}
+%
+Here the leftmost column of $\bm{T}$ is just the raw feature $\bm{x}$, and each column represents the feature generated by propagating the feature vector to its left across the graph, i.e., by multiplying once by $\bm{S}$. We produce a filtered version $\bm{x}_\text{ASGC}$ of the raw feature $\bm{x}$ by linear combination of the columns of $\bm{T}$. That is, $\bm{x}_\text{ASGC} = \bm{T} \bm{\beta}$, and we set the combination coefficients $\bm{\beta} \in \mathbb{R}^{k+1}$ by minimizing a loss function as follows:
+%
+\begin{align} \label{eqn:asgc_loss}
+    \min_{\bm{\beta}} \left( \norm{\bm{T}\bm{\beta} - \bm{x}}_2^2 + (R \beta_0)^2 \right) .
+\end{align}
+%
+The term on the right is $L_2$ regularization applied to the zeroth combination coefficient $\beta_0$ (which multiplies the raw feature $\bm{S}^0 \bm{x}$), and $R \in \mathbb{R}_{\geq 0}$ if a hyperparameter which controls the strength of this regularization. 
+% Thus, $\bm{x}_\text{ASGC}$ is an approximation of the raw feature $\bm{x}$ in terms of versions of $\bm{x}$ which are propagated across the graph; the ``zeroth'' propagation, .
+Equation~\ref{eqn:asgc_loss} is solved for the optimal coefficents $\bm{\beta}$ using linear least squares. 
+
+% \Dan{Runtime is dominated by logistic regression. Clarify that we do log. regression after filtering and add its runtime?}
+
+\begin{algorithm}
+  \caption{Adaptive Simple Graph Convolution (ASGC) Filter}
+  \label{alg:asgc}
+\begin{algorithmic}
+  \STATE {\bfseries Input:} undirected graph $\bm{A} \in \{0,1\}^{n \times n}$, node feature $\bm{x} \in \mathbb{R}^{n}$, \\$\hspace{28pt}$ number of hops $K \in \mathbb{Z}_{>0}$, regularization strength $R \in \mathbb{R}_{\geq 0}$
+  \STATE {\bfseries Output:} ASGC-filtered feature $\bm{x}_\text{ASGC}$
+  \STATE $\bm{D} \gets \text{diag}\left( \bm{A}\bm{1} \right)$ \COMMENT{degree matrix}
+  \STATE $\bm{S} \gets \bm{D}^{-1/2} \bm{A} \bm{D}^{-1/2}$ \COMMENT{normalized adjacency matrix}
+  \STATE $\bm{T} \in \mathbb{R}^{n \times (K+1)} \gets \bm{0}$ \COMMENT{$k$-step propagated features}
+  \STATE $\bm{T}_0 \gets \bm{x}$
+  \FOR{$k=1$ {\bfseries to} $K$}
+  \STATE $\bm{T}_k \gets \bm{S} \bm{T}_{k-1}$
+  \ENDFOR
+  \STATE $\bm{R} \in \mathbb{R}^{K+1} \gets \begin{pmatrix} R, 0, 0, \dots, 0 \end{pmatrix}$
+  \STATE $\bm{\beta} \gets \text{ least squares solution of } {\tiny \begin{pmatrix} \bm{T} \\ \bm{R} \end{pmatrix}} \bm{\beta} \approx {\tiny \begin{pmatrix} \bm{x} \\ 0 \end{pmatrix}} $
+  \STATE {\bfseries Return:} $\bm{T} \bm{\beta}$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Intuition} As noted above, if we set the regularization $R=0$, or more generally in the limit as \mbox{$R\to 0$}, the approximation error in Equation~\ref{eqn:asgc_loss} is trivially minimized and results in \mbox{$\bm{x}_\text{ASGC} = \bm{x}$}; that is, the learned filter just ignores the graph structure and maps the input feature through unchanged.
+Nonzero regularization forces the least squares reconstruction to use the graph structure as it approximates the raw, unpropagated feature. Ideally, this results in a denoising effect that is able to extend beyond SGC's fixed smoothing along edges. 
+% \Dan{Need to update the following now that motivating example is after.}
+% For example, in terms of the synthetic graphs of Section~\ref{sec:motivating}, when the graph is homophilous, since neighbors tend to have similar feature values, the unpropagated feature is correlated positively with propagated versions of the feature. When the graph is heterophilous, due to its roughly bipartite structure, the unpropagated feature is correlated negatively/positively with versions of the feature which are propagated an odd/even number of times. The least squares in ASGC is able to adapt to both cases and exploit these correlations. ASGC admits an interesting alternate interpretation based on a spectral view of Equation~\ref{eqn:asgc_loss}; while it is deeper than the preceding intuition, this interpretation is also more involved, so we defer it to Appendix~\ref{app:interpret}.
+For example, when a graph $\bm{S}$ is homophilous with respect to a node feature $\bm{x}$, in that neighbors tend to have similar feature values, the raw feature is correlated positively with the propagated version $\bm{S} \bm{x}$ of the feature. By contrast, when a graph is heterophilous with respect to a feature, the correlation is negative. The least squares in ASGC is able to adapt to both cases and exploit this correlation, as well as correlations that occur when repeatedly propagating features (i.e., correlations of $\bm{x}$ with $\bm{S}^k \bm{x}$ for $k>1$). ASGC admits an interesting alternate interpretation based on a spectral view of Equation~\ref{eqn:asgc_loss}; while it is deeper than the preceding intuition, this interpretation is also more involved, so we defer it to Appendix~\ref{app:interpret}.
+
+\paragraph{Further remarks} In theory, as $K$ is raised to higher values, $\bm{T}$ will provide a sufficiently high-rank basis that  $\bm{x}_\text{ASGC}$ will be arbitrarily close to $\bm{x}$, even if $R$ is very high and the leftmost (zeroth) column of $\bm{T}$ is effectively removed from the least squares regression.
+Then ASGC would have essentially the same performance as using the raw feature. While this issue could be resolved by introducing a smaller regularization term for the remaining coefficients, we find that this is generally not a problem over reasonable values of $K$ on real-world graphs; hence, for simplicity, we do not introduce this further regularization.
+
+Pseudocode to filter a single feature is given in Algorithm~\ref{alg:asgc}. This algorithm is applied independently to all features; note that this is trivially parallelizable across features.
+After this, as in SGC, the filtered features are passed as input to a logistic regression classifier for node classification.
+The core computations in Algorithm~\ref{alg:asgc} are 1) creation of the matrix $\bm{T}$ by multiplying $\bm{x}$ by $\bm{S}$ up to $K$ times, for which the time complexity is $O(mK)$, where $m$ is the number of edges; and 2) linear least squares with a matrix of dimensionality $(n+1) \times (K+1)$, for which the complexity is $O(n K^2)$.
+
+\section{Motivating Example}\label{sec:motivating}
+We now use a synthetic network to demonstrate the capability of ASGC, and the potential deficiencies of SGC, at denoising a single heterophilous feature. We propose Featured SBMs, which augment stochastic block models (SBMs) \citep{holland1983stochastic} with a single feature; we note that our FSBMs can be seen as a simplified variant of recently studied Contextual SBMs \citep{deshpande2018contextual}.
+%
+% \begin{definition}[Featured SBM]\label{defn:fsbm}
+% An SBM graph $G$ on $n$ nodes comprises two non-overlapping communities $Z$ and $W$ of equal size, with intra- and inter- community edge probabilities $p$ and $q$. Let $\bm{z},\bm{w} \in \{0,1\}^n$ be indicator vectors for membership in each of these communities, i.e., $z_i=1$ if the $i^\text{th}$ node is in $Z$ and $z_i=0$ otherwise. A Featured SBM (FSBM) is such a graph model $G$, plus a feature $\bm{x} = \bm{f} + \bm{\eta}$, where $\bm{f} = \mu_\tp \bm{z} + \mu_\tm \bm{w}$ for some $\mu_\tp, \mu_\tm \in \mathbb{R}$, which are the feature means for each community, and $\bm{\eta} \sim \mathcal{N}(0, \sigma^2 \bm{I})$ is zero-centered, isotropic Gaussian noise.
+% \end{definition}
+\begin{definition}[Featured SBM]\label{defn:fsbm}
+An SBM graph $G$ has $n$ nodes partitioned into $r$ communities $C_1,C_2,\dots,C_r$, with intra- and inter- community edge probabilities $p$ and $q$. Let $\bm{c_1},\bm{c_2},\dots,\bm{c_r} \in \{0,1\}^n$ be indicator vectors for membership in each community, i.e., the $j^\text{th}$ entry of $\bm{c_i}$ is $1$ if the $j^\text{th}$ node is in $C_i$ and 0 otherwise. A Featured SBM (FSBM) is such a graph model $G$, plus a feature vector $\bm{x} = \bm{f} + \bm{\eta} \in \mathbb{R}^n$, where $\bm{\eta} \sim \mathcal{N}(0, \sigma^2 \bm{I})$ is zero-centered, isotropic Gaussian noise and $\bm{f} = \sum_i \mu_i \bm{c_i}$ for some $\mu_1, \mu_2, \dots, \mu_r \in \mathbb{R}$, which are the expected feature values of each community.
+\end{definition}
+%
+We consider FSBMs with $n=1000$, 2 equally-sized communities $C_\tp$ and $C_\tm$, feature means $\mu_\tp = +1$, and $\mu_- = -1$, and noise variance $\sigma=1$. 
+Thus, there are $500$ nodes in each community; calling these communities `plus' and `minus,' the feature mean is $+1$ for nodes in the former and $-1$ for the latter, to which standard normal noise is added. We generate different graphs by setting the expected degree of all nodes to $10$ 
+(that is, ${\scriptstyle \frac{1}{2}} (p+q) \cdot n =10$)
+, then varying the intra- and inter-community edge probabilities $p$ and $q$ from $p \gg q$ (highly homophilous, in that `plus' nodes are much more likely to connect to other `plus' nodes than to `minus' nodes) to $q \gg p$ (highly heterophilous, in that `plus' nodes tend to connect to `minus' nodes).  See Figure~\ref{fig:motiv_dset} for illustration.
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.99\textwidth]{motivating_images/motivating_network.pdf}
+\caption{Synthetic dataset visualization. Left: 3 sample adjacency matrices, from the highly heterophilous ($q \ll p$) to the highly homophilous ($p \gg q$); for visual clarity, these graphs are 10 times denser the description in Section~\ref{sec:motivating}. Right: Feature values by node; note the feature means.}
+\label{fig:motiv_dset}
+\end{figure*}
+
+\begin{figure*}
+\centering
+\includegraphics[height=1.95in]{motivating_images/motivating_acc.pdf}\qquad
+\raisebox{+0.05\height}{\includegraphics[height=1.90in]{motivating_images/motivating_hist.pdf}}
+% \raisebox{+0.045\height}{\includegraphics[height=1.95in]{motivating_images/motivating_hist.pdf}}
+% \includegraphics[height=1.95in]{motivating_images/motivating_hist.pdf}
+\caption{Left: Denoising results on the synthetic graphs using SGC and ASGC with number of hops $K=2$. `Raw' shows the error when no filtering method is applied. ASGC and SGC are more effective at denoising on heterophilous and homophilous networks, respectively, and ASGC is more effective overall.
+Right: Distribution of the feature values before and after applying each of the filtering methods on a very heterophilous synthetic graph ($\frac{p-q}{p+q} = \sfrac{-9}{10}$), separated by ground-truth communities. SGC tends to merge the two communities, while ASGC is able to keep them separated.} \label{fig:motiv_results}
+\end{figure*}
+
+We seek to denoise the feature by exploiting the graph, which should result in the feature values moving towards the means of the respective communities. We employ SGC and our ASGC, both with number of hops $K=2$. Figure~\ref{fig:motiv_results} (left) shows the deviation from the feature means after denoising. It also shows the proportion of nodes whose filtered feature differs from the community mean in sign, that is, the error when classifying nodes into $C_+$ and $C_-$.
+By both metrics, ASGC outperforms SGC on heterophilous graphs, while SGC outperforms ASGC on homophilous graphs.
+Both methods can lose accuracy relative to just using the raw feature when the graph is neither homophilous nor heterophilous, that is, when the graph is not informative about the communities.
+However, the performance of ASGC increases similarly as the graph becomes either more heterophilous or homophilous, whereas SGC's performance improves significantly less in the heterophilous direction. Finally, the performance gap between the two is smaller on homophilous graphs, particularly on sign accuracy, suggesting that ASGC can better adapt to varying degrees of homophily/heterophily.
+We examine the highly heterophilous case in more detail in Figure~\ref{fig:motiv_results} (right), which shows the distributions of the feature before and after filtering. The fixed propagation of SGC tends towards merging the two communities' feature distributions; by contrast, ASGC is able to keep them separated, preserves the feature means, and pulls the feature distributions towards the respective community means.
+
+\section{Theoretical Guarantees}\label{sec:theory}
+
+To support our empirical investigation in Section~\ref{sec:motivating}, we now theoretically verify the limitations and capabilities of SGC and ASGC at denoising FSBM networks.
+For simplicity, we analyze SGC without the addition of a self-loop (that is, using $\bm{S}$ in Equation~\ref{eqn:sgc} rather than $\tilde{\bm{S}}$); the distinction between the two in the analysis vanishes as the number of intra-community edges grows, i.e., if $n \cdot p$ is high.
+Further, we assume that the regularization hyperparameter $R$ for ASGC is high, in which case the coefficient $\beta_0$ is fixed to zero, or equivalently, the column $\bm{S}^0 \bm{x}$ is removed from the Krylov matrix $\bm{T}$ in Equations~\ref{eqn:krylov_matrix} and \ref{eqn:asgc_loss}.
+Finally, we analyze using expected adjacency matrices from the model, though we conjecture that via concentration bounds one could extend the following results to the sampled setting~\citep{spielman2012spectral}.
+% \Cam{should say also that we analyze using the expected adjacency matrix, but that by standard matrix concentration bounds, similar results could be proven when p is large enough. And maybe cite the spielman book or something. I think we should acknowledge that there is some complexity here though. Something like: while, $\E[\bv{S}]$ is rank-$2$, $\bv{S}$ will be full rank with very high probability, and will have two dominant eigendirections, approximated aligned with $\bv{1}$ and $\bv{z}-\bv w$. Thus, the span of the Krylov subspace will not precisely align with that of $\bv{S}$'s top eigenvalues. However, it is well known that the span will approximately contain these eigenvalues for large enough $k$, and thus a similar result should hold. Then maybe we an cite some refs on krylov subspce based eigenvector approximation. I can try to dig somethign up.}
+Here, we analyze FSBMs with 2 equally-sized communities. In Appendix~\ref{app:multicom_sbm}, we prove that these results extend to an arbitrary number of communities. Unless otherwise specified, we use the same notation as Definition~\ref{defn:fsbm}.
+
+% \begin{theorem}[Effect of SGC on FSBM Networks]
+% When applied to FSBMs in expectation, SGC preserves the community feature means $\mu_\tp$ and $\mu_\tm$ and reduces the noise variance by a factor of $O(n)$ as the graph tends towards total homophily ($\lambda_2 \to +1$) or, with an even number of hops $K$, as the graph tends towards total heterophily ($\lambda_2 \to -1$). In other cases, SGC alters the community feature means, as much as exchanging the community means.
+% \end{theorem}
+\begin{theorem}[Effect of SGC on FSBM Networks]
+Consider FSBMs having 2 equally-sized communities with indicator vectors $\bm{c_u}$ and $\bm{c_v}$, expected adjacency matrix $\bm{A}$, and feature vector $\bm{x} = \bm{f} + \bm{\eta}$. Let $\bm{x}_\text{SGC}$ be the feature vector returned by applying SGC, with number of hops $K$, to $\bm{A}$ and $\bm{x}$. Further, let $\bar{\mu} = \tfrac{1}{2}(\mu_u + \mu_v)$ be the average of the feature means. Then, $\bm{x}_\text{SGC} = \bm{f}' + \theta_u \bm{c_u} + \theta_v \bm{c_v}$, where $\bm{f}' = \lambda_2^K \bm{f} + (1 - \lambda_2^K) (\bar{\mu} \bm{1})$, and $\theta_u$ and $\theta_v$ are both distributed according to $\mathcal{N}\left( 0, \tfrac{1}{n} (1 + \lambda_2^{2K}) \sigma^2 \right)$.
+\end{theorem}
+%
+\begin{proof}
+In expectation, an entry $A_{ij}$ of the adjacency matrix of the graph is $p$ if both $i,j \in C_u$ or both $i,j \in C_v$, and it is $q$ otherwise. The eigendecomposition $\bm{Q}\diag(\bm{\lambda})\bm{Q}^\top$ of the associated normalized adjacency matrix $\bm{S}$ has two nonzero eigenvalues: $\lambda_1 = 1$, with eigenvector $\bm{q_1} = (\sfrac{1}{\sqrt{n}})\bm{1} = (\sfrac{1}{\sqrt{n}}) (\bm{c_u} + \bm{c_v})$, and $\lambda_2 = \tfrac{p-q}{p+q}$, with $\bm{q_2} = (\sfrac{1}{\sqrt{n}}) (\bm{c_u} - \bm{c_v})$. 
+
+In the following analysis, we use the fact that zero-centered, isotropic Gaussian distributions are invariant to rotation, meaning $\bm{Q}^\top \bm{\eta} = \bm{\eta}' \sim \mathcal{N}(0, \sigma^2 \bm{I})$ for any orthonormal matrix $\bm{Q}$.
+% Let $\eta'_1$ and $\eta'_2$ be the first and second entries of $\bm{\eta}'$.
+\begin{align*}
+    \bm{x}_\text{SGC} = \bm{S}^K \bm{x}
+    &= \bm{Q} \diag(\bm{\lambda})^K \bm{Q}^\top ( \mu_u \bm{c_u} + \mu_v \bm{c_v} + \bm{\eta} ) \\
+    &= \bm{q_1} \bm{q_1}^\top ( \mu_u \bm{c_u} + \mu_v \bm{c_v} + \bm{\eta} ) + \lambda_2^K \bm{q_2} \bm{q_2}^\top ( \mu_u \bm{c_u} + \mu_v \bm{c_v} + \bm{\eta} ) \\
+    &= \bm{q_1} \left( \tfrac{\sqrt{n}}{2} ( \mu_u + \mu_v )  + \eta'_1 \right)
+    + \lambda_2^K \bm{q_2} \left( \tfrac{\sqrt{n}}{2} ( \mu_u - \mu_v)  +\eta'_2 \right) \\
+    % &= \left( \tfrac{1}{2} ( \mu_u + \mu_v )  + \tfrac{1}{\sqrt{n}} \eta'_1 \right) \bm{1}
+    % + \lambda_2^K \left( \tfrac{1}{2} ( \mu_u - \mu_v)  + \tfrac{1}{\sqrt{n}}\eta'_2 \right) \bm{c_u}
+    % + \lambda_2^K \left( \tfrac{1}{2} ( \mu_v - \mu_u)  - \tfrac{1}{\sqrt{n}}\eta'_2 \right) \bm{c_v} \\
+    &= \left( \tfrac{1}{2} ( \mu_u + \mu_v )  + \tfrac{1}{\sqrt{n}} \eta'_1 \right) (\bm{c_u} + \bm{c_v})
+    + \lambda_2^K \left( \tfrac{1}{2} ( \mu_u - \mu_v)  + \tfrac{1}{\sqrt{n}}\eta'_2 \right) (\bm{c_u} - \bm{c_v}) \\
+    &= \quad \lambda_2^K \left( \mu_u \bm{c_u} + \mu_v \bm{c_v} \right)  +
+    (1-\lambda_2^K) \cdot \tfrac{1}{2} ( \mu_u + \mu_v ) (\bm{c_u} + \bm{c_v})  \\
+    &\quad+ \tfrac{1}{\sqrt{n}} \left( \eta'_1 + \lambda_2^K \eta'_2 \right) \bm{c_u}
+    + \tfrac{1}{\sqrt{n}} \left( \eta'_1 - \lambda_2^K \eta'_2 \right) \bm{c_v} \\
+    &= \lambda_2^K \bm{f} + (1 - \lambda_2^K) (\bar{\mu} \bm{1}) + \theta_\tp \bm{c_u} + \theta_\tm \bm{c_v},
+\end{align*}
+%
+where $\theta_\pm = \tfrac{1}{\sqrt{n}} ( \eta'_1 \pm \lambda_2^K \eta'_2 )$, which has the specified distribution. 
+\end{proof}
+
+Note that $\lambda_2 = \tfrac{p-q}{p+q} \in [-1,+1]$, with negative values indicating heterophily ($p < q$) and positive values indicating homophily ($p > q$). SGC only preserves the feature means in certain limiting cases. In particular, this occurs as $\lambda_2 \to +1$, or as $\lambda_2 \to -1$ if $K$ is even; then $\lambda_2^K \to 1$, so the expected filtered feature vector $\bm{f}' \to \bm{f}$. On the other hand, if $\lambda_2 \to 0$, then $\lambda_2^K \to 0$ and $\bm{f}' \to \bar{\mu}\bm{1}$, that is, the feature value means are averaged between the communities. Finally, if $\lambda_2 \to -1$ and $K$ is odd, then $\lambda_2^K \to -1$ and $\bm{f}' = \bar{\mu}\bm{1} + (\bar{\mu}\bm{1} - \bm{f})  = \mu_v \bm{c_u} + \mu_u \bm{c_v}$: the feature value means are entirely exchanged across the communities. By contrast, ASGC preserves the means, while similarly reducing noise by an $O(n)$ factor, with much looser restrictions on $\lambda_2$ and $K$:
+% , and the analysis is simpler as well:
+%
+% \Cam{I would state this theorem first. Its cleaner. Then Theorem 1 after to compare SGC to us.}
+% \begin{theorem}[Effect of ASGC on FSBM Networks]
+% When applied to FSBMs in expectation, ASGC preserves the community feature means $\mu_\tp$ and $\mu_\tm$ and reduces the noise variance by a factor of $O(n)$, with any number of hops $K\geq 2$, as long as $\lambda_2 \neq 0$, that is, as long as $p \neq q$.
+% \end{theorem}
+
+\begin{theorem}[Effect of ASGC on FSBM Networks]
+Consider FSBMs with $p \neq q$ having 2 equally-sized communities with community indicator vectors $\bm{c_u}$ and $\bm{c_v}$, expected adjacency matrix $\bm{A}$, and feature vector $\bm{x} = \bm{f} + \bm{\eta}$. Let $\bm{x}_\text{ASGC}$ be the feature vector returned by applying ASGC, with number of hops $K \geq 2$, to $\bm{A}$ and $\bm{x}$. Then $\bm{x}_\text{ASGC} = \bm{f} + \theta'_\tp \bm{c_u} + \theta'_\tm \bm{c_v}$, where $\theta'_\tp$ and $\theta'_\tm$ are both distributed according to $\mathcal{N}\left( 0, \tfrac{2}{n} \sigma^2 \right)$.
+\end{theorem}
+% \Cam{I think we need to state the theorem more mathematically. E.g. say, Consider an FSBM model, with expected adjacency matrix $\bv S$ and feature vector $\bv f + \bv \eta$. Let $\bv{x}_{ASCG}$ be the feature vector returned by ASCG (Algorithm blah). Then $\bv{x}_{ASCG} = \bv f + \bv{\eta}'$ where $\bv \eta'$ is i.i.d. entries distributed acorrding to blah. Same goes for theorem 1. Then after the theorem you can say a less formal sentence like 'Note that this shows that ASCG maintains the feature while reducing the noise by a factor of $O(n)$.}
+%
+\begin{proof}
+The least squares in ASGC is equivalent to projecting the feature $\bm{x}$ onto the column span of the Krylov matrix $\bm{T} = \begin{pmatrix} \bm{S}^1 \bm{x} ; \bm{S}^2 \bm{x} ; \dots ; \bm{S}^K \bm{x} \end{pmatrix}$. 
+%This is just projection of $\bm{x}$ onto the eigenspace of $\bm{S}$:
+% \Cam{I would say explicitly since the Krylov subspace has the same column span as $\bv S$. This requires arguing that it has rank at least 2 -- i.e. that $\bv S^1 \bv x$ and $\bv S^2 \bv x$ are not just scalings of each other.}
+Observe that the column span of $\bm T$ is contained in the column span of $\bm{S}$. Further, $\bm{S}$ is rank-$2$ (by the assumption that $p \neq q$), so with probability $1$ over the distribution of $\bm{\eta}$, as long as $K \ge 2$, the column span of $\bm{T}$ equals that of $\bm{S}$. Thus ASGC projects $\bm{x}$ onto the column span of $\bm{S}$, i.e., the span of $\bm{q_1},\bm{q_2}$, the eigenvectors of $\bm{S}$. The following analysis proceeds exactly like the one for SGC, just without the terms for the eigenvalue $\lambda_2$, so we use the same notation and abbreviate the steps:
+%
+\begin{align*}
+    \bm{x}_\text{ASGC} &= \bm{Q}\bm{Q}^\top \bm{x} \\
+    &= \bm{q_1} \bm{q_1}^\top ( \mu_u \bm{c_u} + \mu_v \bm{c_v} + \bm{\eta} ) + \bm{q_2} \bm{q_2}^\top ( \mu_u \bm{c_u} + \mu_v \bm{c_v} + \bm{\eta} ) \\
+    &= \bm{f} + \theta'_\tp \bm{c_u} + \theta'_\tm \bm{c_v},
+\end{align*}
+where $\theta'_\pm = \tfrac{1}{\sqrt{n}} ( \eta'_1 \pm \eta'_2 )$, which has the specified distribution.
+% \Cam{Ok to shorten but need to say that the notation is as in Theorem 1. Since otherwise, here $\eta_1,\eta_2$ are undefined. (I think ignore this comment now.)}
+\end{proof}
+%
+Observe that in the sampled setting, standard matrix concentration results can be used to show that, while $\bm S$ will be full rank with high probability, it will have two outlying eigenvalues, corresponding to eigenvectors close to $\bm{q_1}$ and $\bm{q_2}$~\citep{spielman2012spectral}. It is well known that the span of the Krylov matrix $\bm T$ will align well with these outlying eigendirections~\citep{saad2011numerical}. Thus, we expect the projection $\bm{Q} \bm{Q}^\top \bm{x} = \bm{Q} \bm{Q}^\top \bm{f} + \bm{Q} \bm{Q}^\top \bm{\eta}$ to still approximately preserve $\bm{f}$. At the same time, $\bm Q\bm Q^T \bm \eta$ is the projection of a random Gaussian vector $\bm \eta$ onto a fixed $K$-dimensional subspace. Thus, we will have $\norm{\bm Q \bm Q^\top \bm{\eta}}_2^2 \approx \frac{K}{n} \norm{\bm{\eta}}_2^2$, so ASGC will still perform significant denoising when $K$ is small.
+
+\section{Related Work}\label{sec:related}
+
+\paragraph{Deep graph models} As discussed previously, the SGC algorithm is a drastic simplification of the graph convolutional network (GCN) model~\citep{kipf2016semi}. GCNs learn a sequence of node representations that evolve via repeated propagation through the graph and nonlinear transformations. The starting node representations $\bm{H}^{(0)}$ are set to the input feature matrix $\bm{X}\in\mathbb{R}^{n \times f}$, where $f$ is the number of features. The $k^\text{th}$-step representations are $\bm{H}^{(k)} = \sigma\left( \bm{S} \bm{H}^{(k-1)} \bm{\Theta}^{(k)} \right)$, where $\bm{\Theta}^{(k)}$ is the learned linear transformation matrix for the $k^\text{th}$ layer and $\sigma$ is a nonlinearity like ReLU. After $K$ such steps, the representations are used to classify the nodes via a softmax layer, and the whole model is trained end-to-end via gradient descent.
+\citet{wu2019simplifying} observe that if the nonlinearities are ignored, all of the linear transformations collapse into a single one, while the repeated multiplications by $\bm{S}$ collapse into a single one by $\bm{S}^K$; this yields their algorithm of the SGC filter (Equation~\ref{eqn:sgc}) followed by logistic regression.
+GCNs have spawned streamlined versions like FastGCN~\citep{chen2018fastgcn}, as well as more complicated variants like graph isomorphism networks (GINs)~\citep{xu2018powerful} and graph attention networks (GATs)~\citep{velivckovic2018graph}; despite being much simpler and faster than these competitors, SGC manages similar performance on common benchmarks, though, based on the analysis of \citet{nt2019revisiting}, this may be due in part to the simplicity of the benchmark datasets in that they mainly exhibit homophily/assortativity.
+
+\paragraph{Addressing heterophily} Like our work, some other recent methods attempt to address node heterophily. 
+\citet{gatterbauer2014semi} and \citet{zhu2020graph} augment classical feature propagation and GCNs, respectively, to accommodate heterophily by modifying feature propagation based on node classes. \citet{zhu2020beyond} and \citet{yan2021two} analyze common structures in heterophilous graphs and the failure points of GCNs, then propose GCN variants based on their analyses.
+The Geom-GCN paper of \citet{pei2020geom} introduces several of the real-world heterophilous networks which are commonly used in related papers, including this one. Their method allows for long-range feature propagation based on similarity of pre-trained node embeddings.
+% Non-local GNNs~\citep{liu2020non}, as their name implies, also allow for long-range feature propagation. Rather than using pre-trained node embeddings, they do this via an efficient variant of a general attention mechanism.
+% We include comparisons of our method to the last two methods discussed, Geom-GCN and non-local GNNs; the latter claims to achieve overall state-of-the-art results on benchmarks of heterophilous datasets.
+% \Cam{What does this last sentence mean exactly? On what benchmarks? It doesn't look that in geneeral they are state-of-the-art in experiments?}
+The preceding is just a sample of recent works in this area, which has seen a surge of activity~\citep{liu2020non, luan2021heterophily, suresh2021breaking}.
+% \Dan{Explain other works quickly in relation to GPRGNN. Also, what's their theory contribution vs ours?}
+We note that, like the GNNs of \citet{kipf2016semi} but unlike SGC and our ASGC, almost all of these methods are based on deep learning and are trained via backpropagation through repeated feature propagation and linear transformation steps, and hence incur an associated speed and memory requirement. Understanding and implementing these methods is also more complicated relative to our method, which just constitutes a learned feature filter and logistic regression.
+We mainly compare our results with the deep method which is most similar to ours, Generalized PageRank GNN (GPR-GNN) \citep{chien2020adaptive}. Like ASGC, GPR-GNN produces node representations by linear combination of propagated versions of node features; unlike ASGC, the raw features are first transformed by a neural network, and parameters for this network, as well as the linear combination coefficients, are learned by backpropagation using the known node labels. 
+% To our knowledge, ours is the first algorithm which can handle heterophily using just feature pre-processing.
+To our knowledge, our work is the first to show that heterophily can be handled using just feature pre-processing.
+% \Dan{Comment on their experiments on synthetic dataset, but lack of proof unlike us?}
+
+
+% \Cam{I would also say that understnading them is much more complex. While our method is basically a learned feature transformation + regression, so much easier to interpret and has many feature parameters}
+
+
+% Recent deep approaches include \dan{Add some discussion of Geom-GCN and non-local GNNs since we compare to them later; what is the difference between geom-gcn and \citep{zhu2020graph}? Check non-local for their review}
+
+\section{Empirical Performance}\label{sec:results}
+We test the performance of ASGC for the node classification task on a benchmark of real-world datasets given in Table~\ref{tab:datasets}, and compare with SGC and several deep methods.
+
+\paragraph{Real-world datasets} 
+We experiment on 10 commonly-used datasets, the same collection of datasets as \citet{chien2020adaptive}. We describe them briefly here and in more detail in Appendix~\ref{app:data_describe}, where we discuss the labels and features.
+% bag-of-words representations of papers
+\textsc{Cora}, \textsc{Citeseer}, and \textsc{Pubmed} are citation networks which are common benchmarks for node classification \citep{sen2008collective, namata2012query}.
+\textsc{Computers} and \textsc{Photo} are segments of the Amazon co-purchase graph~\citep{mcauley2015image, shchur2018pitfalls}.
+These first 5 datasets are considered assortative/homophilous; the remaining 5 datasets, which are disassortative/heterophilous, come from the Geom-GCN paper~\citep{pei2020geom}, which also introduces the following measure of of a network's homophily: 
+\mbox{$ H(\mathcal{G}) = \frac{1}{|V|} \sum_{v \in V} \frac{\text{\# $v$'s neighbors with the same label as $v$}}{\text{\# neighbors of $v$}} \in [0,1]$}.
+We include this statistic in Table~\ref{tab:datasets}.
+The latter 5 datasets have much lower values of $H(\mathcal{G})$.
+\textsc{Chameleon} and \textsc{Squirrel} are hyperlink networks of pages in Wikipedia which concern the two topics~\citep{rozemberczki2021multi}.
+\textsc{Actor} is the actor-only induced subgraph of the film-director-actor-writer network of \citet{tang2009relational}.
+Finally, \textsc{Texas} and \textsc{Cornell} are hyperlink networks from university websites~\citep{craven2000learning}.
+
+% Values from GPRGNN
+% \begin{table}
+% \caption{\label{tab:datasets} Datasets used in our experiments, separated by homophilous vs heterophilous.}
+%     \centering
+%     \begin{small}
+%     \setlength\tabcolsep{4.5pt}
+%         \begin{tabular}{l|rrrrr|rrrrr}
+%         Dataset  & {\sc Cora}  & {\sc Cite.} & {\sc PubM.} & {\sc Comp.} & {\sc Photo}  & {\sc Cham.} & {\sc Squi.} & {\sc Actor} & {\sc Texas} & {\sc Corn.} \\ \hline
+%         Nodes    & 2708  & 3327     & 19717  & 13752     & 7650   & 2277      & 5201     & 7600  & 183   & 183     \\
+%         Edges    & 5278  & 4552     & 44324  & 245861    & 119081 & 31371     & 198353   & 26659 & 279   & 277     \\
+%         Features & 1433  & 3703     & 500    & 767       & 745    & 2325      & 2089     & 932   & 1703  & 1703    \\
+%         Classes  & 7     & 6        & 3      & 10        & 8      & 5         & 5        & 5     & 5     & 5       \\
+%         $H(\mathcal{G})$     & 0.825 & 0.718    & 0.792  & 0.802     & 0.849  & 0.247     & 0.217    & 0.215 & 0.057 & 0.301  
+%         \end{tabular}
+%     \end{small}
+% \end{table}
+
+% % My values
+% \begin{table}
+% \caption{\label{tab:datasets} Statistics of datasets used in our experiments, separated by homophilous vs heterophilous.}
+%     \centering
+%     \begin{small}
+%     \setlength\tabcolsep{4.5pt}
+%         \begin{tabular}{l|rrrrr|rrrrr}
+%         \noalign{\hrule height 0.75pt}
+%         Dataset  & {\sc Cora}  & {\sc Cite.} & {\sc PubM.} & {\sc Comp.} & {\sc Photo}  & {\sc Cham.} & {\sc Squi.} & {\sc Actor} & {\sc Texas} & {\sc Corn.} \\ \hline
+%         Nodes    & 2708  & 3327     & 19717  & 13752     & 7650   & 2277      & 5201     & 7600  & 183   & 183     \\
+%         Edges    & 5278  & 4676     & 44327  & 245861    & 119081 & 31421     & 198493   & 26752 & 295   & 280     \\
+%         Features & 1433  & 3703     & 500    & 767       & 745    & 2325      & 2089     & 932   & 1703  & 1703    \\
+%         Classes  & 7     & 6        & 3      & 10        & 8      & 5         & 5        & 5     & 5     & 5       \\
+%         $H(\mathcal{G})$     & 0.825 & 0.718    & 0.792  & 0.802     & 0.849  & 0.247     & 0.217    & 0.215 & 0.057 & 0.301  \\ \noalign{\hrule height 0.75pt}
+%         \end{tabular}
+%     \end{small}
+% \end{table}
+
+% Symmetrized torch geometric values
+\begin{table}
+\caption{\label{tab:datasets} Statistics of datasets used in our experiments, separated by homophilous vs heterophilous.}
+    \centering
+    \begin{small}
+    \setlength\tabcolsep{4.5pt}
+        \begin{tabular}{l|rrrrr|rrrrr}
+        \noalign{\hrule height 0.75pt}
+        Dataset  & {\sc Cora}  & {\sc Cite.} & {\sc PubM.} & {\sc Comp.} & {\sc Photo}  & {\sc Cham.} & {\sc Squi.} & {\sc Actor} & {\sc Texas} & {\sc Corn.} \\ \hline
+        Nodes    & 2708  & 3327     & 19717  & 13752     & 7650   & 2277      & 5201     & 7600  & 183   & 183     \\
+        Edges    & 5278  & 4552     & 44324  & 245861    & 119081 & 31421     & 198493   & 26752 & 295   & 280     \\
+        Features & 1433  & 3703     & 500    & 767       & 745    & 2325      & 2089     & 932   & 1703  & 1703    \\
+        Classes  & 7     & 6        & 3      & 10        & 8      & 5         & 5        & 5     & 5     & 5       \\
+        $H(\mathcal{G})$     & 0.825 & 0.718    & 0.792  & 0.802     & 0.849  & 0.247     & 0.217    & 0.215 & 0.057 & 0.301  \\ \noalign{\hrule height 0.75pt}
+        \end{tabular}
+    \end{small}
+\end{table}
+
+% \begin{table}
+% \caption{\label{tab:datasets} Datasets used in our experiments. \Dan{Check the table}}
+%     \centering
+%     \begin{small}
+%     \setlength\tabcolsep{10pt}
+%     \begin{tabular}{l|rrrrr}
+% Dataset   & Nodes & Edges  & Features & Classes & $H(\mathcal{G})$  \\ \hline
+% {\sc Cora}      & 2708  & 5278   & 1433     & 7       & 0.825 \\
+% {\sc Citeseer}  & 3327  & 4552   & 3703     & 6       & 0.718 \\
+% {\sc PubMed}    & 19717 & 44324  & 500      & 5       & 0.792 \\
+% {\sc Computers} & 13752 & 245861 & 767      & 10      & 0.802 \\
+% {\sc Photo}     & 7650  & 119081 & 745      & 8       & 0.849 \\ \hline
+% {\sc Chameleon} & 2277  & 31371  & 2325     & 5       & 0.247 \\
+% {\sc Squirrel}  & 5201  & 198353 & 2089     & 5       & 0.217 \\
+% {\sc Actor}     & 7600  & 26659  & 932      & 5       & 0.215 \\
+% {\sc Texas}     & 183   & 279    & 1703     & 5       & 0.057 \\
+% {\sc Cornell}   & 183   & 277    & 1703     & 5       & 0.301
+%     \end{tabular}
+%     \end{small}
+% \end{table}
+
+\paragraph{Implementation} The SGC and ASGC algorithms are implemented in Python using NumPy~\citep{harris2020array} for least squares regression and other linear algebraic computations. We use scikit-learn~\citep{scikit-learn} for logistic regression with 1,000 maximum iterations and otherwise default hyperparameters. For our implementations of SGC and ASGC, we treat each network as undirected, in that if edge $(i,j)$ appears, we also include edge $(j,i)$. 
+% We include code in the form of a Jupyter notebook~\citep{PER-GRA:2007} demo in the supplemental material. 
+We include code in the supplemental material. 
+We tune the number of hops over $K \in \{1,2,4,8\}$, roughly covering the range analyzed in \citet{wu2019simplifying}, and the regularization strength $R=\sqrt{n \cdot R'}$ over $\log_{10}(R') \in \{-4,-3,-2,-1,0\}$; $n$ is the number of nodes, and this dependency on $n$ allows the regularization loss to scale with the least squares loss, which generally grows linearly with $n$. Like \citet{chien2020adaptive}, we use random 60\%/20\%/20\% splits as training/validation/test data for the 5 heterophilous datasets, as in \citet{pei2020geom}, and use random 2.5\%/2.5\%/95\% splits for the homophilous datasets, which is closer to the original setting from \citet{kipf2016semi} and \citet{shchur2018pitfalls}.
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{empirical_images/compare_results.pdf}
+\caption{Test classification accuracy on the benchmark of datasets from Table~\ref{tab:datasets} for selected methods: 2 non-deep, SGC and ASGC; and 3 deep, GCN, Geom-GCN, and GPR-GNN. Error bars show the 95\% confidence intervals. SGC is generally competitive with the deep methods on the homophilous datasets (top row), but not so on the heterophilous ones, whereas ASGC is competitive throughout.} \label{fig:comp_res}
+\end{figure*}
+
+\paragraph{Classification results}
+We apply our implementations of SGC and ASGC to these datasets and report the mean test accuracy across 10 random splits of the data. As a baseline, we also report the accuracy of logistic regression on the `raw,' unfiltered features, ignoring the graph. We compare to results from \citet{chien2020adaptive} for 9 deep methods applied to these datasets. These methods are 1) a multi-layer perceptron which ignores the graph; 2) GCN; 3) GAT; 4) SAGE~\citep{hamilton2017inductive}; 5) JKNet~\citep{xu2018representation}; 6) GCN-Cheby~\citep{defferrard2016convolutional}; 7) Geom-GCN; 8) APPNP~\citep{klicpera2018predict}; and 9) GPR-GNN.
+Full results are given in Table~\ref{tab:full_res} in Appendix~\ref{app:full_results}.
+
+We plot accuracies for selected methods in Figure~\ref{fig:comp_res}. In addition to SGC and ASGC, we include 3 deep methods: `vanilla' GCN; Geom-GCN, which originated the heterophilous datasets; and GPR-GNN, a recent method claiming state-of-the-art performance.
+We find that SGC is generally competitive with the deep methods on the homophilous datasets, but not so on the heterophilous ones, whereas ASGC is generally competitive throughout.
+Interestingly, the datasets on which GPRGNN significantly outperforms ASGC (\textsc{PubMed}, \textsc{Actor}, \textsc{Texas}, \textsc{Cornell}) are exactly those on which a multi-layer perceptron significantly outperforms logistic regression; note that the latter two methods both ignore the graph. This suggests that the some nonlinear processing of the node features may be key to performance on these networks, separate from how the graph is exploited.
+%
+To compactly compare all 12 of the methods across these 10 datasets, we aggregate the performance across the datasets as follows. For each dataset, we calculate the accuracy of each method as a proportion of the accuracy of the best method. We plot the mean and the minimum across the 10 datasets of each method's proportional accuracies. See Figure~\ref{fig:agg_res}. GPRGNN and ASGC achieve the highest mean performance. Further, ASGC achieves the highest minimum performance: at worst, it achieves over 90\% of the best method's test accuracy on each of the datasets. 
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{empirical_images/aggregate_results.pdf}
+\vspace{-3pt}
+\caption{Test accuracy as a proportion of the best method's accuracy; mean and minimum performance over the 10 networks. The 3 non-deep (logistic regression) methods are on the left. ASGC achieves the highest minimum performance, and is competitive with GPRGNN on the mean.}
+\label{fig:agg_res}
+\vspace{-3pt}
+\end{figure*}
+
+
+\section{Conclusion}\label{sec:conclusion}
+% Building on SGC, we propose a feature filtering technique, ASGC, based on feature propagation and least-squares regression. Using a synthetic network, we show that ASGC can adapt to both homophilous and heterophilous networks. To combine SGC and ASGC while preserving simplicity, we propose our combination method, which is competitive with recent deep learning algorithms at node classification on real-world networks.
+% We also find that an overlooked setting of SGC with $K=1$ is surprisingly performant.
+% Given their simplicity, we believe these methods can serve as a good baseline for any future proposed models.
+
+Building on SGC, we propose a feature filtering technique, ASGC, based on feature propagation and least-squares regression. We propose a natural class of synthetic featured networks, FSBMs, and show both empirically and with theoretical guarantees that ASGC can denoise both homophilous and heterophilous FSBMs, whereas SGC is inappropriate for the latter. Further, we find that ASGC is generally competitive with recent deep learning-based methods on a benchmark of real-world datasets, covering both homophilous and heterophilous networks. Our results suggest that deep learning is not strictly necessary for handling heterophily, and that even a simple feature pre-processing method can be competitive. We hope that, like SGC, ASGC can serve as a good first method to try, especially for node classification on heterophilous networks, and a baseline for future works.
+
+% We note certain limitations of our work. First, our theoretical guarantees are in the fairly idealized setting of FSBM networks; we provide no general guarantee of performance. Second, our empirical evaluations on real-world datasets do not include any truly large-scale datasets ($n \sim 10^6$ or higher), though our collection of 10 datasets is a fairly broad selection amongst those which are commonly used in related papers about heterophily. Finally, as we note in Section~\ref{sec:related}, there are many more recent works and methods for handling heterophily to which we could compare our results. We limit ourselves to a subset due to the amount of activity in this area; further, we are not asserting absolute state-of-the-art results in this area, merely that a simple method like ours can be competitive.
+
+% We do not anticipate direct negative societal impacts of our work, but improved methods for network analysis, including those for node classification, have social consequences. For example, improved graph-based recommendations may be associated with negative impacts to well-being due to increased social media use \citep{verduyn2017social,kelly2018social}. They might also contribute to concerns of filter bubbles and polarization~\citep{nguyen2014exploring,lee2014social,musco2018minimizing}.
+
+\begin{ack}
+This project was partially supported by an Adobe Research grant, along with NSF
+Grants 2046235 and 1763618. We also thank Raj Kumar Maity and Konstantinos Sotiropoulos for helpful conversations.
+\end{ack}
+
+\clearpage
+
+
+\bibliography{main}
+\bibliographystyle{icml2021}
+
+% \section*{References}
+
+% References follow the acknowledgments. Use unnumbered first-level heading for
+% the references. Any choice of citation style is acceptable as long as you are
+% consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
+% when listing the references.
+% Note that the Reference section does not count towards the page limit.
+% \medskip
+
+
+% {
+% \small
+
+
+% [1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
+% connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
+% (eds.), {\it Advances in Neural Information Processing Systems 7},
+% pp.\ 609--616. Cambridge, MA: MIT Press.
+
+
+% [2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
+%   Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
+% TELOS/Springer--Verlag.
+
+
+% [3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
+% recall at excitatory recurrent synapses and cholinergic modulation in rat
+% hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
+% }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section*{Checklist}
+
+
+% % %%% BEGIN INSTRUCTIONS %%%
+% % The checklist follows the references.  Please
+% % read the checklist guidelines carefully for information on how to answer these
+% % questions.  For each question, change the default \answerTODO{} to \answerYes{},
+% % \answerNo{}, or \answerNA{}.  You are strongly encouraged to include a {\bf
+% % justification to your answer}, either by referencing the appropriate section of
+% % your paper or providing a brief inline description.  For example:
+% % \begin{itemize}
+% %   \item Did you include the license to the code and datasets? \answerYes{See Section~\ref{gen_inst}.}
+% %   \item Did you include the license to the code and datasets? \answerNo{The code and the data are proprietary.}
+% %   \item Did you include the license to the code and datasets? \answerNA{}
+% % \end{itemize}
+% % Please do not modify the questions and only use the provided macros for your
+% % answers.  Note that the Checklist section does not count towards the page
+% % limit.  In your paper, please delete this instructions block and only keep the
+% % Checklist section heading above along with the questions/answers below.
+% % %%% END INSTRUCTIONS %%%
+
+
+% \begin{enumerate}
+
+
+% \item For all authors...
+% \begin{enumerate}
+%   \item Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+%     \answerYes{}
+%   \item Did you describe the limitations of your work?
+%     \answerYes{Section~\ref{sec:conclusion} describes limitations.}
+%   \item Did you discuss any potential negative societal impacts of your work?
+%     \answerYes{Section~\ref{sec:conclusion} discusses potential negative societal impacts.}
+%   \item Have you read the ethics review guidelines and ensured that your paper conforms to them?
+%     \answerYes{}
+% \end{enumerate}
+
+
+% \item If you are including theoretical results...
+% \begin{enumerate}
+%   \item Did you state the full set of assumptions of all theoretical results?
+%     \answerYes{Section~\ref{sec:motivating} defines the FSBM networks and Section~\ref{sec:theory} describes any further assumptions for theoretical results.}
+%         \item Did you include complete proofs of all theoretical results?
+%     \answerYes{Section~\ref{sec:theory} includes proofs.}
+% \end{enumerate}
+
+
+% \item If you ran experiments...
+% \begin{enumerate}
+%   \item Did you include the code, data, and instructions needed to reproduce the main experimental results (either in the supplemental material or as a URL)?
+%     \answerYes{The code is a straightforward Jupyter demo, and it is included in the supplemental material.}
+%   \item Did you specify all the training details (e.g., data splits, hyperparameters, how they were chosen)?
+%     \answerYes{The implementation subsection of Section~\ref{sec:results} specifies the data splits and hyperparameters and where they came from.}
+%         \item Did you report error bars (e.g., with respect to the random seed after running experiments multiple times)?
+%     \answerYes{Both the main results plot and the full table of results include confidence intervals.}
+%         \item Did you include the total amount of compute and the type of resources used (e.g., type of GPUs, internal cluster, or cloud provider)?
+%     \answerNo{As should be clear from the time complexity discussion in Section~\ref{sec:method} and the dataset statistics in Table~\ref{tab:datasets}, our method is lightweight enough to run the benchmarks within a few hours on a laptop without a GPU, so compute is not a significant concern.}
+% \end{enumerate}
+
+
+% \item If you are using existing assets (e.g., code, data, models) or curating/releasing new assets...
+% \begin{enumerate}
+%   \item If your work uses existing assets, did you cite the creators?
+%     \answerYes{We only use standard node classification benchmarks and credit the original papers.}
+%   \item Did you mention the license of the assets?
+%     \answerNA{}
+%   \item Did you include any new assets either in the supplemental material or as a URL?
+%     \answerNA{We do not produce new assets.}
+%   \item Did you discuss whether and how consent was obtained from people whose data you're using/curating?
+%     \answerNA{}
+%   \item Did you discuss whether the data you are using/curating contains personally identifiable information or offensive content?
+%     \answerNA{}
+% \end{enumerate}
+
+
+% \item If you used crowdsourcing or conducted research with human subjects...
+% \begin{enumerate}
+%   \item Did you include the full text of instructions given to participants and screenshots, if applicable?
+%     \answerNA{}
+%   \item Did you describe any potential participant risks, with links to Institutional Review Board (IRB) approvals, if applicable?
+%     \answerNA{}
+%   \item Did you include the estimated hourly wage paid to participants and the total amount spent on participant compensation?
+%     \answerNA{}
+% \end{enumerate}
+
+
+% \end{enumerate}
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \clearpage
+% \appendix
+
+\clearpage
+\section{Appendix}
+
+\subsection{Spectral Interpretation of ASGC}\label{app:interpret}
+%
+ASGC admits an interesting alternate interpretation based on a spectral view of Equation~\ref{eqn:asgc_loss}.
+Let $\bm{S} = \bm{Q} \diag(\bm{\lambda}) \bm{Q}^\top$ be an eigendecomposition of $\bm{S}$, and let $\bm{\gamma} = \bm{Q}^{-1} \bm{x}$, that is, $\bm{\gamma}$ is the graph Fourier transform of the feature $\bm{x}$. The central objective in ASGC is the norm of the residual of the least squares in Equation~\ref{eqn:asgc_loss}. As in Parseval's Theorem, due to the orthogonality of $\bm{Q}$, this norm is invariant under the graph Fourier transform:
+%
+\begin{align*}
+    \norm{\bm{x}_\text{ASGC} - \bm{x}}^2 
+    = \norm{\bm{T}\bm{\beta} - \bm{x}}^2
+    % {\color{red} = \left( \bm{T}\bm{c} - \bm{x} \right)^\top \left( \bm{T}\bm{c} - \bm{x} \right) 
+    % = \left( \bm{T}\bm{c} - \bm{x} \right)^\top \bm{Q} \bm{Q}^\top \left( \bm{T}\bm{c} - \bm{x} \right)} \\
+    = \norm{\bm{Q}^{\top} \left(\bm{T}\bm{\beta} - \bm{x}\right)}^2
+    = \norm{\bm{Q}^{-1} \left(\bm{T}\bm{\beta} - \bm{x}\right)}^2 .
+\end{align*}
+%
+Recall that each column of $\bm{T}$ is of the form $\bm{S}^i \bm{x}$ for some nonnegative power $i$. Then
+%
+\begin{align*}
+    \bm{Q}^{-1} \bm{S}^i \bm{x}
+    = \bm{Q}^{-1} \left( \bm{Q} \diag(\bm{\lambda})^i \bm{Q}^\top \right) \left( \bm{Q} \bm{\gamma} \right)
+    = \diag(\bm{\lambda})^i \bm{\gamma},
+\end{align*}
+%
+and the minimization objective can be written as
+%
+\begin{align*}
+    \norm{\bm{x}_\text{ASGC} - \bm{x}}^2 
+    &= \norm{\bm{Q}^{-1} \bm{T}\bm{c} - \bm{Q}^{-1}\bm{x}}^2
+    = \norm{\diag(\bm{\gamma}) \bm{V_\lambda} \bm{\beta} - \bm{\gamma}}^2
+    = \norm{\diag(\bm{\gamma}) \left(\bm{V_\lambda} \bm{\beta} - \bm{1} \right)}^2 ,
+\end{align*}
+%
+% where
+% %
+% \begin{align*}
+%     \bm{V_\lambda} &= 
+%     \begin{pmatrix}
+%     \lambda_1^0 & \lambda_1^1 & \lambda_1^2 & \dots & \lambda_1^K \\
+%     \lambda_2^0 & \lambda_2^1 & \lambda_2^2 & \dots & \lambda_2^K \\
+%     \vdots & \vdots & \vdots & \dots & \vdots \\
+%     \lambda_n^0 & \lambda_n^1 & \lambda_n^2 & \dots & \lambda_n^K \\
+%     \end{pmatrix}
+% \end{align*}
+% %
+%
+where, letting superscript $\circ i$ denote the entrywise $i^\text{th}$ power of a vector,
+\begin{align*}
+    \bm{V_\lambda} &= 
+    \begin{pmatrix}
+    \bm{\lambda}^{\circ 0}; \bm{\lambda}^{\circ 1}; \bm{\lambda}^{\circ 2}; \dots; \bm{\lambda}^{\circ K}
+    \end{pmatrix}
+\end{align*}
+%
+
+is the Vandermonde matrix of powers $0$ to $K$ of the eigenvalues of $\bm{S}$. Note that multiplying $\bm{V_\lambda}$ by the vector $\bm{\beta}$ yields the values of the polynomial with coefficients $\bm{\beta}$, evaluated at the eigenvalues $\bm{\lambda}$.
+Hence ASGC can be interpreted as fitting a $K$-degree polynomial over the graph's eigenvalues, with the target being all-ones. The value the polynomial takes over each eigenvalue represents how the learned filter scales the component of the feature $\bm{x}$ which is along the direction of the corresponding eigenvector of $\bm{S}$; the all-ones target corresponds to a do-nothing filter. The least squares loss is weighed proportionately to the magnitude of this component at each eigenvalue. That $K$ is small, and the use of regularization on the zeroth coefficient, precludes the learned filter actually being the do-nothing filter, and instead results in a simple polynomial which adapts to the feature.
+
+\subsection{Multi-Community FSBM Proofs}\label{app:multicom_sbm}
+
+We now prove generalizations of the theorems from Section~\ref{sec:theory} for FSBMs that may have more than 2 communities, i.e., with $r\geq 2$ from Definition~\ref{defn:fsbm}, and otherwise the same assumptions. The theorem statements and their implications are essentially the same. The proofs are also similar in concept, just using a different projection matrix $\bm{Q}$, though the proof for the generalized Theorem~\ref{thm:sgc} is significantly more involved.
+
+\begin{customthm}{1}[Effect of SGC on FSBM Networks]~\label{thm:sgc}
+Consider FSBMs having $r$ equally-sized communities with indicator vectors $\bm{c_1},\bm{c_2},\dots,\bm{c_k}$, expected adjacency matrix $\bm{A}$, and feature vector $\bm{x} = \bm{f} + \bm{\eta}$. Let $\bm{x}_\text{SGC}$ be the feature vector returned by applying SGC, with number of hops $K$, to $\bm{A}$ and $\bm{x}$. Further, let $\bar{\mu} = \tfrac{1}{r} \sum_i \mu_i$ be the average of the feature means. Then, $\bm{x}_\text{SGC} = \bm{f}' + \sum_i \theta_i \bm{c_i}$, where $\bm{f}' = \lambda_2^K \bm{f} + (1 - \lambda_2^K) (\bar{\mu} \bm{1})$, and each $\theta_i$ is distributed according to $\mathcal{N}\left( 0, \tfrac{1}{n} \left(1 + \lambda_2^{2K} (r-1) \right) \sigma^2 \right)$.
+\end{customthm}
+%
+\begin{proof}
+Let $\hat{\bm{1}} = (\sfrac{1}{\sqrt{n}}) \bm{1}$, where $\bm{1}$ is the $n$-length all-ones vector. Let $\bm{C} = \begin{pmatrix} \bm{c_1}; \bm{c_2}; \dots ; \bm{c_r} \end{pmatrix}$ and $\bm{Q} = \big( \sqrt{\sfrac{r}{n}} \big)  \bm{C}$. Note that $\hat{\bm{1}}$ has norm $1$, and the columns of $\bm{Q}$ are orthonormal. Finally, let $\lambda_2 = \tfrac{p-q}{p+(r-1)q}$. We we will not make use of this fact, but, as in the 2-community case from Section~\ref{sec:theory}, this is still the second largest eigenvalue of $\bm{S}$, and it now has multiplicity $r-1$.
+%
+% \begin{align*}
+%     \intertext{The expected adjacency matrix of the graph is}
+%     \bm{A} &= (p-q) \bm{C}\bm{C}^\top + q \bm{1} \bm{1}^\top 
+%     = (p-q) (\sfrac{n}{r}) \bm{Q}\bm{Q}^\top + qn \hat{\bm{1}} \hat{\bm{1}}^\top,
+%     \intertext{and the expected degree vector is}
+%     \bm{d} &= \bm{A} \bm{1} = (p-q) (\sfrac{n}{r}) \bm{1} + qn\bm{1} = \left( p + (r-1) q \right) (\sfrac{n}{r}) \bm{1},
+%     \intertext{yielding the expected normalized adjacency matrix}
+%     \bm{S} 
+%     &= \frac{(p-q) (\sfrac{n}{r}) \bm{Q}\bm{Q}^\top + qn \hat{\bm{1}} \hat{\bm{1}}^\top}{\left( p + (r-1) q \right) (\sfrac{n}{r})} \\
+%     &= \lambda_2 \bm{Q}\bm{Q}^\top + \frac{qr}{p + (r-1) q} \hat{\bm{1}} \hat{\bm{1}}^\top \\
+%     &= \lambda_2 \bm{Q}\bm{Q}^\top + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \\
+%     &= \left( \bm{Q}\bm{Q}^\top \right) \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right) .
+%     %
+%     \intertext{Note that
+%     $\left( \bm{Q}\bm{Q}^\top \right) \left( \hat{\bm{1}} \hat{\bm{1}}^\top \right) 
+%     = \left( \hat{\bm{1}} \hat{\bm{1}}^\top \right) \left( \bm{Q}\bm{Q}^\top \right) 
+%     = \hat{\bm{1}} \hat{\bm{1}}^\top$. Then, by induction,}
+%     \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right)^K
+%     &= \lambda_2^L \bm{I}  + (1-\lambda_2^K) \hat{\bm{1}} \hat{\bm{1}}^\top
+% \end{align*}
+
+The expected adjacency matrix of the graph is
+%
+\begin{equation*}
+    \bm{A} = (p-q) \bm{C}\bm{C}^\top + q \bm{1} \bm{1}^\top 
+    = (p-q) (\sfrac{n}{r}) \bm{Q}\bm{Q}^\top + qn \hat{\bm{1}} \hat{\bm{1}}^\top,
+\end{equation*}
+%
+and the expected degree vector is
+%
+\begin{equation*}
+    \bm{d} = \bm{A} \bm{1} = (p-q) (\sfrac{n}{r}) \bm{1} + qn\bm{1} = \left( p + (r-1) q \right) (\sfrac{n}{r}) \bm{1},
+\end{equation*}
+%
+yielding the expected normalized adjacency matrix
+\begin{align*}
+    \bm{S} 
+    &= \frac{(p-q) (\sfrac{n}{r}) \bm{Q}\bm{Q}^\top + qn \hat{\bm{1}} \hat{\bm{1}}^\top}{\left( p + (r-1) q \right) (\sfrac{n}{r})} \\
+    &= \lambda_2 \bm{Q}\bm{Q}^\top + \frac{qr}{p + (r-1) q} \hat{\bm{1}} \hat{\bm{1}}^\top \\
+    &= \lambda_2 \bm{Q}\bm{Q}^\top + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \\
+    &= \left( \bm{Q}\bm{Q}^\top \right) \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right) .
+\end{align*}
+%
+Note that $\left(\bm{Q} \bm{Q}^\top\right)^2 = \bm{Q} \bm{Q}^\top$ and $\left( \hat{\bm{1}} \hat{\bm{1}}^\top \right)^2 = \hat{\bm{1}} \hat{\bm{1}}^\top$ since these are projection matrices.
+We show that
+%
+\begin{equation*}
+    \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right)^K
+    = \lambda_2^K \bm{I}  + \left(1-\lambda_2^K\right) \hat{\bm{1}} \hat{\bm{1}}^\top
+\end{equation*}
+%
+by induction as follows:
+%
+\begin{align*}
+    \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right)^{K}
+    &= \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right) \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right)^{K-1} \\
+    &= \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right) \left( \lambda_2^{K-1} \bm{I}  + \left(1-\lambda_2^{K-1}\right) \hat{\bm{1}} \hat{\bm{1}}^\top \right) \\
+    &= \lambda_2^K \bm{I}  + \left( \lambda_2 \left(1-\lambda_2^{K-1}\right) + (1-\lambda_2) \lambda_2^{K-1} + (1-\lambda_2) \left(1-\lambda_2^{K-1}\right) \right) \hat{\bm{1}} \hat{\bm{1}}^\top\\
+    &= \lambda_2^K \bm{I}  + \left(1-\lambda_2^K\right) \hat{\bm{1}} \hat{\bm{1}}^\top.
+\end{align*}
+%
+Using this result and the fact that $\left( \bm{Q}\bm{Q}^\top \right) \left( \hat{\bm{1}} \hat{\bm{1}}^\top \right) 
+    = \left( \hat{\bm{1}} \hat{\bm{1}}^\top \right) \left( \bm{Q}\bm{Q}^\top \right) 
+    = \hat{\bm{1}} \hat{\bm{1}}^\top$, we have
+\begin{align}
+    \bm{S}^K
+    &= \left( \left( \bm{Q}\bm{Q}^\top \right) \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right) \right)^K \nonumber\\
+    &= \left( \bm{Q}\bm{Q}^\top \right)^K \left( \lambda_2 \bm{I}  + (1-\lambda_2) \hat{\bm{1}} \hat{\bm{1}}^\top \right)^K \nonumber\\
+    &= \left( \bm{Q}\bm{Q}^\top \right) \left( \lambda_2^K \bm{I}  + \left(1-\lambda_2^K\right) \hat{\bm{1}} \hat{\bm{1}}^\top \right) \label{eqn:multi_com_SK}.
+\end{align}
+%
+Now, as in the 2-community case, $\bm{Q}^\top \bm{\eta} = \bm{\eta}' \sim \mathcal{N}(0, \sigma^2 \bm{I})$, yielding
+%
+\begin{align}
+    \bm{Q}^\top \bm{x} &= \bm{Q}^\top \left( \sum\nolimits_i \mu_i \bm{c_i}  + \bm{\eta} \right) \nonumber \\
+    &= \big( \sqrt{\sfrac{r}{n}} \big) \begin{pmatrix}
+    \mu_1, \mu_2, \dots, \mu_r
+    \end{pmatrix}^\top
+    + \begin{pmatrix}
+    \eta'_1, \eta'_2, \dots, \eta'_r
+    \end{pmatrix}^\top, \nonumber\\
+    %
+    \bm{Q} \bm{Q}^\top \bm{x} &= \sum\nolimits_i \left( \mu_i   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \right) \bm{c_i}, \text{ and} \label{eqn:multi_com_qproj} \\
+    %
+    \left( \hat{\bm{1}} \hat{\bm{1}}^\top \right) \left( \bm{Q} \bm{Q}^\top \right) \bm{x} 
+    &= \left( \tfrac{1}{r} \sum\nolimits_i \left( \mu_i   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \right) \right) \bm{1} \nonumber.
+\end{align}
+%
+Finally, combining these equations with the expression for $\bm{S}^K$, we have
+\begin{align*}
+    \bm{x}_\text{SGC} = \bm{S}^K \bm{x}
+    &= \lambda_2^K \sum\nolimits_i \left( \mu_i   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \right) \bm{c_i}
+    + \left( 1 - \lambda_2^K \right) \left( \tfrac{1}{r} \sum\nolimits_j \left( \mu_j   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right) \right) \bm{1} \\
+    %
+    &= \sum\nolimits_i \left( \lambda_2^K \left( \mu_i   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \right) +  \left( 1 - \lambda_2^K \right) \cdot \tfrac{1}{r} \sum\nolimits_j \left( \mu_j   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right) \right) \bm{c_i} \\
+    %
+    &= \sum\nolimits_i \left( \lambda_2^K \mu_i  + \left( 1 - \lambda_2^K \right) \bar{\mu} 
+    + \lambda_2^K \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i + \left( 1 - \lambda_2^K \right) \cdot \tfrac{1}{r} \sum\nolimits_j \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right) \bm{c_i} \\
+    %
+    &= \bm{f}' + \sum\nolimits_i \left( \lambda_2^K \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i + \left( 1 - \lambda_2^K \right) \cdot \tfrac{1}{r} \sum\nolimits_j \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right)  \bm{c_i},
+\end{align*}
+%
+so the expectation $\bm{f}'$ of the filtered feature is as desired. Further, letting the noise term summands be $\theta_i \bm{c_i}$, we have
+\begin{align*}
+    \theta_i &= \lambda_2^K \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i + \left( 1 - \lambda_2^K \right) \cdot \tfrac{1}{r} \sum\nolimits_j \left( \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right) \\
+    %
+    &= \left( \lambda_2^K + \tfrac{1}{r} \left( 1 - \lambda_2^K \right) \right) \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i + \left( 1 - \lambda_2^K \right) \left( \tfrac{1}{r} \sum\nolimits_{j\neq i} \big( \sqrt{\sfrac{r}{n}} \big) \eta'_j \right), 
+\end{align*}
+%
+which is normally distributed with mean $0$ and variance
+%
+\begin{align*}
+    &\quad \left( \lambda_2^K + \tfrac{1}{r} \left( 1 - \lambda_2^K \right) \right)^2 \cdot \tfrac{r}{n} \sigma^2 + \left(1 - \lambda_2^K \right)^2 \cdot \tfrac{1}{r^2} (r-1) \cdot \tfrac{r}{n} \sigma^2 \\
+    &= \tfrac{\sigma^2}{n} \left( \left( r \lambda_2^K + \left( 1-\lambda_2^K \right) \right)^2 \cdot \tfrac{1}{r} + \left( 1-\lambda_2^K \right)^2 \left(1 - \tfrac{1}{r} \right) \right) \\
+    &= \tfrac{\sigma^2}{n} \left(1 + \lambda_2^{2K} (r-1) \right),
+\end{align*}
+%
+so the noise variance is also as desired.
+\end{proof}
+
+
+\begin{customthm}{2}[Effect of ASGC on FSBM Networks]
+Consider FSBMs with $p \neq q$ having $r$ equally-sized communities with indicator vectors $\bm{c_1},\bm{c_2},\dots,\bm{c_k}$, expected adjacency matrix $\bm{A}$, and feature vector $\bm{x} = \bm{f} + \bm{\eta}$. Let $\bm{x}_\text{ASGC}$ be the feature vector returned by applying ASGC, with number of hops $K \geq r$, to $\bm{A}$ and $\bm{x}$. Then, $\bm{x}_\text{ASGC} = \bm{f} + \sum_i \theta'_i \bm{c_i}$, where each $\theta'_i$ is distributed according to $\mathcal{N}\left( 0, \tfrac{r}{n} \sigma^2 \right)$.
+\end{customthm}
+%
+\begin{proof}
+Following the same argument from Section~\ref{sec:theory}, the least squares in ASGC is equivalent to projecting the feature $\bm{x}$ onto the column span of the Krylov matrix $\bm{T} = \begin{pmatrix} \bm{S}^1 \bm{x} ; \bm{S}^2 \bm{x} ; \dots ; \bm{S}^K \bm{x} \end{pmatrix}$.
+The column span of $\bm T$ is contained in the column span of $\bm{S}$, and since $\bm{S}$ is rank-$r$ (by the assumption that $p \neq q$), with probability $1$ over the distribution of $\bm{\eta}$, as long as $K \ge r$, the column span of $\bm{T}$ equals that of $\bm{S}$; by Equation~\ref{eqn:multi_com_SK} for $\bm{S}$, this span is exactly that of the community indicator matrix $\bm{Q}$. Thus, ASGC is equivalent to multiplication of the feature $\bm{x}$ by the projection matrix $\bm{Q} \bm{Q}^\top$, for which we use Equation~\ref{eqn:multi_com_qproj} as follows:
+%
+\begin{align*}
+    \bm{x}_\text{ASGC} 
+    &= \bm{Q}\bm{Q}^\top \bm{x} \\
+    &= \sum\nolimits_i \left( \mu_i   + \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \right) \bm{c_i} \\
+    &= \bm{f} + \sum\nolimits_i \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i \bm{c_i} \\
+    &= \bm{f} + \sum\nolimits_i \theta'_i \bm{c_i},
+\end{align*}
+%
+where $\theta'_i = \big( \sqrt{\sfrac{r}{n}} \big) \eta'_i$, which has the specified distribution.
+\end{proof}
+
+\clearpage
+
+\subsection{Full Dataset Descriptions} \label{app:data_describe}
+We revisit the description of the 10 datasets from Section~\ref{sec:results} in more detail.
+\textsc{Cora}, \textsc{Citeseer}, and \textsc{Pubmed} are citation networks which are common benchmarks for node classification \citep{sen2008collective, namata2012query}; these have been used for evaluation on the GCN~\citep{kipf2016semi} and GAT~\citep{velivckovic2018graph} papers, in addition to SGC itself.
+% Nodes and edges represent papers and citations between them.
+The features are bag-of-words representations of papers, and the node labels give the topics of the paper. 
+\textsc{Computers} and \textsc{Photo} are segments of the Amazon co-purchase graph~\citep{mcauley2015image, shchur2018pitfalls}; features are derived from product reviews, and labels are product categories.
+These first 5 datasets are considered assortative/homophilous; the remaining 5 datasets, which are disassortative/heterophilous, come from the Geom-GCN paper~\citep{pei2020geom}, which also introduces the following measure of of a network's homophily: 
+\mbox{$ H(\mathcal{G}) = \frac{1}{|V|} \sum_{v \in V} \frac{\text{\# $v$'s neighbors with the same label as $v$}}{\text{\# neighbors of $v$}} \in [0,1]$}.
+We include this statistic in Table~\ref{tab:datasets}.
+The latter 5 datasets have much lower values of $H(\mathcal{G})$.
+\textsc{Chameleon} and \textsc{Squirrel} are hyperlink networks of pages in Wikipedia which concern the two topics \citep{rozemberczki2021multi}.
+Features derive from text in the pages, and labels correspond to the amount of web traffic to the page, split into 5 categories. \textsc{Actor} is the actor-only induced subgraph of the film-director-actor-writer network of \citet{tang2009relational}. Nodes and edges represent actors and co-occurrence on a Wikipedia page. Features are based on keywords on the webpage, and labels derive from the number of words on the page, split into 5 categories.
+Finally, \textsc{Texas} and \textsc{Cornell} are hyperlink networks from university websites~\citep{craven2000learning}; features derive from webpage text, and the labels represent the type of page: student, project, course, staff, or faculty.
+
+\subsection{Full Node Classification Results}\label{app:full_results}
+
+Table~\ref{app:full_results} reports the full node classification performance results, which were deferred in Section~\ref{sec:results}. We provide results for our implementations of logistic regression on raw features, SGC, and ASGC; we also include results from \citet{chien2020adaptive} for 9 deep methods, including their GPR-GNN.
+As the authors note, the results for Geom-GCN~\cite{pei2020geom} on datasets not originally tested in that paper (in particular, the co-purchasing networks \textsc{Computers} and \textsc{Photo}) cannot be included due to a pre-processing subroutine that is not publicly available.
+
+\begin{table}[!ht]
+\caption{\label{tab:full_res} Complete results for mean test classification accuracy, as well as 95\% confidence intervals, on the benchmark of datasets from Table~\ref{tab:datasets}. Datasets are separated by homophilous vs heterophilous. Methods are separated by non-deep vs deep. Results for deep methods are taken from \citet{chien2020adaptive}.}
+    \centering
+    \begin{tiny}
+    \setlength\tabcolsep{3.0pt}
+        \begin{tabular}{l|rrrrr|rrrrr}
+        \noalign{\hrule height 0.75pt}
+          & {\sc Cora}  & {\sc Citeseer} & {\sc PubMed} & {\sc Computer} & {\sc Photo}  & {\sc Chameleon} & {\sc Squirrel} & {\sc Actor} & {\sc Texas} & {\sc Cornell} \\ \hline
+Raw       & 55.09$\pm$1.81 & 60.30$\pm$1.55 & 77.79$\pm$0.95 & 76.07$\pm$0.57 & 82.97$\pm$0.58 & 49.56$\pm$0.88 & 34.16$\pm$0.74 & 36.28$\pm$0.77 & 86.49$\pm$2.88 & 86.49$\pm$2.88 \\
+SGC       & 78.16$\pm$1.32 & 70.18$\pm$1.00 & 73.90$\pm$2.22 & 87.14$\pm$0.45 & 92.03$\pm$0.51 & 57.70$\pm$1.62 & 44.98$\pm$1.28 & 30.07$\pm$0.76 & 55.68$\pm$5.71 & 54.32$\pm$6.41 \\
+ASGC      & 73.93$\pm$2.51 & 67.73$\pm$0.71 & 79.05$\pm$0.97 & 86.72$\pm$0.50 & 91.74$\pm$0.33 & 72.28$\pm$0.90 & 58.98$\pm$1.01 & 36.45$\pm$0.79 & 86.76$\pm$3.58 & 86.22$\pm$3.08 \\ \hline
+MLP       & 50.34$\pm$0.48 & 52.88$\pm$0.51 & 80.57$\pm$0.12 & 70.48$\pm$0.28 & 78.69$\pm$0.30 & 46.72$\pm$0.46 & 31.28$\pm$0.27 & 38.58$\pm$0.25 & 92.26$\pm$0.71 & 91.36$\pm$0.70 \\
+GCN       & 75.21$\pm$0.38 & 67.30$\pm$0.35 & 84.27$\pm$0.01 & 82.52$\pm$0.32 & 90.54$\pm$0.21 & 60.96$\pm$0.78 & 45.66$\pm$0.39 & 30.59$\pm$0.23 & 75.16$\pm$0.96 & 66.72$\pm$1.37 \\
+GAT       & 76.70$\pm$0.42 & 67.20$\pm$0.46 & 83.28$\pm$0.12 & 81.95$\pm$0.38 & 90.09$\pm$0.27 & 63.9±$\pm$0.46 & 42.72$\pm$0.33 & 35.98$\pm$0.23 & 78.87$\pm$0.86 & 76.00$\pm$1.01 \\
+SAGE      & 70.89$\pm$0.54 & 61.52$\pm$0.44 & 81.30$\pm$0.10 & 83.11$\pm$0.23 & 90.51$\pm$0.25 & 62.15$\pm$0.42 & 41.26$\pm$0.26 & 36.37$\pm$0.21 & 79.03$\pm$1.20 & 71.41$\pm$1.24 \\
+JKNet     & 73.22$\pm$0.64 & 60.85$\pm$0.76 & 82.91$\pm$0.11 & 77.80$\pm$0.97 & 87.70$\pm$0.70 & 62.92$\pm$0.49 & 44.72$\pm$0.48 & 33.41$\pm$0.25 & 75.53$\pm$1.16 & 66.73$\pm$1.73 \\
+GCN-Cheby & 71.39$\pm$0.51 & 65.67$\pm$0.38 & 83.83$\pm$0.12 & 82.41$\pm$0.28 & 90.09$\pm$0.28 & 59.96$\pm$0.51 & 40.67$\pm$0.31 & 38.02$\pm$0.23 & 86.08$\pm$0.96 & 85.33$\pm$1.04 \\
+GeomGCN   & 20.37$\pm$1.13 & 20.30$\pm$0.90 & 58.20$\pm$1.23 & NA      & NA      & 61.06$\pm$0.49 & 38.28$\pm$0.27 & 31.81$\pm$0.24 & 58.56$\pm$1.77 & 55.59$\pm$1.59 \\
+APPNP     & 79.41$\pm$0.38 & 68.59$\pm$0.30 & 85.02$\pm$0.09 & 81.99$\pm$0.26 & 91.11$\pm$0.26 & 51.91$\pm$0.56 & 34.77$\pm$0.34 & 38.86$\pm$0.24 & 91.18$\pm$0.70 & 91.80$\pm$0.63 \\
+GPRGNN    & 79.51$\pm$0.36 & 67.63$\pm$0.38 & 85.07$\pm$0.09 & 82.90$\pm$0.37 & 91.93$\pm$0.26 & 67.48$\pm$0.40 & 49.93$\pm$0.53 & 39.30$\pm$0.27 & 92.92$\pm$0.61 & 91.36$\pm$0.70\\ 
+        \noalign{\hrule height 0.75pt}
+\end{tabular}
+\end{tiny}
+\end{table}
+
+\end{document}

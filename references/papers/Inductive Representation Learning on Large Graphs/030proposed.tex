@@ -1,0 +1,134 @@
+% !TEX root = paper-graphnet.tex
+
+\section{Proposed method: \name}
+
+
+The key idea behind our approach is that we learn how to aggregate feature information from a node's local neighborhood (e.g., the degrees or text attributes of nearby nodes). 
+We first describe the  \name\ embedding generation (i.e., forward propagation) algorithm, which generates embeddings for nodes assuming that the \name\ model parameters are already learned (Section \ref{sec:foward}). 
+We then describe how the \name\ model parameters can be learned using standard stochastic gradient descent and backpropagation techniques (Section \ref{sec:learning}). 
+
+%\cut{
+%During inference, \name\ uses a set of aggregator functions and recursive propagation layers to aggregate feature information from nearby nodes. 
+%\cut{At every step of the algorithm, nodes aggregate feature information from their immediate neighbors, and as this process iterates, nodes incrementally gain more and more information from further reaches of the graph, as their neighbors have aggregated information from their neighbors and so on.}
+%During training, we optimize the parameters of the aggregation functions and propagation layers using stochastic gradient descent.
+%After training, the \name\ inference algorithm can be directly applied to generate embeddings for unseen nodes. 
+%}
+%
+%\cut{
+%By recursively aggregating neighborhood information we naturally exploit the tendency for nearby nodes in real-world graphs to exhibit strong similarities, a well-studied phenomena known as {\em homophily} or {\em assortativity} \CITE. 
+%Thus, even if the features present at a single node, $v$, are noisy or insufficient for accurate classification, \name\ can aggregate information from $v$'s local neighborhood that will be relevant for classifying $v$.
+%In addition to exploiting homophily, we will also show in Section \todo{this} that \name\ is capable of learning about the structure of network, despite the fact that it is inherently based on features.
+%} 
+
+\subsection{Embedding generation (i.e., forward propagation) algorithm}\label{sec:foward} 
+
+\label{sec:method}
+\begin{algorithm}
+\caption{\name\ embedding generation (i.e., forward propagation) algorithm}
+\label{alg:basic}
+	\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{~Graph $\G(\V,\E)$; input features $\{\mb{x}_v, \forall v\in \V\}$; depth $K$; weight matrices $\mb{W}^{k}, \forall k \in \{1,...,K\}$; non-linearity $\sigma$; differentiable aggregator functions $\textsc{aggregate}_k, \forall k \in \{1,...,K\}$; neighborhood function $\mathcal{N} : v \rightarrow 2^{\V}$}
+    \Output{~Vector representations $\mb{z}_v$ for all $v \in \V$}
+    \BlankLine
+    $\mb{h}^0_v \leftarrow \mb{x}_v, \forall v \in \V$ \;
+    \For{$k=1...K$}{
+    	  \For{$v \in \V$}{
+    	  $\mb{h}^{k}_{\mathcal{N}(v)} \leftarrow \textsc{aggregate}_k(\{\mb{h}_u^{k-1}, \forall u \in \mathcal{N}(v)\})$\;
+    	  		$\mb{h}^k_v \leftarrow \sigma\left(\mb{W}^{k}\cdot\textsc{concat}(\mb{h}_v^{k-1}, \mb{h}^{k}_{\mathcal{N}(v)})\right)$
+    	  }
+    	  $\mb{h}^{k}_v\leftarrow \mb{h}^{k}_v/ \|\mb{h}^{k}_v\|_2, \forall v \in \V$
+    	}
+     $\mb{z}_v\leftarrow \mb{h}^{K}_v, \forall v \in \V$ 
+\end{algorithm}
+
+In this section, we describe the embedding generation, or forward propagation algorithm (Algorithm \ref{alg:basic}), which assumes that the model has already been trained and that the parameters are fixed. 
+In particular, we assume that we have learned the parameters of $K$ aggregator functions (denoted $\textsc{aggregate}_k, \forall k \in \{1,...,K\}$), which aggregate information from node neighbors, as well as a set of weight matrices $\mb{W}^{k}, \forall k \in \{1,...,K\}$, which are used to propagate information between different layers of the model or ``search depths''. 
+Section \ref{sec:learning} describes how we train these parameters. 
+
+The intuition behind Algorithm \ref{alg:basic} is that at each iteration, or search depth, nodes aggregate information from their local neighbors, and as this process iterates, nodes incrementally gain more and more information from further reaches of the graph.
+
+Algorithm \ref{alg:basic} describes the embedding generation process in the case where the entire graph, $\G=(\V, \E)$,  and features  for all nodes $\mb{x}_v, \forall v \in \V$, are provided as input.
+We describe how to generalize this to the minibatch setting below. 
+Each step in the outer loop of Algorithm \ref{alg:basic} proceeds as follows, where $k$ denotes the current step in the outer loop (or the depth of the search) and $\mb{h}^{k}$ denotes a node's representation at this step: First, each node $v\in\V$ aggregates the representations of the nodes in its immediate neighborhood, $\{\mb{h}^{k-1}_u, \forall u \in \mathcal{N}(v)\}$, into a single vector $\mb{h}^{k-1}_{\mathcal{N}(v)}$. 
+Note that this aggregation step depends on the representations generated at the previous iteration of the outer loop (i.e., $k-1$),  and the $k=0$ (``base case'') representations are defined as the input node features. 
+After aggregating the neighboring feature vectors, \name\ then concatenates the node's current representation, $\mb{h}_v^{k-1}$, with the aggregated neighborhood vector, $\mb{h}^{k-1}_{\mathcal{N}(v)}$, and this concatenated vector is fed through a fully connected layer with nonlinear activation function $\sigma$, which transforms the representations to be used at the next step of the algorithm (i.e.,  $ \mb{h}_v^{k}, \forall v \in \mathcal{V}$). 
+For notational convenience, we denote the final representations output at depth $K$ as $\mb{z}_v \equiv \mb{h}^K_v , \forall v \in \mathcal{V}$.
+The aggregation of the neighbor representations can be done by a variety of aggregator architectures (denoted by the \textsc{aggregate} placeholder in Algorithm 1), and we discuss different architecture choices in Section \ref{sec:aggs} below.
+\cut{Figure \ref{fig:struct_learn} provides a simple visual illustration of  Algorithm \ref{alg:basic}.\cut{, when we use a hash function as an aggregator and use node degrees as features.}}
+
+
+To extend Algorithm \ref{alg:basic} to the minibatch setting, given a set of input nodes, we first forward sample the required neighborhood sets (up to depth $K$) and then we run the inner loop (line 3 in Algorithm \ref{alg:basic}), but instead of iterating over all nodes, we compute only the representations that are necessary to satisfy the recursion at each depth (Appendix \ref{sec:minibatch} contains complete minibatch pseudocode).
+
+\xhdr{Relation to the Weisfeiler-Lehman Isomorphism Test}\label{sec:wl}
+The \name\ algorithm is conceptually inspired by a classic algorithm for testing graph isomorphism. 
+If, in Algorithm \ref{alg:basic}, we (i) set $K=|\V|$, (ii) set the weight matrices as the identity, and (iii) use an appropriate hash function as an aggregator (with no non-linearity), then Algorithm \ref{alg:basic} is an instance of the Weisfeiler-Lehman (WL) isomorphism test, also known as ``naive vertex refinement'' \cite{shervashidze2011weisfeiler}.
+%The represenations (or in this case labels) generated by the WL test can be used to test if two graphs are isomorphic.
+If the set of representations $\{\mb{z}_v, \forall v \in \V\}$ output by Algorithm \ref{alg:basic} for two subgraphs are identical then the WL test declares the two subgraphs to be isomorphic.
+This test is known to fail in some cases, but is valid for a broad class of graphs \cite{shervashidze2011weisfeiler}.
+\name\ is a continuous approximation to the WL test, where we replace the hash function with trainable neural network aggregators. 
+Of course, we use \name\ to generate useful node representations--not to test graph isomorphism. 
+Nevertheless, the connection between \name\ and the classic WL test provides theoretical context for our algorithm design to learn the topological structure of node neighborhoods. 
+\cut{
+\begin{figure}
+\centering
+\includegraphics[width=0.95\textwidth]{FIG/struct_learn.png}
+\caption{Two iterations of Algorithm 1 on two similar graphs for a toy example where only degrees are used as features (denoted by different colors) and where we use a simple set hash function as an aggregator. The circled, middle node plays a similar ``bridging'' role in both graphs. After $k=1$ iterations the representation for this central node is not unique (it is the same as the starred nodes in top graph).  After $k=2$ iterations the node has the same unique representation in both graphs.
+\cut{Note that if we were to run another iteration of Algorithm \ref{alg:basic}, then the representation of the circled nodes would again become distinct; this highlights, how different depths contain different types of structural information and motivates the concatenation of depth information in Layer 1.}}
+\label{fig:struct_learn}
+\vspace{-10pt}
+\end{figure}
+}
+
+\xhdr{Neighborhood definition}
+In this work, we uniformly sample a fixed-size set of neighbors, instead of using full neighborhood sets in Algorithm \ref{alg:basic}, in order to keep the computational footprint of each batch fixed.\footnote{Exploring non-uniform samplers is an important direction for future work.}
+That is, using overloaded notation, we define $\mathcal{N}(v)$ as a fixed-size, uniform draw from the set $\{u \in \V : (u,v) \in \E\}$, and we draw different uniform samples at each iteration, $k$, in Algorithm \ref{alg:basic}. 
+Without this sampling the memory and expected runtime of a single batch is unpredictable and in the worst case $O(|\V|)$.\cut{,  due to the presence of extremely high-degree ``hub''-nodes, which are common in real-world graphs \cite{clauset2009power}. }
+In contrast, the per-batch space and time complexity for \name\ is fixed at $O(\prod_{i=1}^{K}S_i)$, where $S_i, i \in \{1,...,K\}$ and $K$ are user-specified constants.
+Practically speaking we found that our approach could achieve high performance with $K=2$ and $S_1\cdot S_2 \leq 500$ (see Section~\ref{sec:sensitivity} for details).
+
+
+\subsection{Learning the parameters of \name}\label{sec:learning}  
+In order to learn useful, predictive representations in a fully unsupervised setting, we apply a graph-based loss function to the output representations, $\mb{z}_u, \forall u \in {\V}$, and tune the weight matrices, $\mb{W}^k, \forall k \in \{1,...,K\}$,  and parameters of the aggregator functions via stochastic gradient descent. 
+The graph-based loss function encourages nearby nodes to have similar representations, while enforcing that the representations of disparate nodes are highly distinct:
+\begin{equation}\label{eq:neg}
+J_{\G}(\mb{z}_u) = -\log\left(\sigma(\mb{z}^\top_u\mb{z}_{v}) \right) - Q\cdot\mathbb{E}_{v_{n} \sim P_n(v)}\log\left(\sigma(-\mb{z}^\top_u\mb{z}_{v_{n}})\right),
+\end{equation}
+where $v$ is a node that co-occurs near $u$ on fixed-length random walk, $\sigma$ is the sigmoid function, $P_n$ is a negative sampling distribution, and $Q$ defines the number of negative samples. 
+Importantly, unlike previous embedding approaches, the representations $\mb{z}_u$ that we feed into this loss function are generated from the features contained within a node's local neighborhood, rather than training a unique embedding for each node (via an embedding look-up). 
+
+This unsupervised setting emulates situations where node features are provided to downstream machine learning applications, as a service or in a static repository. 
+In cases where representations are to be used only on a specific downstream task, the unsupervised loss (Equation \ref{eq:neg}) can simply be replaced, or augmented, by a task-specific objective (e.g., cross-entropy loss).
+
+\subsection{Aggregator Architectures}\label{sec:aggs}
+
+Unlike machine learning over N-D lattices (e.g., sentences, images, or 3-D volumes), a node's neighbors have no natural ordering; thus, the aggregator functions in Algorithm \ref{alg:basic} must operate over an unordered set of vectors.
+Ideally, an aggregator function would be symmetric (i.e., invariant to permutations of its inputs) while still being trainable and maintaining high representational capacity. 
+The symmetry property of the aggregation function ensures that our neural network model can be trained and applied to arbitrarily ordered node neighborhood feature sets.
+We examined three candidate aggregator functions:
+
+\xhdr{Mean aggregator} Our first candidate aggregator function is the mean operator, where we simply take the elementwise mean of the vectors in $\{\mb{h}_u^{k-1}, \forall u \in \mathcal{N}(v)\}$.
+The mean aggregator is nearly equivalent to the convolutional propagation rule used in the transductive GCN framework \cite{kipf2016semi}.
+In particular, we can derive an inductive variant of the GCN approach by replacing lines 4 and 5 in Algorithm \ref{alg:basic} with the following:\footnote{Note that this differs from Kipf et al's exact equation by a minor normalization constant \cite{kipf2016semi}.}
+\begin{equation}
+\mb{h}^k_v \leftarrow \sigma(\mb{W}\cdot\textsc{mean}(\{\mb{h}^{k-1}_v\} \cup \{\mb{h}_u^{k-1}, \forall u \in {\mathcal{N}(v)}\}).
+\end{equation}
+We call this modified mean-based aggregator {\em convolutional} since it is a rough, linear approximation of a localized spectral convolution \cite{kipf2016semi}.
+An important distinction between this convolutional aggregator and our other proposed aggregators is that it does not perform the concatenation operation in line 5 of Algorithm \ref{alg:basic}---i.e., the convolutional aggregator does concatenate the node's previous layer representation $\mb{h}^{k-1}_v$ with the aggregated neighborhood vector $\mb{h}^{k}_{\mathcal{N}(v)}$. 
+This concatenation can be viewed as a simple form of a ``skip connection'' \cite{he2016identity} between the different ``search depths'', or ``layers'' of the GraphSAGE algorithm, and it leads to significant gains in performance (Section \ref{sec:exp}).  
+
+\xhdr{LSTM aggregator} We also examined a more complex aggregator based on an LSTM architecture \cite{hochreiter1997long}. 
+Compared to the mean aggregator, LSTMs have the advantage of larger expressive capability. However, it is important to note that LSTMs are not inherently symmetric (i.e., they are not permutation invariant), since they process their inputs in a sequential manner.
+We adapt LSTMs to operate on an unordered set by simply applying the LSTMs to a random permutation of the node's neighbors. 
+
+\xhdr{Pooling aggregator} The final aggregator we examine is both symmetric and trainable.
+In this {\em pooling} approach, each neighbor's vector is independently fed through a fully-connected neural network; following this transformation, an elementwise max-pooling operation is applied to aggregate information across the neighbor set:
+\begin{equation}\label{eq:pool}
+\textsc{aggregate}_k^{\textrm{pool}} = \max(\{\sigma\left(\mb{W}_{\textrm{pool}}\mb{h}^k_{u_i} + \mb{b}\right), \forall u_i \in \mathcal{N}(v)\}),
+\end{equation}
+where $\max$ denotes the element-wise max operator and $\sigma$ is a nonlinear activation function. 
+In principle, the function applied before the max pooling can be an arbitrarily deep multi-layer perceptron, but we focus on simple single-layer architectures in this work. 
+This approach is inspired by recent advancements in applying neural network architectures to learn over general point sets \cite{qi2016pointnet}.
+Intuitively, the multi-layer perceptron can be thought of as a set of functions that compute features for each of the node representations in the neighbor set. By applying the max-pooling operator to each of the computed features, the model effectively captures different aspects of the neighborhood set. 
+Note also that, in principle, any symmetric vector function could be used in place of the $\max$ operator (e.g., an element-wise mean). 
+We found no significant difference between max- and mean-pooling in developments test and thus focused on max-pooling for the rest of our experiments. 
+

@@ -1,0 +1,568 @@
+\begin{thebibliography}{80}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Ahmed \& Chen(2016)Ahmed and Chen]{ahmed2016efficient}
+Nahla~Mohamed Ahmed and Ling Chen.
+\newblock An efficient algorithm for link prediction in temporal uncertain
+  social networks.
+\newblock \emph{Information Sciences}, 331:\penalty0 120--136, 2016.
+
+\bibitem[Ahmed et~al.(2016)Ahmed, Chen, Wang, Li, Li, and
+  Liu]{ahmed2016sampling}
+Nahla~Mohamed Ahmed, Ling Chen, Yulong Wang, Bin Li, Yun Li, and Wei Liu.
+\newblock Sampling-based algorithm for link prediction in temporal networks.
+\newblock \emph{Information Sciences}, 374:\penalty0 1--14, 2016.
+
+\bibitem[Bastas et~al.(2019)Bastas, Semertzidis, Axenopoulos, and
+  Daras]{bastas2019evolve2vec}
+Nikolaos Bastas, Theodoros Semertzidis, Apostolos Axenopoulos, and Petros
+  Daras.
+\newblock evolve2vec: Learning network representations using temporal
+  unfolding.
+\newblock In \emph{International Conference on Multimedia Modeling}, pp.\
+  447--458. Springer, 2019.
+
+\bibitem[Battaglia et~al.(2016)Battaglia, Pascanu, Lai, Rezende,
+  et~al.]{battaglia2016interaction}
+Peter~W Battaglia, Razvan Pascanu, Matthew Lai, Danilo~Jimenez Rezende, et~al.
+\newblock Interaction networks for learning about objects, relations and
+  physics.
+\newblock In \emph{NIPS}, pp.\  4502--4510, 2016.
+
+\bibitem[Battaglia et~al.(2018)Battaglia, Hamrick, Bapst, Sanchez-Gonzalez,
+  Zambaldi, Malinowski, Tacchetti, Raposo, Santoro, and
+  Faulkner]{battaglia2018relational}
+Peter~W Battaglia, Jessica~B Hamrick, Victor Bapst, Alvaro Sanchez-Gonzalez,
+  Vinicius Zambaldi, Mateusz Malinowski, Andrea Tacchetti, David Raposo, Adam
+  Santoro, and Ryan Faulkner.
+\newblock Relational inductive biases, deep learning, and graph networks.
+\newblock \emph{arXiv:1806.01261}, 2018.
+
+\bibitem[Belli et~al.(2020)Belli, Ktena, Tejani, Lung-Yut-Fon, Portman, Zhu,
+  Xie, Gupta, Bronstein, Deli{\'c}, et~al.]{belli2020privacy}
+Luca Belli, Sofia~Ira Ktena, Alykhan Tejani, Alexandre Lung-Yut-Fon, Frank
+  Portman, Xiao Zhu, Yuanpu Xie, Akshay Gupta, Michael~M. Bronstein, Amra
+  Deli{\'c}, et~al.
+\newblock Privacy-preserving recommender systems challenge on twitter's home
+  timeline.
+\newblock \emph{arXiv:2004.13715}, 2020.
+
+\bibitem[Bronstein et~al.(2017)Bronstein, Bruna, LeCun, Szlam, and
+  Vandergheynst]{bronstein2017geometric}
+Michael~M Bronstein, Joan Bruna, Yann LeCun, Arthur Szlam, and Pierre
+  Vandergheynst.
+\newblock Geometric deep learning: going beyond euclidean data.
+\newblock \emph{IEEE Signal Process. Mag.}, 34\penalty0 (4):\penalty0 18--42,
+  2017.
+
+\bibitem[Chen et~al.(2018)Chen, Xu, Wu, and Zheng]{chen2018gclstm}
+Jinyin Chen, Xuanheng Xu, Yangyang Wu, and Haibin Zheng.
+\newblock Gc-lstm: Graph convolution embedded lstm for dynamic link prediction.
+\newblock \emph{arXiv:1812.04206}, 2018.
+
+\bibitem[Cho et~al.(2014)Cho, van Merri{\"e}nboer, Gulcehre, Bahdanau,
+  Bougares, Schwenk, and Bengio]{cho-etal-2014-learning}
+Kyunghyun Cho, Bart van Merri{\"e}nboer, Caglar Gulcehre, Dzmitry Bahdanau,
+  Fethi Bougares, Holger Schwenk, and Yoshua Bengio.
+\newblock Learning phrase representations using {RNN} encoder{--}decoder for
+  statistical machine translation.
+\newblock In \emph{EMNLP}, pp.\  1724--1734, 2014.
+\newblock \doi{10.3115/v1/D14-1179}.
+\newblock URL \url{https://www.aclweb.org/anthology/D14-1179}.
+
+\bibitem[Choma et~al.(2018)Choma, Monti, Gerhardt, Palczewski, Ronaghi,
+  Prabhat, Bhimji, Bronstein, Klein, and Bruna]{choma2018graph}
+Nicholas Choma, Federico Monti, Lisa Gerhardt, Tomasz Palczewski, Zahra
+  Ronaghi, Prabhat Prabhat, Wahid Bhimji, Michael~M. Bronstein, Spencer Klein,
+  and Joan Bruna.
+\newblock Graph neural networks for icecube signal classification.
+\newblock In \emph{ICMLA}, 2018.
+
+\bibitem[da~Silva~Soares \& Prud{\^e}ncio(2012)da~Silva~Soares and
+  Prud{\^e}ncio]{da2012time}
+Paulo~Ricardo da~Silva~Soares and Ricardo Bastos~Cavalcante Prud{\^e}ncio.
+\newblock Time series based link prediction.
+\newblock In \emph{IJCNN}, pp.\  1--7. IEEE, 2012.
+
+\bibitem[Dasgupta et~al.(2018)Dasgupta, Ray, and
+  Talukdar]{dasgupta-etal-2018-hyte}
+Shib~Sankar Dasgupta, Swayambhu~Nath Ray, and Partha Talukdar.
+\newblock {H}y{TE}: Hyperplane-based temporally aware knowledge graph
+  embedding.
+\newblock In \emph{EMNLP}, pp.\  2001--2011, 2018.
+\newblock \doi{10.18653/v1/D18-1225}.
+\newblock URL \url{https://www.aclweb.org/anthology/D18-1225}.
+
+\bibitem[{De Winter} et~al.(2018){De Winter}, {Decuypere}, {Mitrović},
+  {Baesens}, and {De Weerdt}]{8508272}
+S.~{De Winter}, T.~{Decuypere}, S.~{Mitrović}, B.~{Baesens}, and J.~{De
+  Weerdt}.
+\newblock Combining temporal aspects of dynamic networks with node2vec for a
+  more efficient dynamic link prediction.
+\newblock In \emph{ASONAM}, pp.\  1234--1241, 2018.
+
+\bibitem[Du et~al.(2018)Du, Wang, Song, Lu, and Wang]{du2018dynamic}
+Lun Du, Yun Wang, Guojie Song, Zhicong Lu, and Junshan Wang.
+\newblock Dynamic network embedding: An extended approach for skip-gram based
+  network embedding.
+\newblock In \emph{IJCAI}, pp.\  2086--2092, 2018.
+
+\bibitem[Dunlavy et~al.(2011)Dunlavy, Kolda, and Acar]{dunlavy2011temporal}
+Daniel~M Dunlavy, Tamara~G Kolda, and Evrim Acar.
+\newblock Temporal link prediction using matrix and tensor factorizations.
+\newblock \emph{TKDD}, 5\penalty0 (2):\penalty0 1--27, 2011.
+
+\bibitem[Duvenaud et~al.(2015)Duvenaud, Maclaurin, Iparraguirre, Bombarelli,
+  Hirzel, Aspuru-Guzik, and Adams]{NIPS2015_5954}
+David~K Duvenaud, Dougal Maclaurin, Jorge Iparraguirre, Rafael Bombarelli,
+  Timothy Hirzel, Alan Aspuru-Guzik, and Ryan~P Adams.
+\newblock Convolutional networks on graphs for learning molecular fingerprints.
+\newblock In \emph{NIPS}. 2015.
+
+\bibitem[Fard et~al.(2019)Fard, Bagheri, and Wang]{fard2019relationship}
+Amin~Milani Fard, Ebrahim Bagheri, and Ke~Wang.
+\newblock Relationship prediction in dynamic heterogeneous information
+  networks.
+\newblock In \emph{European Conference on Information Retrieval}, pp.\  19--34.
+  Springer, 2019.
+
+\bibitem[Gainza et~al.(2019)]{gainza2019deciphering}
+Pablo Gainza et~al.
+\newblock Deciphering interaction fingerprints from protein molecular surfaces
+  using geometric deep learning.
+\newblock \emph{Nature Methods}, 17:\penalty0 184--192, 2019.
+
+\bibitem[Garc{\'\i}a-Dur{\'a}n et~al.(2018)Garc{\'\i}a-Dur{\'a}n,
+  Duman{\v{c}}i{\'c}, and Niepert]{garcia-duran-etal-2018-learning}
+Alberto Garc{\'\i}a-Dur{\'a}n, Sebastijan Duman{\v{c}}i{\'c}, and Mathias
+  Niepert.
+\newblock Learning sequence encoders for temporal knowledge graph completion.
+\newblock In \emph{EMNLP}, pp.\  4816--4821, 2018.
+\newblock \doi{10.18653/v1/D18-1516}.
+
+\bibitem[Gilmer et~al.(2017)Gilmer, Schoenholz, Riley, Vinyals, and
+  Dahl]{pmlr-v70-gilmer17a}
+Justin Gilmer, Samuel~S. Schoenholz, Patrick~F. Riley, Oriol Vinyals, and
+  George~E. Dahl.
+\newblock Neural message passing for quantum chemistry.
+\newblock In \emph{ICML}, 2017.
+
+\bibitem[Goel et~al.(2019)Goel, Kazemi, Brubaker, and
+  Poupart]{goel2019diachronic}
+Rishab Goel, Seyed~Mehran Kazemi, Marcus Brubaker, and Pascal Poupart.
+\newblock Diachronic embedding for temporal knowledge graph completion.
+\newblock \emph{arXiv:1907.03143}, 2019.
+
+\bibitem[Goyal et~al.(2018)Goyal, Kamra, He, and
+  Liu]{journals/corr/abs-1805-11273}
+Palash Goyal, Nitin Kamra, Xinran He, and Yan Liu.
+\newblock Dyngem: Deep embedding method for dynamic graphs.
+\newblock \emph{arXiv:1805.11273}, abs/1805.11273, 2018.
+\newblock URL
+  \url{http://dblp.uni-trier.de/db/journals/corr/corr1805.html#abs-1805-11273}.
+
+\bibitem[Grover \& Leskovec(2016)Grover and Leskovec]{10.1145/2939672.2939754}
+Aditya Grover and Jure Leskovec.
+\newblock Node2vec: Scalable feature learning for networks.
+\newblock In \emph{KDD ’16}, KDD ’16, pp.\  855–864, New York, NY, USA,
+  2016. Association for Computing Machinery.
+\newblock ISBN 9781450342322.
+\newblock \doi{10.1145/2939672.2939754}.
+\newblock URL \url{https://doi.org/10.1145/2939672.2939754}.
+
+\bibitem[G{\"u}ne{\c{s}} et~al.(2016)G{\"u}ne{\c{s}},
+  G{\"u}nd{\"u}z-{\"O}{\u{g}}{\"u}d{\"u}c{\"u}, and
+  {\c{C}}ataltepe]{gunecs2016link}
+{\.I}smail G{\"u}ne{\c{s}}, {\c{S}}ule
+  G{\"u}nd{\"u}z-{\"O}{\u{g}}{\"u}d{\"u}c{\"u}, and Zehra {\c{C}}ataltepe.
+\newblock Link prediction using time series of neighborhood-based node
+  similarity scores.
+\newblock \emph{Data Mining and Knowledge Discovery}, 30\penalty0 (1):\penalty0
+  147--180, 2016.
+
+\bibitem[Gupta et~al.(2011)Gupta, Aggarwal, Han, and
+  Sun]{gupta2011evolutionary}
+Manish Gupta, Charu~C Aggarwal, Jiawei Han, and Yizhou Sun.
+\newblock Evolutionary clustering and analysis of bibliographic networks.
+\newblock In \emph{ASONAM}, pp.\  63--70. IEEE, 2011.
+
+\bibitem[Hamilton et~al.(2017{\natexlab{a}})Hamilton, Ying, and
+  Leskovec]{graphsage}
+William~L. Hamilton, Rex Ying, and Jure Leskovec.
+\newblock Inductive representation learning on large graphs.
+\newblock In \emph{NIPS}, 2017{\natexlab{a}}.
+
+\bibitem[Hamilton et~al.(2017{\natexlab{b}})Hamilton, Ying, and
+  Leskovec]{hamilton2017representation}
+William~L Hamilton, Rex Ying, and Jure Leskovec.
+\newblock Representation learning on graphs: Methods and applications.
+\newblock \emph{arXiv:1709.05584}, 2017{\natexlab{b}}.
+
+\bibitem[Hisano(2018)]{Hisano_2018}
+Ryohei Hisano.
+\newblock Semi-supervised graph embedding approach to dynamic link prediction.
+\newblock \emph{Springer Proceedings in Complexity}, pp.\  109–121, 2018.
+\newblock ISSN 2213-8692.
+\newblock \doi{10.1007/978-3-319-73198-8_10}.
+\newblock URL \url{http://dx.doi.org/10.1007/978-3-319-73198-8_10}.
+
+\bibitem[Hochreiter \& Schmidhuber(1997)Hochreiter and
+  Schmidhuber]{10.1162/neco.1997.9.8.1735}
+Sepp Hochreiter and J\"{u}rgen Schmidhuber.
+\newblock Long short-term memory.
+\newblock \emph{Neural Comput.}, 9\penalty0 (8):\penalty0 1735–1780, November
+  1997.
+\newblock ISSN 0899-7667.
+\newblock \doi{10.1162/neco.1997.9.8.1735}.
+\newblock URL \url{https://doi.org/10.1162/neco.1997.9.8.1735}.
+
+\bibitem[Huang \& Lin(2009)Huang and Lin]{huang2009time}
+Zan Huang and Dennis~KJ Lin.
+\newblock The time-series link prediction problem with applications in
+  communication surveillance.
+\newblock \emph{INFORMS Journal on Computing}, 21\penalty0 (2):\penalty0
+  286--303, 2009.
+
+\bibitem[Ibrahim \& Chen(2015)Ibrahim and Chen]{ibrahim2015link}
+Nahla Mohamed~Ahmed Ibrahim and Ling Chen.
+\newblock Link prediction in dynamic social networks by integrating different
+  types of information.
+\newblock \emph{Applied Intelligence}, 42\penalty0 (4):\penalty0 738--750,
+  2015.
+
+\bibitem[Kazemi et~al.(2019)Kazemi, Goel, Eghbali, Ramanan, Sahota, Thakur, Wu,
+  Smyth, Poupart, and Brubaker]{DBLP:journals/corr/abs-1907-05321}
+Seyed~Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet
+  Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, and Marcus
+  Brubaker.
+\newblock Time2vec: Learning a vector representation of time.
+\newblock \emph{CoRR}, abs/1907.05321, 2019.
+\newblock URL \url{http://arxiv.org/abs/1907.05321}.
+
+\bibitem[Kazemi et~al.(2020)Kazemi, Goel, Jain, Kobyzev, Sethi, Forsyth, and
+  Poupart]{dynamic-graphs-survey}
+Seyed~Mehran Kazemi, Rishab Goel, Kshitij Jain, Ivan Kobyzev, Akshay Sethi,
+  Peter Forsyth, and Pascal Poupart.
+\newblock Representation learning for dynamic graphs: A survey.
+\newblock \emph{Journal of Machine Learning Research}, 21\penalty0
+  (70):\penalty0 1--73, 2020.
+\newblock URL \url{http://jmlr.org/papers/v21/19-447.html}.
+
+\bibitem[Kim \& Han(2009)Kim and Han]{kim2009particle}
+Min-Soo Kim and Jiawei Han.
+\newblock A particle-and-density based evolutionary clustering method for
+  dynamic networks.
+\newblock \emph{VLDB}, 2\penalty0 (1):\penalty0 622--633, 2009.
+
+\bibitem[Kipf \& Welling(2016)Kipf and Welling]{kipf2016variational}
+Thomas~N Kipf and Max Welling.
+\newblock Variational graph auto-encoders.
+\newblock \emph{NIPS Workshop on Bayesian Deep Learning}, 2016.
+
+\bibitem[Kipf \& Welling(2017)Kipf and Welling]{Kipf:2016tc}
+Thomas~N. Kipf and Max Welling.
+\newblock {Semi-Supervised Classification with Graph Convolutional Networks}.
+\newblock In \emph{ICLR}, 2017.
+\newblock URL \url{https://openreview.net/forum?id=SJU4ayYgl}.
+
+\bibitem[Kumar et~al.(2019)Kumar, Zhang, and Leskovec]{10.1145/3292500.3330895}
+Srijan Kumar, Xikun Zhang, and Jure Leskovec.
+\newblock Predicting dynamic embedding trajectory in temporal interaction
+  networks.
+\newblock In \emph{KDD ’19}, pp.\  1269–1278, 2019.
+\newblock ISBN 9781450362016.
+\newblock \doi{10.1145/3292500.3330895}.
+\newblock URL \url{https://doi.org/10.1145/3292500.3330895}.
+
+\bibitem[Li et~al.(2018)Li, Yu, Shahabi, and Liu]{li2018diffusion}
+Yaguang Li, Rose Yu, Cyrus Shahabi, and Yan Liu.
+\newblock Diffusion convolutional recurrent neural network: Data-driven traffic
+  forecasting.
+\newblock In \emph{International Conference on Learning Representations}, 2018.
+\newblock URL \url{https://openreview.net/forum?id=SJiHXGWAZ}.
+
+\bibitem[Liben-Nowell \& Kleinberg(2007)Liben-Nowell and
+  Kleinberg]{10.5555/1241540.1241551}
+David Liben-Nowell and Jon Kleinberg.
+\newblock The link-prediction problem for social networks.
+\newblock \emph{J. Am. Soc. Inf. Sci. Technol.}, 58\penalty0 (7):\penalty0
+  1019–1031, May 2007.
+\newblock ISSN 1532-2882.
+
+\bibitem[Ma et~al.(2018)Ma, Guo, Ren, Zhao, Tang, and Yin]{ma2018streaming}
+Yao Ma, Ziyi Guo, Zhaochun Ren, Eric Zhao, Jiliang Tang, and Dawei Yin.
+\newblock Streaming graph neural networks.
+\newblock \emph{arXiv:1810.10627}, 2018.
+
+\bibitem[Ma et~al.(2019)Ma, Tresp, and Daxberger]{ma2019embedding}
+Yunpu Ma, Volker Tresp, and Erik~A Daxberger.
+\newblock Embedding models for episodic knowledge graphs.
+\newblock \emph{Journal of Web Semantics}, 59:\penalty0 100490, 2019.
+
+\bibitem[Mahdavi et~al.(2018)Mahdavi, Khoshraftar, and
+  An]{mahdavi2018dynnode2vec}
+Sedigheh Mahdavi, Shima Khoshraftar, and Aijun An.
+\newblock dynnode2vec: Scalable dynamic network embedding.
+\newblock In \emph{2018 IEEE International Conference on Big Data}, pp.\
+  3762--3765. IEEE, 2018.
+
+\bibitem[Manessi et~al.(2020)Manessi, Rozza, and Manzo]{MANESSI2020107000}
+Franco Manessi, Alessandro Rozza, and Mario Manzo.
+\newblock Dynamic graph convolutional networks.
+\newblock \emph{Pattern Recognition}, 97:\penalty0 107000, 2020.
+
+\bibitem[Monti et~al.(2016)Monti, Boscaini, Masci, Rodol{\`a}, Svoboda, and
+  Bronstein]{Monti2016GeometricDL}
+Federico Monti, Davide Boscaini, Jonathan Masci, Emanuele Rodol{\`a}, Jan
+  Svoboda, and Michael~M. Bronstein.
+\newblock Geometric deep learning on graphs and manifolds using mixture model
+  cnns.
+\newblock In \emph{CVPR}, 2016.
+
+\bibitem[Monti et~al.(2019)Monti, Frasca, Eynard, Mannion, and
+  Bronstein]{monti2019fake}
+Federico Monti, Fabrizio Frasca, Davide Eynard, Damon Mannion, and Michael~M.
+  Bronstein.
+\newblock Fake news detection on social media using geometric deep learning.
+\newblock \emph{arXiv:1902.06673}, 2019.
+\newblock URL \url{http://arxiv.org/abs/1902.06673}.
+
+\bibitem[Moradabadi \& Meybodi(2017)Moradabadi and
+  Meybodi]{moradabadi2017novel}
+Behnaz Moradabadi and Mohammad~Reza Meybodi.
+\newblock A novel time series link prediction method: Learning automata
+  approach.
+\newblock \emph{Physica A: Statistical Mechanics and its Applications},
+  482:\penalty0 422--432, 2017.
+
+\bibitem[Narayan \& Roe(2018)Narayan and Roe]{NARAYAN2018433}
+Apurva Narayan and Peter~HO’N Roe.
+\newblock Learning graph dynamics using deep neural networks.
+\newblock \emph{IFAC-PapersOnLine}, 51\penalty0 (2):\penalty0 433--438, 2018.
+
+\bibitem[{Nguyen} et~al.(2018){Nguyen}, {Boaz Lee}, {Rossi}, {Ahmed}, {Koh},
+  and {Kim}]{8622109}
+G.~H. {Nguyen}, J.~{Boaz Lee}, R.~A. {Rossi}, N.~K. {Ahmed}, E.~{Koh}, and
+  S.~{Kim}.
+\newblock Dynamic network embeddings: From random walks to temporal random
+  walks.
+\newblock In \emph{2018 IEEE International Conference on Big Data}, pp.\
+  1085--1092, 2018.
+
+\bibitem[Nguyen et~al.(2018)Nguyen, Lee, Rossi, Ahmed, Koh, and
+  Kim]{10.1145/3184558.3191526}
+Giang~Hoang Nguyen, John~Boaz Lee, Ryan~A. Rossi, Nesreen~K. Ahmed, Eunyee Koh,
+  and Sungchul Kim.
+\newblock Continuous-time dynamic network embeddings.
+\newblock In \emph{WWW '18}, pp.\  969–976, 2018.
+\newblock ISBN 9781450356404.
+\newblock \doi{10.1145/3184558.3191526}.
+\newblock URL \url{https://doi.org/10.1145/3184558.3191526}.
+
+\bibitem[Pareja et~al.(2019)Pareja, Domeniconi, Chen, Ma, Suzumura, Kanezashi,
+  Kaler, and Leisersen]{pareja2019evolvegcn}
+Aldo Pareja, Giacomo Domeniconi, Jie Chen, Tengfei Ma, Toyotaro Suzumura,
+  Hiroki Kanezashi, Tim Kaler, and Charles~E Leisersen.
+\newblock Evolvegcn: Evolving graph convolutional networks for dynamic graphs.
+\newblock \emph{arXiv:1902.10191}, 2019.
+
+\bibitem[Parisot et~al.(2018)Parisot, Ktena, Ferrante, Lee, Guerrero, Glocker,
+  and Rueckert]{parisot2018disease}
+Sarah Parisot, Sofia~Ira Ktena, Enzo Ferrante, Matthew Lee, Ricardo Guerrero,
+  Ben Glocker, and Daniel Rueckert.
+\newblock Disease prediction using graph convolutional networks: Application to
+  autism spectrum disorder and alzheimer’s disease.
+\newblock \emph{Med Image Anal}, 48:\penalty0 117--130, 2018.
+
+\bibitem[Pei et~al.(2016)Pei, Zhang, Fletcher, and Pechenizkiy]{pei2016node}
+Yulong Pei, Jianpeng Zhang, GH~Fletcher, and Mykola Pechenizkiy.
+\newblock Node classification in dynamic social networks.
+\newblock \emph{AALTD}, pp.\ ~54, 2016.
+
+\bibitem[Perozzi et~al.(2014)Perozzi, Al-Rfou, and
+  Skiena]{10.1145/2623330.2623732}
+Bryan Perozzi, Rami Al-Rfou, and Steven Skiena.
+\newblock Deepwalk: Online learning of social representations.
+\newblock In \emph{KDD ’14}, pp.\  701–710, 2014.
+\newblock ISBN 9781450329569.
+\newblock \doi{10.1145/2623330.2623732}.
+\newblock URL \url{https://doi.org/10.1145/2623330.2623732}.
+
+\bibitem[Qi et~al.(2018)Qi, Wang, Jia, Shen, and Zhu]{qi2018learning}
+Siyuan Qi, Wenguan Wang, Baoxiong Jia, Jianbing Shen, and Song-Chun Zhu.
+\newblock Learning human-object interactions by graph parsing neural networks.
+\newblock In \emph{ECCV}, pp.\  401--417, 2018.
+
+\bibitem[Rossi et~al.(2019)Rossi, Monti, Bronstein, and
+  Li{\`o}]{rossi2019ncrna}
+Emanuele Rossi, Federico Monti, Michael~M. Bronstein, and Pietro Li{\`o}.
+\newblock ncrna classification with graph convolutional networks.
+\newblock In \emph{KDD Workshop on Deep Learning on Graphs}, 2019.
+
+\bibitem[Rossi et~al.(2020)Rossi, Frasca, Chamberlain, Eynard, Bronstein, and
+  Monti]{rossi2020sign}
+Emanuele Rossi, Fabrizio Frasca, Ben Chamberlain, Davide Eynard, Michael
+  Bronstein, and Federico Monti.
+\newblock Sign: Scalable inception graph neural networks.
+\newblock \emph{arXiv preprint arXiv:2004.11198}, 2020.
+
+\bibitem[Sankar et~al.(2020)Sankar, Wu, Gou, Zhang, and Yang]{sankar2020dysat}
+Aravind Sankar, Yanhong Wu, Liang Gou, Wei Zhang, and Hao Yang.
+\newblock Dysat: Deep neural representation learning on dynamic graphs via
+  self-attention networks.
+\newblock In \emph{WSDM}, pp.\  519--527, 2020.
+
+\bibitem[Seo et~al.(2018)Seo, Defferrard, Vandergheynst, and Bresson]{Seo_2018}
+Youngjoo Seo, Michaël Defferrard, Pierre Vandergheynst, and Xavier Bresson.
+\newblock Structured sequence modeling with graph convolutional recurrent
+  networks.
+\newblock \emph{Lecture Notes in Computer Science}, pp.\  362–373, 2018.
+\newblock ISSN 1611-3349.
+\newblock \doi{10.1007/978-3-030-04167-0_33}.
+\newblock URL \url{http://dx.doi.org/10.1007/978-3-030-04167-0_33}.
+
+\bibitem[Sharan \& Neville(2008)Sharan and Neville]{sharan2008temporal}
+Umang Sharan and Jennifer Neville.
+\newblock Temporal-relational classifiers for prediction in evolving domains.
+\newblock In \emph{ICDM}, pp.\  540--549. IEEE, 2008.
+
+\bibitem[Singer et~al.(2019)Singer, Guy, and Radinsky]{ijcai2019-640}
+Uriel Singer, Ido Guy, and Kira Radinsky.
+\newblock Node embedding over temporal graphs.
+\newblock In \emph{IJCAI}, pp.\  4605--4612, 7 2019.
+\newblock \doi{10.24963/ijcai.2019/640}.
+\newblock URL \url{https://doi.org/10.24963/ijcai.2019/640}.
+
+\bibitem[Trivedi et~al.(2017)Trivedi, Dai, Wang, and
+  Song]{10.5555/3305890.3306039}
+Rakshit Trivedi, Hanjun Dai, Yichen Wang, and Le~Song.
+\newblock Know-evolve: Deep temporal reasoning for dynamic knowledge graphs.
+\newblock In \emph{ICML}, pp.\  3462–3471, 2017.
+
+\bibitem[Trivedi et~al.(2019)Trivedi, Farajtabar, Biswal, and
+  Zha]{trivedi2018dyrep}
+Rakshit Trivedi, Mehrdad Farajtabar, Prasenjeet Biswal, and Hongyuan Zha.
+\newblock Dyrep: Learning representations over dynamic graphs.
+\newblock In \emph{ICLR}, 2019.
+\newblock URL \url{https://openreview.net/forum?id=HyePrhR5KX}.
+
+\bibitem[Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez,
+  Kaiser, and Polosukhin]{NIPS2017_7181}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N Gomez, \L~ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In \emph{NIPS}, pp.\  5998--6008. 2017.
+\newblock URL
+  \url{http://papers.nips.cc/paper/7181-attention-is-all-you-need.pdf}.
+
+\bibitem[Velickovic et~al.(2018)Velickovic, Cucurull, Casanova, Romero,
+  Li{\`{o}}, and Bengio]{DBLP:conf/iclr/VelickovicCCRLB18}
+Petar Velickovic, Guillem Cucurull, Arantxa Casanova, Adriana Romero, Pietro
+  Li{\`{o}}, and Yoshua Bengio.
+\newblock Graph attention networks.
+\newblock In \emph{ICLR}, 2018.
+
+\bibitem[Veselkov et~al.(2019)]{veselkov2019hyperfoods}
+Kirill Veselkov et~al.
+\newblock Hyperfoods: Machine intelligent mapping of cancer-beating molecules
+  in foods.
+\newblock \emph{Scientific Reports}, 9\penalty0 (1):\penalty0 1--12, 2019.
+
+\bibitem[Wolf et~al.(2019)Wolf, Debut, Sanh, Chaumond, Delangue, Moi, Cistac,
+  Rault, Louf, Funtowicz, and Brew]{Wolf2019HuggingFacesTS}
+Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue,
+  Anthony Moi, Pierric Cistac, Tim Rault, R'emi Louf, Morgan Funtowicz, and
+  Jamie Brew.
+\newblock Huggingface's transformers: State-of-the-art natural language
+  processing.
+\newblock \emph{arXiv:1910.03771}, 2019.
+
+\bibitem[Xin et~al.(2016)Xin, Xie, and Yang]{xin2016adaptive}
+Yu~Xin, Zhi-Qiang Xie, and Jing Yang.
+\newblock An adaptive random walk sampling method on dynamic community
+  detection.
+\newblock \emph{Expert Systems with Applications}, 58:\penalty0 10--19, 2016.
+
+\bibitem[Xu et~al.(2019)Xu, Nayyeri, Alkhoury, Lehmann, and
+  Yazdi]{xu2019temporal}
+Chengjin Xu, Mojtaba Nayyeri, Fouad Alkhoury, Jens Lehmann, and Hamed~Shariat
+  Yazdi.
+\newblock Temporal knowledge graph completion based on time series gaussian
+  embedding.
+\newblock \emph{arXiv:1911.07893}, 2019.
+
+\bibitem[Xu et~al.(2020)Xu, Ruan, Korpeoglu, Kumar, and Achan]{Xu2020Inductive}
+Da~Xu, Chuanwei Ruan, Evren Korpeoglu, Sushant Kumar, and Kannan Achan.
+\newblock Inductive representation learning on temporal graphs.
+\newblock In \emph{ICLR}, 2020.
+\newblock URL \url{https://openreview.net/forum?id=rJeW1yHYwH}.
+
+\bibitem[Yao et~al.(2016)Yao, Wang, Pan, and Yao]{yao2016link}
+Lin Yao, Luning Wang, Lv~Pan, and Kai Yao.
+\newblock Link prediction based on common-neighbors for dynamic social network.
+\newblock \emph{Procedia Computer Science}, 83:\penalty0 82--89, 2016.
+
+\bibitem[Ying et~al.(2018)Ying, He, Chen, Eksombatchai, Hamilton, and
+  Leskovec]{pinsage}
+Rex Ying, Ruining He, Kaifeng Chen, Pong Eksombatchai, William~L. Hamilton, and
+  Jure Leskovec.
+\newblock Graph convolutional neural networks for web-scale recommender
+  systems.
+\newblock In \emph{KDD '18}, 2018.
+
+\bibitem[Yu et~al.(2019)Yu, Li, Zhang, and Zhu]{yu20193d}
+Bing Yu, Mengzhang Li, Jiyong Zhang, and Zhanxing Zhu.
+\newblock 3d graph convolutional networks with temporal graphs: A spatial
+  information free framework for traffic forecasting.
+\newblock \emph{arXiv:1903.00919}, 2019.
+
+\bibitem[Yu et~al.(2017)Yu, Cheng, Aggarwal, Chen, and Wang]{yu2017link}
+Wenchao Yu, Wei Cheng, Charu~C Aggarwal, Haifeng Chen, and Wei Wang.
+\newblock Link prediction with spatial and temporal consistency in dynamic
+  networks.
+\newblock In \emph{IJCAI}, pp.\  3343--3349, 2017.
+
+\bibitem[Yu et~al.(2018)Yu, Cheng, Aggarwal, Zhang, Chen, and
+  Wang]{yu2018netwalk}
+Wenchao Yu, Wei Cheng, Charu~C Aggarwal, Kai Zhang, Haifeng Chen, and Wei Wang.
+\newblock Netwalk: A flexible deep embedding approach for anomaly detection in
+  dynamic networks.
+\newblock In \emph{KDD '18}, pp.\  2672--2681, 2018.
+
+\bibitem[Zhang et~al.(2018)Zhang, Shi, Xie, Ma, King, and Yeung]{zhang2018gaan}
+Jiani Zhang, Xingjian Shi, Junyuan Xie, Hao Ma, Irwin King, and Dit-Yan Yeung.
+\newblock Gaan: Gated attention networks for learning on large and
+  spatiotemporal graphs.
+\newblock \emph{Conference on Uncertainty in Artificial Intelligence}, 2018.
+
+\bibitem[Zhang \& Chen(2018)Zhang and Chen]{zhang2018link}
+Muhan Zhang and Yixin Chen.
+\newblock Link prediction based on graph neural networks.
+\newblock In \emph{NIPS}, 2018.
+
+\bibitem[Zhou et~al.(2018)Zhou, Yang, Ren, Wu, and Zhuang]{zhou2018dynamic}
+Lekui Zhou, Yang Yang, Xiang Ren, Fei Wu, and Yueting Zhuang.
+\newblock Dynamic network embedding by modeling triadic closure process.
+\newblock In \emph{AAAI}, 2018.
+
+\bibitem[Zhu et~al.(2012)Zhu, Xie, and Chin]{zhu2012hybrid}
+Jia Zhu, Qing Xie, and Eun~Jung Chin.
+\newblock A hybrid time-series link prediction framework for large social
+  network.
+\newblock In \emph{DEXA}, pp.\  345--359. Springer, 2012.
+
+\bibitem[Zhu et~al.(2017)Zhu, Li, Liao, Wang, Guan, Liu, and Cai]{zhu2017next}
+Yu~Zhu, Hao Li, Yikang Liao, Beidou Wang, Ziyu Guan, Haifeng Liu, and Deng Cai.
+\newblock What to do next: Modeling user behaviors by time-lstm.
+\newblock In \emph{IJCAI}, volume~17, pp.\  3602--3608, 2017.
+
+\bibitem[Zitnik et~al.(2018)Zitnik, Agrawal, and Leskovec]{zitnik2018modeling}
+Marinka Zitnik, Monica Agrawal, and Jure Leskovec.
+\newblock Modeling polypharmacy side effects with graph convolutional networks.
+\newblock \emph{Bioinformatics}, 34\penalty0 (13):\penalty0 i457--i466, 2018.
+
+\end{thebibliography}

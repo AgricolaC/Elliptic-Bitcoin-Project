@@ -1,0 +1,14 @@
+In order to better understand and explain the mechanisms of GCNs, we explore the simplest possible formulation of a graph convolutional model, \method{}. The algorithm is almost trivial, a graph based pre-processing step  followed by standard multi-class logistic regression. However, the performance of \method{} rivals --- if not surpasses --- the performance of GCNs and state-of-the-art graph neural network models across a wide range of graph learning tasks.
+Moreover by precomputing the fixed feature extractor $\rmS^K$, training time is reduced to a record low.
+For example on the Reddit dataset, \method{} can be trained up to two orders of magnitude faster than sampling-based GCN variants. 
+
+In addition to our empirical analysis, we analyze \method{} from a convolution perspective and manifest this method as a low-pass-type filter on the spectral domain. Low-pass-type filters capture low-frequency signals, which corresponds with smoothing features across a graph in this setting. 
+Our analysis also provides insight into the empirical boost of the ``renormalization trick" and demonstrates how shrinking the spectral domain leads to a low-pass-type filter which underpins \method{}. 
+
+Ultimately, the strong performance of \method{} sheds light onto GCNs. It is likely that the expressive power of GCNs originates primarily from the repeated graph propagation (which \method{} preserves) rather than the nonlinear feature extraction (which it doesn't.) 
+
+Given its empirical performance, efficiency, and interpretability, we argue that the \method{} should be highly beneficial to the community in at least three ways:
+(1) as a first model to try, especially for node classification tasks; 
+(2) as a simple baseline for comparison with future graph learning models; 
+(3) as a starting point for future research in graph learning --- returning to the historic machine learning practice to develop complex from simple models. 
+

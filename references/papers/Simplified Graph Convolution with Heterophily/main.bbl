@@ -1,0 +1,260 @@
+\begin{thebibliography}{36}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chen et~al.(2018)Chen, Ma, and Xiao]{chen2018fastgcn}
+Chen, J., Ma, T., and Xiao, C.
+\newblock Fastgcn: fast learning with graph convolutional networks via
+  importance sampling.
+\newblock \emph{International Conference on Learning Representations}, 2018.
+
+\bibitem[Chien et~al.(2021)Chien, Peng, Li, and Milenkovic]{chien2020adaptive}
+Chien, E., Peng, J., Li, P., and Milenkovic, O.
+\newblock Adaptive universal generalized pagerank graph neural network.
+\newblock In \emph{9th International Conference on Learning Representations,
+  {ICLR} 2021, Virtual Event, Austria, May 3-7, 2021}, 2021.
+
+\bibitem[Craven et~al.(2000)Craven, DiPasquo, Freitag, McCallum, Mitchell,
+  Nigam, and Slattery]{craven2000learning}
+Craven, M., DiPasquo, D., Freitag, D., McCallum, A., Mitchell, T., Nigam, K.,
+  and Slattery, S.
+\newblock Learning to construct knowledge bases from the world wide web.
+\newblock \emph{Artificial intelligence}, 118\penalty0 (1-2):\penalty0 69--113,
+  2000.
+
+\bibitem[Defferrard et~al.(2016)Defferrard, Bresson, and
+  Vandergheynst]{defferrard2016convolutional}
+Defferrard, M., Bresson, X., and Vandergheynst, P.
+\newblock Convolutional neural networks on graphs with fast localized spectral
+  filtering.
+\newblock In \emph{Advances in Neural Information Processing Systems 29: Annual
+  Conference on Neural Information Processing Systems 2016, December 5-10,
+  2016, Barcelona, Spain}, pp.\  3837--3845, 2016.
+
+\bibitem[Deshpande et~al.(2018)Deshpande, Sen, Montanari, and
+  Mossel]{deshpande2018contextual}
+Deshpande, Y., Sen, S., Montanari, A., and Mossel, E.
+\newblock Contextual stochastic block models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2018.
+
+\bibitem[Gatterbauer(2014)]{gatterbauer2014semi}
+Gatterbauer, W.
+\newblock Semi-supervised learning with heterophily.
+\newblock \emph{arXiv preprint arXiv:1412.3100}, 2014.
+
+\bibitem[Hamilton et~al.(2017)Hamilton, Ying, and
+  Leskovec]{hamilton2017inductive}
+Hamilton, W.~L., Ying, Z., and Leskovec, J.
+\newblock Inductive representation learning on large graphs.
+\newblock In \emph{Advances in Neural Information Processing Systems 30: Annual
+  Conference on Neural Information Processing Systems 2017, December 4-9, 2017,
+  Long Beach, CA, {USA}}, pp.\  1024--1034, 2017.
+
+\bibitem[Harris et~al.(2020)Harris, Millman, van~der Walt, Gommers, Virtanen,
+  Cournapeau, Wieser, Taylor, Berg, Smith, Kern, Picus, Hoyer, van Kerkwijk,
+  Brett, Haldane, del R{\'{i}}o, Wiebe, Peterson, G{\'{e}}rard-Marchant,
+  Sheppard, Reddy, Weckesser, Abbasi, Gohlke, and Oliphant]{harris2020array}
+Harris, C.~R., Millman, K.~J., van~der Walt, S.~J., Gommers, R., Virtanen, P.,
+  Cournapeau, D., Wieser, E., Taylor, J., Berg, S., Smith, N.~J., Kern, R.,
+  Picus, M., Hoyer, S., van Kerkwijk, M.~H., Brett, M., Haldane, A., del
+  R{\'{i}}o, J.~F., Wiebe, M., Peterson, P., G{\'{e}}rard-Marchant, P.,
+  Sheppard, K., Reddy, T., Weckesser, W., Abbasi, H., Gohlke, C., and Oliphant,
+  T.~E.
+\newblock Array programming with {NumPy}.
+\newblock \emph{Nature}, 585\penalty0 (7825):\penalty0 357--362, September
+  2020.
+\newblock \doi{10.1038/s41586-020-2649-2}.
+
+\bibitem[Holland et~al.(1983)Holland, Laskey, and
+  Leinhardt]{holland1983stochastic}
+Holland, P.~W., Laskey, K.~B., and Leinhardt, S.
+\newblock Stochastic blockmodels: First steps.
+\newblock \emph{Social networks}, 5\penalty0 (2):\penalty0 109--137, 1983.
+
+\bibitem[Huang et~al.(2016)Huang, Goldsberry, Wymbs, Grafton, Bassett, and
+  Ribeiro]{huang2016graph}
+Huang, W., Goldsberry, L., Wymbs, N.~F., Grafton, S.~T., Bassett, D.~S., and
+  Ribeiro, A.
+\newblock Graph frequency analysis of brain signals.
+\newblock \emph{IEEE Journal of Selected Topics in Signal Processing},
+  10\penalty0 (7):\penalty0 1189--1203, 2016.
+
+\bibitem[Kipf \& Welling(2017)Kipf and Welling]{kipf2016semi}
+Kipf, T.~N. and Welling, M.
+\newblock Semi-supervised classification with graph convolutional networks.
+\newblock \emph{International Conference on Learning Representations}, 2017.
+
+\bibitem[Klicpera et~al.(2019)Klicpera, Bojchevski, and
+  G{\"{u}}nnemann]{klicpera2018predict}
+Klicpera, J., Bojchevski, A., and G{\"{u}}nnemann, S.
+\newblock Predict then propagate: Graph neural networks meet personalized
+  pagerank.
+\newblock In \emph{7th International Conference on Learning Representations,
+  {ICLR} 2019, New Orleans, LA, USA, May 6-9, 2019}, 2019.
+
+\bibitem[LeCun et~al.(2015)LeCun, Bengio, and Hinton]{lecun2015deep}
+LeCun, Y., Bengio, Y., and Hinton, G.
+\newblock Deep learning.
+\newblock \emph{Nature}, 521\penalty0 (7553):\penalty0 436--444, 2015.
+
+\bibitem[Liu et~al.(2020)Liu, Wang, and Ji]{liu2020non}
+Liu, M., Wang, Z., and Ji, S.
+\newblock Non-local graph neural networks.
+\newblock \emph{arXiv preprint arXiv:2005.14612}, 2020.
+
+\bibitem[Luan et~al.(2021)Luan, Hua, Lu, Zhu, Zhao, Zhang, Chang, and
+  Precup]{luan2021heterophily}
+Luan, S., Hua, C., Lu, Q., Zhu, J., Zhao, M., Zhang, S., Chang, X.-W., and
+  Precup, D.
+\newblock Is heterophily a real nightmare for graph neural networks to do node
+  classification?
+\newblock \emph{arXiv preprint arXiv:2109.05641}, 2021.
+
+\bibitem[McAuley et~al.(2015)McAuley, Targett, Shi, and Van
+  Den~Hengel]{mcauley2015image}
+McAuley, J., Targett, C., Shi, Q., and Van Den~Hengel, A.
+\newblock Image-based recommendations on styles and substitutes.
+\newblock In \emph{Proceedings of the 38th International ACM SIGIR Conference
+  on Research and Development in Information retrieval}, pp.\  43--52, 2015.
+
+\bibitem[Namata et~al.(2012)Namata, London, Getoor, Huang, and
+  EDU]{namata2012query}
+Namata, G., London, B., Getoor, L., Huang, B., and EDU, U.
+\newblock Query-driven active surveying for collective classification.
+\newblock In \emph{10th International Workshop on Mining and Learning with
+  Graphs}, volume~8, pp.\ ~1, 2012.
+
+\bibitem[NT \& Maehara(2019)NT and Maehara]{nt2019revisiting}
+NT, H. and Maehara, T.
+\newblock Revisiting graph neural networks: All we have is low-pass filters.
+\newblock \emph{arXiv preprint arXiv:1905.09550}, 2019.
+
+\bibitem[Ortega et~al.(2018)Ortega, Frossard, Kova{\v{c}}evi{\'c}, Moura, and
+  Vandergheynst]{ortega2018graph}
+Ortega, A., Frossard, P., Kova{\v{c}}evi{\'c}, J., Moura, J.~M., and
+  Vandergheynst, P.
+\newblock Graph signal processing: Overview, challenges, and applications.
+\newblock \emph{Proceedings of the IEEE}, 106\penalty0 (5):\penalty0 808--828,
+  2018.
+
+\bibitem[Pedregosa et~al.(2011)Pedregosa, Varoquaux, Gramfort, Michel, Thirion,
+  Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
+  Cournapeau, Brucher, Perrot, and Duchesnay]{scikit-learn}
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel,
+  O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J.,
+  Passos, A., Cournapeau, D., Brucher, M., Perrot, M., and Duchesnay, E.
+\newblock Scikit-learn: Machine learning in {P}ython.
+\newblock \emph{Journal of Machine Learning Research}, 12:\penalty0 2825--2830,
+  2011.
+
+\bibitem[Pei et~al.(2020)Pei, Wei, Chang, Lei, and Yang]{pei2020geom}
+Pei, H., Wei, B., Chang, K.~C., Lei, Y., and Yang, B.
+\newblock Geom-gcn: Geometric graph convolutional networks.
+\newblock In \emph{8th International Conference on Learning Representations,
+  {ICLR} 2020, Addis Ababa, Ethiopia, April 26-30, 2020}, 2020.
+
+\bibitem[Rozemberczki et~al.(2021)Rozemberczki, Allen, and
+  Sarkar]{rozemberczki2021multi}
+Rozemberczki, B., Allen, C., and Sarkar, R.
+\newblock Multi-scale attributed node embedding.
+\newblock \emph{J. Complex Networks}, 9\penalty0 (2), 2021.
+
+\bibitem[Saad(2011)]{saad2011numerical}
+Saad, Y.
+\newblock \emph{Numerical methods for large eigenvalue problems: revised
+  edition}.
+\newblock SIAM, 2011.
+
+\bibitem[Sen et~al.(2008)Sen, Namata, Bilgic, Getoor, Gallagher, and
+  Eliassi{-}Rad]{sen2008collective}
+Sen, P., Namata, G., Bilgic, M., Getoor, L., Gallagher, B., and Eliassi{-}Rad,
+  T.
+\newblock Collective classification in network data.
+\newblock \emph{{AI} Mag.}, 29\penalty0 (3):\penalty0 93--106, 2008.
+
+\bibitem[Shchur et~al.(2018)Shchur, Mumme, Bojchevski, and
+  G{\"u}nnemann]{shchur2018pitfalls}
+Shchur, O., Mumme, M., Bojchevski, A., and G{\"u}nnemann, S.
+\newblock Pitfalls of graph neural network evaluation.
+\newblock \emph{arXiv preprint arXiv:1811.05868}, 2018.
+
+\bibitem[Spielman(2012)]{spielman2012spectral}
+Spielman, D.
+\newblock Spectral graph theory.
+\newblock \emph{Combinatorial Scientific Computing}, 18, 2012.
+
+\bibitem[Stankovi{\'c} et~al.(2019)Stankovi{\'c}, Dakovi{\'c}, and
+  Sejdi{\'c}]{stankovic2019introduction}
+Stankovi{\'c}, L., Dakovi{\'c}, M., and Sejdi{\'c}, E.
+\newblock Introduction to graph signal processing.
+\newblock In \emph{Vertex-Frequency Analysis of Graph Signals}, pp.\  3--108.
+  Springer, 2019.
+
+\bibitem[Suresh et~al.(2021)Suresh, Budde, Neville, Li, and
+  Ma]{suresh2021breaking}
+Suresh, S., Budde, V., Neville, J., Li, P., and Ma, J.
+\newblock Breaking the limit of graph neural networks by improving the
+  assortativity of graphs with local mixing patterns.
+\newblock In \emph{{KDD} '21: The 27th {ACM} {SIGKDD} Conference on Knowledge
+  Discovery and Data Mining, Virtual Event, Singapore, August 14-18, 2021},
+  pp.\  1541--1551. {ACM}, 2021.
+
+\bibitem[Tang \& Liu(2009)Tang and Liu]{tang2009relational}
+Tang, L. and Liu, H.
+\newblock Relational learning via latent social dimensions.
+\newblock In \emph{Proceedings of the 15th {ACM} {SIGKDD} International
+  Conference on Knowledge Discovery and Data Mining}, pp.\  817--826. {ACM},
+  2009.
+
+\bibitem[Veli{\v{c}}kovi{\'c} et~al.(2018)Veli{\v{c}}kovi{\'c}, Cucurull,
+  Casanova, Romero, Lio, and Bengio]{velivckovic2018graph}
+Veli{\v{c}}kovi{\'c}, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., and
+  Bengio, Y.
+\newblock Graph attention networks.
+\newblock \emph{International Conference on Learning Representations}, 2018.
+
+\bibitem[Wu et~al.(2019)Wu, Souza, Zhang, Fifty, Yu, and
+  Weinberger]{wu2019simplifying}
+Wu, F., Souza, A., Zhang, T., Fifty, C., Yu, T., and Weinberger, K.
+\newblock Simplifying graph convolutional networks.
+\newblock In \emph{Proceedings of the 36th International Conference on Machine
+  Learning}, pp.\  6861--6871. PMLR, 2019.
+
+\bibitem[Xu et~al.(2018)Xu, Li, Tian, Sonobe, Kawarabayashi, and
+  Jegelka]{xu2018representation}
+Xu, K., Li, C., Tian, Y., Sonobe, T., Kawarabayashi, K.-i., and Jegelka, S.
+\newblock Representation learning on graphs with jumping knowledge networks.
+\newblock In \emph{International Conference on Machine Learning}, pp.\
+  5453--5462. PMLR, 2018.
+
+\bibitem[Xu et~al.(2019)Xu, Hu, Leskovec, and Jegelka]{xu2018powerful}
+Xu, K., Hu, W., Leskovec, J., and Jegelka, S.
+\newblock How powerful are graph neural networks?
+\newblock \emph{International Conference on Learning Representations}, 2019.
+
+\bibitem[Yan et~al.(2021)Yan, Hashemi, Swersky, Yang, and Koutra]{yan2021two}
+Yan, Y., Hashemi, M., Swersky, K., Yang, Y., and Koutra, D.
+\newblock Two sides of the same coin: Heterophily and oversmoothing in graph
+  convolutional neural networks.
+\newblock \emph{arXiv preprint arXiv:2102.06462}, 2021.
+
+\bibitem[Zhu et~al.(2020{\natexlab{a}})Zhu, Rossi, Rao, Mai, Lipka, Ahmed, and
+  Koutra]{zhu2020graph}
+Zhu, J., Rossi, R.~A., Rao, A., Mai, T., Lipka, N., Ahmed, N.~K., and Koutra,
+  D.
+\newblock Graph neural networks with heterophily.
+\newblock \emph{AAAI Conference on Artificial Intelligence},
+  2020{\natexlab{a}}.
+
+\bibitem[Zhu et~al.(2020{\natexlab{b}})Zhu, Yan, Zhao, Heimann, Akoglu, and
+  Koutra]{zhu2020beyond}
+Zhu, J., Yan, Y., Zhao, L., Heimann, M., Akoglu, L., and Koutra, D.
+\newblock Beyond homophily in graph neural networks: Current limitations and
+  effective designs.
+\newblock \emph{Advances in Neural Information Processing Systems}, 33,
+  2020{\natexlab{b}}.
+
+\end{thebibliography}

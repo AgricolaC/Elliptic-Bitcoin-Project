@@ -1,0 +1,226 @@
+\begin{thebibliography}{10}
+
+\bibitem{abadi2016tensorflow}
+M.~Abadi, A.~Agarwal, P.~Barham, E.~Brevdo, Z.~Chen, C.~Citro, G.~S. Corrado,
+  A.~Davis, J.~Dean, M.~Devin, et~al.
+\newblock Tensorflow: Large-scale machine learning on heterogeneous distributed
+  systems.
+\newblock {\em arXiv preprint $ $}, 2016.
+
+\bibitem{arora2017simple}
+S.~Arora, Y.~Liang, and T.~Ma.
+\newblock A simple but tough-to-beat baseline for sentence embeddings.
+\newblock In {\em ICLR}, 2017.
+
+\bibitem{benson2016higher}
+A.~R. Benson, D.~F. Gleich, and J.~Leskovec.
+\newblock Higher-order organization of complex networks.
+\newblock {\em Science}, 353(6295):163--166, 2016.
+
+\bibitem{bruna2013spectral}
+J.~Bruna, W.~Zaremba, A.~Szlam, and Y.~LeCun.
+\newblock Spectral networks and locally connected networks on graphs.
+\newblock In {\em ICLR}, 2014.
+
+\bibitem{cao2015grarep}
+S.~Cao, W.~Lu, and Q.~Xu.
+\newblock Grarep: Learning graph representations with global structural
+  information.
+\newblock In {\em KDD}, 2015.
+
+\bibitem{chen2017stochastic}
+J.~Chen and J.~Zhu.
+\newblock Stochastic training of graph convolutional networks.
+\newblock {\em arXiv preprint arXiv:1710.10568}, 2017.
+
+\bibitem{dai2016discriminative}
+H.~Dai, B.~Dai, and L.~Song.
+\newblock Discriminative embeddings of latent variable models for structured
+  data.
+\newblock In {\em ICML}, 2016.
+
+\bibitem{defferrard2016convolutional}
+M.~Defferrard, X.~Bresson, and P.~Vandergheynst.
+\newblock Convolutional neural networks on graphs with fast localized spectral
+  filtering.
+\newblock In {\em NIPS}, 2016.
+
+\bibitem{duvenaud2015convolutional}
+D.~K. Duvenaud, D.~Maclaurin, J.~Iparraguirre, R.~Bombarell, T.~Hirzel,
+  A.~Aspuru-Guzik, and R.~P. Adams.
+\newblock Convolutional networks on graphs for learning molecular fingerprints.
+\newblock In {\em NIPS}, 2015.
+
+\bibitem{gori2005new}
+M.~Gori, G.~Monfardini, and F.~Scarselli.
+\newblock A new model for learning in graph domains.
+\newblock In {\em IEEE International Joint Conference on Neural Networks},
+  volume~2, pages 729--734, 2005.
+
+\bibitem{grover2016node2vec}
+A.~Grover and J.~Leskovec.
+\newblock node2vec: Scalable feature learning for networks.
+\newblock In {\em KDD}, 2016.
+
+\bibitem{hamilton2016diachronic}
+W.~L. Hamilton, J.~Leskovec, and D.~Jurafsky.
+\newblock Diachronic word embeddings reveal statistical laws of semantic
+  change.
+\newblock In {\em ACL}, 2016.
+
+\bibitem{he2016identity}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun.
+\newblock Identity mappings in deep residual networks.
+\newblock In {\em EACV}, 2016.
+
+\bibitem{hochreiter1997long}
+S.~Hochreiter and J.~Schmidhuber.
+\newblock Long short-term memory.
+\newblock {\em Neural Computation}, 9(8):1735--1780, 1997.
+
+\bibitem{hornik1991approximation}
+K.~Hornik.
+\newblock Approximation capabilities of multilayer feedforward networks.
+\newblock {\em Neural Networks}, 4(2):251--257, 1991.
+
+\bibitem{kingma2014adam}
+D.~Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock In {\em ICLR}, 2015.
+
+\bibitem{kipf2016semi}
+T.~N. Kipf and M.~Welling.
+\newblock Semi-supervised classification with graph convolutional networks.
+\newblock In {\em ICLR}, 2016.
+
+\bibitem{kipf2016variational}
+T.~N. Kipf and M.~Welling.
+\newblock Variational graph auto-encoders.
+\newblock In {\em NIPS Workshop on Bayesian Deep Learning}, 2016.
+
+\bibitem{kruskal1964multidimensional}
+J.~B. Kruskal.
+\newblock Multidimensional scaling by optimizing goodness of fit to a nonmetric
+  hypothesis.
+\newblock {\em Psychometrika}, 29(1):1--27, 1964.
+
+\bibitem{levy2014neural}
+O.~Levy and Y.~Goldberg.
+\newblock Neural word embedding as implicit matrix factorization.
+\newblock In {\em NIPS}, 2014.
+
+\bibitem{li2015gated}
+Y.~Li, D.~Tarlow, M.~Brockschmidt, and R.~Zemel.
+\newblock Gated graph sequence neural networks.
+\newblock In {\em ICLR}, 2015.
+
+\bibitem{mikolov2013distributed}
+T.~Mikolov, I.~Sutskever, K.~Chen, G.~S. Corrado, and J.~Dean.
+\newblock Distributed representations of words and phrases and their
+  compositionality.
+\newblock In {\em NIPS}, 2013.
+
+\bibitem{ng2001spectral}
+A.~Y. Ng, M.~I. Jordan, Y.~Weiss, et~al.
+\newblock On spectral clustering: Analysis and an algorithm.
+\newblock In {\em NIPS}, 2001.
+
+\bibitem{niepert2016learning}
+M.~Niepert, M.~Ahmed, and K.~Kutzkov.
+\newblock Learning convolutional neural networks for graphs.
+\newblock In {\em ICML}, 2016.
+
+\bibitem{page1999pagerank}
+L.~Page, S.~Brin, R.~Motwani, and T.~Winograd.
+\newblock The pagerank citation ranking: Bringing order to the web.
+\newblock Technical report, Stanford InfoLab, 1999.
+
+\bibitem{scikit-learn}
+F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
+  M.~Blondel, P.~Prettenhofer, R.~Weiss, V.~Dubourg, J.~Vanderplas, A.~Passos,
+  D.~Cournapeau, M.~Brucher, M.~Perrot, and E.~Duchesnay.
+\newblock Scikit-learn: Machine learning in {P}ython.
+\newblock {\em Journal of Machine Learning Research}, 12:2825--2830, 2011.
+
+\bibitem{pennington2014glove}
+J.~Pennington, R.~Socher, and C.~D. Manning.
+\newblock Glove: Global vectors for word representation.
+\newblock In {\em EMNLP}, 2014.
+
+\bibitem{perozzi2014deepwalk}
+B.~Perozzi, R.~Al-Rfou, and S.~Skiena.
+\newblock Deepwalk: Online learning of social representations.
+\newblock In {\em KDD}, 2014.
+
+\bibitem{qi2016pointnet}
+C.~R. Qi, H.~Su, K.~Mo, and L.~J. Guibas.
+\newblock Pointnet: Deep learning on point sets for 3d classification and
+  segmentation.
+\newblock In {\em CVPR}, 2017.
+
+\bibitem{rehurek_lrec}
+R.~{\v R}eh{\r u}{\v r}ek and P.~Sojka.
+\newblock {Software Framework for Topic Modelling with Large Corpora}.
+\newblock In {\em LREC}, 2010.
+
+\bibitem{scarselli2009graph}
+F.~Scarselli, M.~Gori, A.~C. Tsoi, M.~Hagenbuchner, and G.~Monfardini.
+\newblock The graph neural network model.
+\newblock {\em IEEE Transactions on Neural Networks}, 20(1):61--80, 2009.
+
+\bibitem{shervashidze2011weisfeiler}
+N.~Shervashidze, P.~Schweitzer, E.~J.~v. Leeuwen, K.~Mehlhorn, and K.~M.
+  Borgwardt.
+\newblock Weisfeiler-lehman graph kernels.
+\newblock {\em Journal of Machine Learning Research}, 12:2539--2561, 2011.
+
+\bibitem{siegal1956nonparametric}
+S.~Siegal.
+\newblock {\em Nonparametric statistics for the behavioral sciences}.
+\newblock McGraw-hill, 1956.
+
+\bibitem{subramanian2005gene}
+A.~Subramanian, P.~Tamayo, V.~K. Mootha, S.~Mukherjee, B.~L. Ebert, M.~A.
+  Gillette, A.~Paulovich, S.~L. Pomeroy, T.~R. Golub, E.~S. Lander, et~al.
+\newblock Gene set enrichment analysis: a knowledge-based approach for
+  interpreting genome-wide expression profiles.
+\newblock {\em Proceedings of the National Academy of Sciences},
+  102(43):15545--15550, 2005.
+
+\bibitem{tang2015line}
+J.~Tang, M.~Qu, M.~Wang, M.~Zhang, J.~Yan, and Q.~Mei.
+\newblock Line: Large-scale information network embedding.
+\newblock In {\em WWW}, 2015.
+
+\bibitem{wang2016structural}
+D.~Wang, P.~Cui, and W.~Zhu.
+\newblock Structural deep network embedding.
+\newblock In {\em KDD}, 2016.
+
+\bibitem{wang2017community}
+X.~Wang, P.~Cui, J.~Wang, J.~Pei, W.~Zhu, and S.~Yang.
+\newblock Community preserving network embedding.
+\newblock In {\em AAAI}, 2017.
+
+\bibitem{watts1998collective}
+D.~J. Watts and S.~H. Strogatz.
+\newblock Collective dynamics of ‘small-world’ networks.
+\newblock {\em Nature}, 393(6684):440--442, 1998.
+
+\bibitem{xu2017embedding}
+L.~Xu, X.~Wei, J.~Cao, and P.~S. Yu.
+\newblock Embedding identity and interest for social networks.
+\newblock In {\em WWW}, 2017.
+
+\bibitem{yang2016revisiting}
+Z.~Yang, W.~Cohen, and R.~Salakhutdinov.
+\newblock Revisiting semi-supervised learning with graph embeddings.
+\newblock In {\em ICML}, 2016.
+
+\bibitem{zitnik2017tissue}
+M.~Zitnik and J.~Leskovec.
+\newblock Predicting multicellular function through multi-layer tissue
+  networks.
+\newblock {\em Bioinformatics}, 33(14):190--198, 2017.
+
+\end{thebibliography}

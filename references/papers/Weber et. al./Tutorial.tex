@@ -1,0 +1,620 @@
+%
+% The first command in your LaTeX source must be the \documentclass command.
+\documentclass[sigconf,submission]{acmart}
+\usepackage{xcolor, soul}
+\sethlcolor{green}
+%
+% defining the \BibTeX command - from Oren Patashnik's original BibTeX documentation.
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08emT\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+    
+% Rights management information. 
+% This information is sent to you when you complete the rights form.
+% These commands have SAMPLE values in them; it is your responsibility as an author to replace
+% the commands and values with those provided to you when you complete the rights form.
+%
+% These commands are for a PROCEEDINGS abstract or paper.
+%\copyrightyear{2019}
+%\acmYear{2019}
+%\setcopyright{MIT-IBM Watson AI Lab}
+%\acmConference[KDD Workshop on Anomaly Detection in Finance]{2nd KDD Workshop on Anomaly Detection in Finance}{August 2019}{Anchorage, Alaska}
+
+%
+% Submission ID. 
+% Use this when submitting an article to a sponsored event. You'll receive a unique submission ID from the organizers
+% of the event, and this ID should be used as the parameter to this command.
+%\acmSubmissionID{123-A56-BU3}
+
+% end of the preamble, start of the body of the document source.
+
+\newcommand{\jc}[1]{{\color{red} #1}}
+\newcommand{\gd}[1]{{\color{blue} #1}}
+\DeclareMathOperator{\diag}{diag}
+
+\begin{document}
+
+%
+% The "title" command has an optional parameter, allowing the author to define a "short title" to be used in page headers.
+%\title{Tutorial: Machine Learning for Anti-Money Laundering in Bitcoin}
+
+\title{Anti-Money Laundering in Bitcoin: Experimenting with Graph Convolutional Networks for Financial Forensics}
+\renewcommand{\shorttitle}{Anti-Money Laundering in Bitcoin}
+
+% The "author" command and its associated commands are used to define the authors and their affiliations.
+% Of note is the shared affiliation of the first two authors, and the "authornote" and "authornotemark" commands
+% used to denote shared contribution to the research.
+
+% The ``\verb|acmart|'' document class can be used to prepare articles for any ACM publication --- conference or journal, and for % any stage of publication, from review to final ``camera-ready'' copy, to the author's own version, with {\it very} few changes to the source. 
+
+
+\author{Mark Weber}
+\authornote{Both authors contributed equally to this research.}
+\affiliation{%
+  \institution{MIT-IBM Watson AI Lab}}
+\email{mrweber@mit.edu}
+
+\author{Giacomo Domeniconi}
+\authornotemark[1]
+\affiliation{%
+  \institution{IBM Research}}
+\email{Giacomo.Domeniconi1@ibm.com}
+
+\author{Jie Chen}
+\affiliation{%
+  \institution{MIT-IBM Watson AI Lab}}
+\email{chenjie@us.ibm.com}
+
+\author{Daniel Karl I. Weidele}
+\affiliation{%
+  \institution{IBM Research AI}}
+\email{daniel.karl@ibm.com}
+
+\author{Claudio Bellei}
+\affiliation{%
+  \institution{Elliptic}}
+\email{claudio@elliptic.co}
+
+\author{Tom Robinson}
+\affiliation{%
+  \institution{Elliptic}}
+\email{tom@elliptic.co}
+
+\author{Charles E. Leiserson}
+\affiliation{%
+  \institution{MIT CSAIL}}
+\email{cel@mit.edu}
+
+% By default, the full list of authors will be used in the page headers. Often, this list is too long, and will overlap
+% other information printed in the page headers. This command allows the author to define a more concise list
+% of authors' names for this purpose.
+\renewcommand{\shortauthors}{Weber and Domeniconi, et al.}
+
+% ABSTRACT
+\begin{abstract}
+Anti-money laundering (AML) regulations play a critical role in safeguarding financial systems, but bear high costs for institutions and drive financial exclusion for those on the socioeconomic and international margins. The advent of cryptocurrency has introduced an intriguing paradox: pseudonymity allows criminals to hide in plain sight, but open data gives more power to investigators and enables the crowdsourcing of forensic analysis. Meanwhile advances in learning algorithms show great promise for the AML toolkit. In this workshop tutorial, we motivate the opportunity to reconcile the cause of safety with that of financial inclusion. We contribute the Elliptic Data Set, a time series graph of over 200K Bitcoin transactions (nodes), 234K directed payment flows (edges), and 166 node features, including ones based on non-public data; to our knowledge, this is the largest labelled transaction data set publicly available in any cryptocurrency. We share results from a binary classification task predicting illicit transactions using variations of Logistic Regression (LR), Random Forest (RF), Multilayer Perceptrons (MLP), and Graph Convolutional Networks (GCN), with GCN being of special interest as an emergent new method for capturing relational information. The results show the superiority of Random Forest (RF), but also invite algorithmic work to combine the respective powers of RF and graph methods. Lastly, we consider visualization for analysis and explainability, which is difficult given the size and dynamism of real-world transaction graphs, and we offer a simple prototype capable of navigating the graph and observing model performance on illicit activity over time. With this tutorial and data set, we hope to a) invite feedback in support of our ongoing inquiry, and b) inspire others to work on this societally important challenge.
+
+\end{abstract}
+
+% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+% Please copy and paste the code instead of the example below.
+%
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10002978.10003018.10011607</concept_id>
+<concept_desc>Security and privacy~Database activity monitoring</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010147.10010257</concept_id>
+<concept_desc>Computing methodologies~Machine learning</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept>
+<concept_id>10010405.10010462.10010466</concept_id>
+<concept_desc>Applied computing~Network forensics</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Security and privacy~Database activity monitoring}
+\ccsdesc[500]{Computing methodologies~Machine learning}
+\ccsdesc[500]{Applied computing~Network forensics}
+
+%
+% Keywords. Separate the keywords with commas.
+\keywords{Graph Convolutional Networks, Anomaly Detection, Financial Forensics, Cryptocurrency, Anti-Money Laundering, Visualization}
+
+
+% This command processes the author and affiliation and title information and builds
+% the first part of the formatted document.
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Toward Financial Inclusion}
+``It's expensive to be poor.'' This is a common credo among advocates for financial inclusion. It speaks to the fact that those on the margins of society suffer from restricted access to the financial system and higher relative costs of participation. 
+
+The problem of restricted access (e.g. the ability to sign up for a bank account) is, in part, an unintended consequence of increasingly stringent anti-money laundering (AML) regulations, which, while essential for safeguarding the financial system, have a disproportionately negative effect on low-income people, immigrants, and refugees \citep{WorldBank2012}. Approximately 1.7 billion adults are unbanked \citep{WorldBank2017}. The problem of higher relative costs is also, in part, a function of AML policy, which enforces high fixed costs of compliance on money service businesses (MSBs) along with the fear of criminal and monetary penalties for noncompliance -- ``low value" customers just aren't worth the risk. Consider global remittances to low-and-middle-income countries, which reached a record high \$529 billion in 2018, far outpacing the global aid contribution of \$153 billion. The current average cost of sending \$200 is an expensive 7 percent, with some countries suffering rates of over 10 percent. The United Nations Sustainable Development Goal number 10.7 targets a reduction to 3 percent by 2030.\citep{WorldBank2019}
+
+And yet AML regulations cannot be summarily dismissed as over burdensome. Multi-billion dollar illicit industries like drug cartels, human trafficking, and terrorist organizations cause intense human suffering around the world. The recent 1Malaysia Development Berhad (1MDB) money laundering scandal robbed the Malaysian people of over \$11 billion in taxpayer funds earmarked for the nation's development \citep{1MDB}, with mega-fines and criminal indictments for Goldman Sachs among others implicated in the wrongdoing. The even more recent Danske Bank money laundering scandal in Estonia, which served as a hub for an estimated \$200 billion in illicit money flows from Russia and Azerbaijan, similarly extracted an incalculable toll on innocent citizens of these countries and served implicated institutions like Danske Bank and Deutsche Bank with billions of dollars in losses \citep{Danske}.
+
+Money laundering is not a victimless crime, and current methods for the traditional financial system are doing a poor job of stopping it. Without reducing this complex challenge to data analysis alone, we pose the question: \textit{with the right tools and open data, can we help reconcile the need for safety with the cause of financial inclusion?}
+
+\subsection{AML in a cryptocurrency world}
+
+The advent of cryptocurrency introduced by Bitcoin \cite{nakamoto} ignited an explosion of technological and entrepreneurial interest in payment processing. Around the world, money transfer startups spun up to compete with legacy banks and MSBs like Western Union. They focused on enabling low-cost, peer-to-peer transfers of cash within and across borders using Bitcoin and other cryptocurrencies as the ``rails'' (a commonly used term in this space). Many explicitly targeted remittances and championed the cause of financial inclusion. Alongside these entrepreneurs grew a community of academics and policy advocates supporting updated regulatory considerations for cryptocurrency.
+
+Dampening this excitement was Bitcoin's bad reputation. Many criminals used Bitcoin's pseudonymity to hide in plain sight, conducting ransomware attacks and operating dark marketplaces for the exchange of illegal goods and services.
+
+In May 2019, the Financial Crimes Enforcement Network (FinCEN) of the United States issued new guidance on how the Bank Secrecy Act (BSA) of 1970 applies to cryptocurrency, or what FinCEN calls convertible virtual currencies (CVC) \cite{FinCEN}. Consistent with the BSA, the guidance calls for MSBs to generate individualized risk assessments measuring exposure to money laundering, terrorism finance, and other financial crime. These assessments are based on customer composition, geographies served, and financial products or services offered. The assessments must inform the management of customer relationships, including the implementation of controls commensurate with risk; in other words, MSBs must not only report suspicious accounts, but must also take action against them (e.g. freeze them or shut them down). The guidance defines a ``well-developed risk assessment'' as ``assisting MSBs in identifying and providing a comprehensive analysis of their individual risk profile.'' Reinforcing the Know Your Customer (KYC) requirements of the BSA, the guidance requires MSBs to ``know enough about their customers to be able to determine the risk level they represent to the institution.''
+
+What it means to ``know enough'' about one's customer is the subject of much debate in compliance and policy circles. In practice, one of the most challenging aspects of this is an implicit but effectively enforced requirement to not only know your customer, but to know your \textit{customer's} customer. In the fragmented data ecosystem of traditional finance, this aspect of compliance is often executed by phone calls between MSBs. But in the open system of Bitcoin, the full graph transaction network data is publicly available, albeit in pseudonymous and unlabelled form.
+
+To meet the opportunity this public data presents, cryptocurrency intelligence companies have emerged to provide AML solutions tailored to the cryptocurrency domain. Whereas the pseudonymity of Bitcoin is an advantage for criminals, the public availability of data is a key advantage for investigators.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Elliptic Data Set}
+\label{dataset}
+
+Elliptic is a cryptocurrency intelligence company focused on safeguarding cryptocurrency ecosystems from criminal activity. For this tutorial and as a contribution to the research community, we present \textit{The Elliptic Data Set}, a graph network of Bitcoin transactions with handcrafted features. As a contribution to the research and AML communities, Elliptic has agreed to share this data set publicly. To our knowledge, it constitutes the world's largest labelled transaction data set publicly available in any cryptocurrency.
+
+% figure is moved here for better look
+\begin{figure*}[h]
+  \centering
+  \includegraphics[width=.8\linewidth]{time2.png}
+  \caption{(Top) Fraction of \textit{illicit} vs. \textit{licit} nodes at different time steps in the data set. (Bottom) Number of nodes vs. time step. }
+  %\Description{There are 49 ``spikes'' corresponding to the 49 time steps, showing that the number of nodes is reasonably uniform in time (ranges from 1,000 to 8,000 nodes. }
+  \label{fig:dataset}
+\end{figure*}
+
+\subsection{Graph Construction}
+
+The Elliptic Data Set maps Bitcoin transactions to real entities belonging to \textit{licit} categories (exchanges, wallet providers, miners, licit services, etc.) versus \textit{illicit} ones (scams, malware, terrorist organizations, ransomware, Ponzi schemes, etc.). From the raw Bitcoin data, a graph is constructed and labelled such that the nodes represent transactions and the edges represent the flow of Bitcoin currency (BTC) going from one transaction to the next one. A given transaction is deemed \textit{licit} (versus \textit{illicit}) if the entity initiating the transaction (i.e., the entity controlling the private keys associated with the input addresses of a specific transaction) belongs to a licit (illicit) category\footnote{Note that for simplicity, this argument ignores mixer transactions where the inputs are controlled by multiple entities.}. Importantly, all features are constructed using only publicly available information.
+
+\subsubsection{Nodes and Edges.} There are 203,769 node transactions and 234,355 directed edge payments flows. For perspective, using the same graph representation the full Bitcoin network has approximately 438M nodes and 1.1B edges as of this writing. In the Elliptic Data Set, two percent (4,545) are labelled \textit{class1 (illicit)}. Twenty-one percent (42,019) are labelled \textit{class2 (licit)}. The remaining transactions are not labelled with regard to licit versus illicit, but have other features.
+
+\subsubsection{Features.} Each node has associated 166 features. The first 94 features represent \textit{local information} about the transaction -- including the time step, number of inputs/outputs, transaction fee, output volume and aggregated figures such as average BTC received (spent) by the inputs/outputs and average number of incoming (outgoing) transactions associated with the inputs/outputs. The remaining 72 features, called \textit{aggregated features}, are obtained by aggregating transaction information one-hop backward/forward from the center node - giving the maximum, minimum, standard deviation and correlation coefficients of the neighbour transactions for the same information data (number of inputs/outputs, transaction fee, etc.).
+
+\subsubsection{Temporal Information.} A time stamp is associated with each node, representing an estimate of the time when the transaction is confirmed by the Bitcoin network. There are 49 distinct time steps, evenly spaced with an interval of about two weeks. Each time step contains a single connected component of transactions that appeared on the blockchain within less than three hours between each other; there are no edges connecting different time steps. Clearly the nodes in a specific time step have associated time stamps very close to each other, so effectively each one of them can be thought of as an instantaneous ``snapshot'' in time. The number of nodes for each time step is reasonably uniform over time (ranging from 1,000 to 8,000 nodes). See Figure~\ref{fig:dataset}.
+
+%\jc{(JC: I recall 50?? Need to be consistent with the actual published data set. Need to be consistent in Figure 1 and 2)}
+
+\subsection{Notes on Feature Construction}
+
+The licit versus illicit labelling process is informed by a heuristics-based reasoning process. For example, a higher number of inputs and the reuse of the same address is commonly associated with higher address-clustering \cite{harrigan2016unreasonable}, which results in a degrade of anonymity for the entity signing the transaction. On the other hand, consolidating funds controlled by multiple addresses in one single transaction provides benefits in terms of transaction costs (fee). It follows that entities eschewing anonymity-preserving measures for large volumes of user requests are likely to be licit (e.g. exchanges). In contrast, illicit activity may tend to favor transactions with a lower number of inputs to reduce the impact of de-anonymizing address-clustering techniques.
+
+% higher fees to increase the chances of transactions being confirmed faster and a lower number of inputs .
+% Additionally the reuse of the same address reduces the chance that users make copy-paste mistake or it is essential when engaging in recurring payments (e.g. joining a mining pool and receiving funds into a selected exchange). 
+% For the above it is reasonable to think that entities not particularly concerned with ``hiding their traces'' and involved in large volumes of users requests (i.e. exchanges) may tend to favour transactions in which large amount of wallets are consolidated and often used multiple times.
+% On the contrary, illicit activity may trend to favour higher fee to increase the chances of transactions being confirmed faster and a lower number of inputs to reduce the impact of address-clustering techniques. 
+% Similarly we have extensively observed the tendency of dark markets and other illicit entities to provide users with one-time addresses techniques and produce multiple transactions for one single payment as a means of reducing both the effectiveness of address-clustering and the traceability of funds.
+% Some of these information can be extracted from publicly available blockchain data, as the 166 features that describe each transaction in the Elliptic dataset. 
+
+Additionally, there are two major challenges in building features for Bitcoin transactions. The first is rooted in the size of the Bitcoin blockchain amounting to 200GB of compressed data and about 400 million addressed transactions. Though not all transactions are included in the subset used in this study, it is still necessary to access the complete blockchain in order to observe the full history of wallets participating in the selected transactions. To overcome this, Elliptic uses a high-performance all-in-memory graph engine for the computation of features.
+
+The second challenge arises from the underlying graph structure of the data and the heterogeneity in the number of neighbors a transaction can have. In building the 72 aggregated features, the problem of heterogeneous neighborhoods is addressed by naively constructing statistical aggregates (minimum, maximum, etc.) of the local features of a neighbor transaction. In general, this solution is sub-optimal because it carries a significant loss of information. We address this in our forthcoming discussion of graph deep learning methods, which may better account for the local graph topology.
+
+\section{Task and Methods}
+At a high level, AML analytics is an anomaly detection challenge of accurately classifying a small number of illicit transactions in massive, ever-growing data sets. Industry standard high false positive rates of upwards of 90\% inhibit this effort. We want to reduce false positive rates without increasing false negative rates, i.e. include more innocent people without allowing more criminals. Logistic Regression and Random Forest are among the benchmark methods for this task. Graph deep learning has also emerged as potential tool for AML \cite{Weber}.
+
+In the case of the Elliptic Data Set, the task to be performed on this data is transaction screening for assessing the risk associated with a given transaction to-and-from cryptocurrency wallets. Specifically, each unlabelled Bitcoin transaction is to be classified illicit or licit.
+
+\subsection{Benchmark Methods}
+Given the features previously described, benchmark machine learning methods use the first 94 features in supervised learning for binary classification. Such techniques include Logistic Regression \citep{Bishop}, Multilayer Perceptron (MLP) (ibid), and Random Forest \cite{breiman2001random}. In MLP, each input neuron takes in a data feature and the output is a softmax with a probability vector for each class. Logistic Regression and Random Forest are popular for AML, especially when used in concert with one another for their respective advantages---Random Forest for accuracy and Logistic Regression for explainability. These methods, however, do not leverage any graph information.
+
+In the Elliptic Data Set, the local features are enhanced with a set of 72 features that contain information about the immediate neighbourhood. We will see the utilization of these features improves performance. While this approach shows the graph structure carries in the binary classification problem, and that this can be used with standard machine learning techniques, it is challenging to extend the purely feature-based method beyond the immediate neighbourhood. This drawback motivates the use of Graph Convolutional Networks.
+    
+\subsection{Graph Convolutional Networks (GCN)}\label{sec:gconv}
+Deep learning on graph structured data is a subject of rapidly increasing interest ~\citep{Bruna2014,Defferrard2016,Li2016,Hamilton2017,Gilmer2017}. Dealing with combinatorial complexity inherent to graph structures poses scalability challenges for practical applications, and significant strides have been made in addressing these challenges \citep{Kipf2017,Chen2018,Ying2018}. Specifically, we consider Graph Convolutional Networks (GCNs). A GCN consists of multiple layers of graph convolution, which is similar to a perceptron but additionally uses a neighborhood aggregation step motivated by spectral convolution.
+
+Consider the Bitcoin transaction graph from the Elliptic Data Set as $G=(N,E)$, where $N$ is the set of node transactions and $E$ is the set of edges representing the flow of BTC. The $l$-th layer of the GCN takes the adjacency matrix $A$ and the node embedding matrix $H^{(l)}$ as input, and uses a weight matrix $W^{(l)}$ to update the node embedding matrix to $H^{(l+1)}$ as output. Mathematically, we write
+\begin{equation}
+  H^{(l+1)} =  \sigma(\widehat{A} H^{(l)} W^{(l)}), \label{eqn:gcn}
+\end{equation}
+where $\widehat{A}$ is a normalization of $A$ defined as:
+\[
+\widehat{A}=\widetilde{D}^{-\frac{1}{2}}\widetilde{A}\widetilde{D}^{-\frac{1}{2}},
+\quad \widetilde{A}=A+I,
+\quad \widetilde{D}=\diag\Bigg(\sum_j\widetilde{A}_{ij}\Bigg),
+\]
+and $\sigma$ is the activation function (typically ReLU) for all but the output layer. The initial embedding matrix comes from the node features; i.e., $H^{(0)}=X$. Let there be $L$ layers of graph convolutions. In the case of node classification, the output layer is the softmax, where $H^{(L)}$ consists of prediction probabilities.
+
+One sees a graph convolution layer is similar to a feed forward layer, except for the multiplication with $\widehat{A}$ in the front. This matrix is motivated by spectral graph filtering on the graph Laplacian matrix and it results from a linear functional of the Laplacian. On the other hand, one may also interpret the multiplication with $\widehat{A}$ as an aggregation of the transformed embeddings of the neighboring nodes.
+The parameters of the GCN are the weight matrices $W^{(l)}$, for different layers $l$. 
+%Graph convolutions occur for a particular time but generate new information (i.e., from $H^{(l)}$ to $H^{(l+1)}$) along the layers. The relationship between $H^{(l)}$, $W^{(l)}$, and $H^{(l+1)}$ is schematically illustrated in the middle part of Figure~\ref{fig:egcu}.
+
+
+
+%%%% AGAIN FROM EVOLVE GCN - Maybe we can put it in the introduction? 
+%Graphs are ubiquitous data structures that model the pairwise interactions between entities. Learning with graphs encounters unique challenges, including their combinatorial nature and the scalability bottleneck, compared with Euclidean data (e.g., images, videos, speech signals, and natural languages). With the remarkable success of deep learning for the latter data types, there exist renewed interests in the learning of graph representations~\cite{Perozzi2014,Tang2015,Cao2015,Ou2016,Grover2016} on both the node and the graph level, now parameterized by deep neural networks~\cite{Bruna2014,Duvenaud2015,Defferrard2016,Li2016,Gilmer2017,Kipf2017,Hamilton2017,Jin2017,Chen2018,Velickovic2018}. ###
+%Graph Convolutional Networks (GCNs) have been proposed as a potentially powerful tool for anti-money laundering and financial forensics \cite{}. The network structure of transaction graphs seems suited to this emerging deep learning class of algorithms. 
+
+%Throughout we will use subscript $t$ to denote the time index and superscript $l$ to denote the network layer index. 
+%Without loss of generality, we assume that all the graphs are built on a common node set of cardinality $n$. A nonexistent node is treated as a dangling node with zero degree, because it does not affect the information flow in graph convolutions. At time step $t$, the input data consists of the pair $(A_t\in\real^{n\times n}, X_t\in\real^{n\times d})$, where the former is the graph (weighted) adjacency matrix and the latter is the matrix of input node features. Specifically, each row of $X_t$ is a $d$-dimensional feature vector of the corresponding node. 
+%In this term, 
+%The detection of illicit transactions can be seen as label prediction of a node $u$, follows the same practice of a standard GCN. In our GCN approach we let the activation function $\sigma$ of the output $\gconv$ layer (see~\eqref{eqn:gcn} with $l=L-1$) be the softmax, so that $h^u$ is a probability vector. Then, with the ground-truth one-hot label vector $y^u$, the training loss is the weighted cross entropy.  
+%In this setting, also the unlabeled nodes are used to construct the graph network and to bring the information over the node embeddings, while only the labeled ones are used to actually compute the loss and train the model.  
+
+A 2-layer GCN, as often used, can be neatly written as
+\[
+H^{(2)}=\text{softmax}(\widehat{A}\cdot\text{ReLU}(\widehat{A}XW^{(0)})\cdot W^{(1)}).
+\]
+A ``skip'' variant, which we find practically useful, inserts a skip connection between the intermediate embedding $H^{(1)}=\text{ReLU}(\widehat{A}XW^{(0)})$ and the input node features $X$, resulting in the architecture
+\[
+\widetilde{H}^{(2)}=\text{softmax}(\widehat{A}\cdot\text{ReLU}(\widehat{A}XW^{(0)})\cdot W^{(1)}+X\widetilde{W}^{(1)}),
+\]
+where $\widetilde{W}^{(1)}$ is a weight matrix for the skip connection.
+We call this architecture Skip-GCN. When $W^{(0)}$ and $W^{(1)}$ are zero, Skip-GCN is equivalent to Logistic Regression. Hence, Skip-GCN should be at least as powerful as Logistic Regression.
+
+\subsection{Temporal Modeling}
+Financial data are inherently temporal as transactions are time stamped. It is reasonable to assume there exists certain dynamics, albeit hidden, that drive the evolution of the system. A prediction model will be more useful if it is designed in a manner to capture the dynamism. This way, a model trained on a given time period may better generalize to subsequent time steps. The better the model captures system dynamics, which are also evolving, the longer horizon it can forest into.
+
+A temporal model that extends GCN is EvolveGCN~\cite{Pareja2019}, which computes a separate GCN model for each time step. These GCNs are then connected through a recurrent neural network (RNN) to capture the system dynamics. Hence, the GCN model for a future time step is evolved from those in the past, where the evolution captures the dynamism.
+
+In EvolveGCN, the GCN weights are collectively treated as the system state. The model is updated upon an input to the system every time, by using an RNN (e.g., GRU). The input is the graph information at the current time step. The graph information may be instantiated in many ways; in EvolveGCN, it is represented by the embeddings of the top-$k$ influential nodes in the graph.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experiments}
+
+
+\begin{table}
+  \caption{Illicit classification results. Top part of the table shows results without the leverage of the graph information, for each model are shown results with different input: $AF$ refers to all features, $LF$ refers to the local features, i.e. the first 94, and $NE$ refers to the node embeddings computed by GCN. Bottom part of the table shows results with GCN.}
+  \label{tab:results}
+  \begin{tabular}{c|ccc|c}
+    \toprule
+     & \multicolumn{3}{|c|} {Illicit} & MicroAVG \\
+    Method &  Precision &  Recall &  $F_1$ &  $F_1$\\
+    \midrule
+    Logistic Regr$^{AF}$ & 0.404 & 0.593 & 0.481  & 0.931 \\
+    Logistic Regr$^{AF+NE}$ & 0.537 & 0.528 & 0.533 & 0.945 \\
+    Logistic Regr$^{LF}$ & 0.348 & 0.668 & 0.457 & 0.920 \\
+    Logistic Regr$^{LF+NE}$ & 0.518 & 0.571 & 0.543 & 0.945\\
+    RandomForest$^{AF}$ & 0.956 & 0.670 & 0.788 & 0.977\\
+    RandomForest$^{AF+NE}$ & 0.971 & 0.675 & 0.796 & 0.978 \\
+    RandomForest$^{LF}$ & 0.803 & 0.611 & 0.694 & 0.966\\
+    RandomForest$^{LF+NE}$ & 0.878 & 0.668 & 0.759 & 0.973 \\
+    MLP$^{AF}$ & 0.694 & 0.617 & 0.653 & 0.962 \\
+    MLP$^{AF+NE}$ & 0.780 & 0.617 & 0.689 & 0.967 \\
+    MLP$^{LF}$ &  0.637 & 0.662 & 0.649 & 0.958 \\
+    MLP$^{LF+NE}$ & 0.6819 & 0.5782 & 0.6258  & 0.986 \\
+    \midrule
+    GCN  & 0.812 & 0.512 & 0.628 & 0.961 \\
+    Skip-GCN  & 0.812 & 0.623 & 0.705 & 0.966\\
+    %EvolveGCN  & 0.616 & 0.644 & 0.629 & 0.951 \\
+    %Skip-EvolveGCN  & 0.850  & 0.624 & 0.720 & 0.968 \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+Here we show experimental results obtained on the Elliptic Data Set. We performed a 70:30 temporal split of training and test data, respectively. That is, the first 34 time steps are used for training the model and the last 15 for test. We use a temporal split because it reflects the nature of the task. As such, GCN is trained in an inductive setting.
+
+We first tested standard classification models for the licit/illicit prediction using three standard approaches: \textit{Logistic Regression} (with default parameters from the scikit-learn Python package \cite{sklearn_api}), \textit{Random Forest} (also from scikit-learn, with 50 estimators and 50 max features), and \textit{Multilayer Perceptron} (implemented in PyTorch). Our MLP had one hidden layer of 50 neurons and was trained for 200 epochs by using the \textit{Adam} optimizer and a learning rate of 0.001.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{img/f1_over_time_2cols.jpg} %width=\linewidth
+  \caption{Illicit $F_1$ results over test time span.}
+  \Description{}
+  \label{fig:resultovertime}
+\end{figure*}
+
+We evaluated these models by using all the 166 features  (referred to as $AF$), as well as only the local ones, i.e., the first 94 (referred to as $LF$). The results are summarized in the top part of Table \ref{tab:results}. 
+
+The bottom part of Table \ref{tab:results} reports the results achieved when we leveraged the graph structure of the data.
+%GCN is trained separately for each training timestep, meaning that all the nodes appearing at a certain time $t$ are predicted by the model and the loss function is computed to update the model.
+We trained the GCN model for 1000 epochs using the \textit{Adam} optimizer with a learning rate of 0.001. In our experiment we used a 2-layer GCN and, after hyper-parameter tuning, we set the size of the node embeddings to be 100.
+%, as well as the size of the last fully-connected layer used for the actual class prediction. 
+
+The task is a binary classification and the two classes are imbalanced (see Figure \ref{fig:dataset}). For AML, more important is the minority class (i.e., the illicit class). 
+Hence, we trained the GCN model using a weighted cross entropy loss to provide higher importance to the illicit samples. After hyperparameter tuning, we opted for a $0.3/0.7$ ratio for the licit and illicit classes. 
+%\gd{(GD: Attempt to explain why 30/70, perhaps we can put it in a footnote.) } 
+%Hence, we trained the GCN model using a weighted cross entropy loss with a $0.3/0.7$ ratio for the licit and illicit classes. \jc{(JC: Address reviewer comment here. Why 30/70?)} 
+Table \ref{tab:results} shows the testing results in term of precision, recall, and $F_1$ score for the illicit class. For the sake of completeness, we also show the micro-averaged $F_1$ score. 
+
+Note that GCN and the variant Skip-GCN outperform Logistic Regression, indicating the usefulness of the graph-based method compared to one agnostic to graph information. On the other hand, in this case, the input features are quite informative already.
+%very informative and, once exploited by a Machine Learning algorithm, is able to provide a very good information to recognize illicit transactions.
+%This is clearly visible from the results of Random Forest, that achieves the best $F_1$.
+Using these features alone, Random Forest achieves the best $F_1$ score. The representation power of the input features is also reflected by the gain of Skip-GCN over GCN.
+%, i.e. when we concatenate the blockchain features $X$ to the node embeddings $H$ before the fully connected classification layer.
+
+Another insight from Table \ref{tab:results} is obtained from the comparison between methods trained on all the features ($AF$) and those on only the 94 local features ($LF$). For all the three evaluated models, the aggregated information led to higher accuracy, indicating the importance of the graph structure in this context. With this observation, we further evaluated the methods with an \textit{enhanced} input feature set. The goal of this experiment was to show that graph information was useful to enhance the representation of a transaction. In this setting, we concatenated the node embeddings obtained from GCN with the original features $X$. Results show that with the enhanced feature set the accuracy of the model improves, for both full features ($AF+NE$) and local features ($LF+NE$).
+
+Table~\ref{tab:evolvegcn} compares the prediction performance between the non-temporal GCN and the temporal EvolveGCN. EvolveGCN consistently outperforms GCN, although the improvement is not substantial for this data set. One avenue of further investigation is the use of alternative forms of system input to drive the recurrent update inside GRU.
+
+\begin{table}[ht]
+\centering
+\caption{GCN v.s. EvolveGCN}
+\label{tab:evolvegcn}
+\begin{tabular}{|c|ccc|ccc|}
+\hline
+& \multicolumn{3}{c|}{GCN} & \multicolumn{3}{c|}{EvolveGCN}\\
+& Precis. & Recall & $F_1$ & Precis. & Recall & $F_1$\\
+\hline
+Illicit  & 0.812 & 0.623 & 0.705 & 0.850 & 0.624 & 0.720\\
+MicroAVG & 0.966 & 0.966 & 0.966 & 0.968 & 0.968 & 0.968\\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{The Dark Market Shutdown.} 
+An important consideration for AML is the robustness of a prediction model with respect to emerging events. One interesting aspect of this data set is the sudden closure of a dark market occurring during the time span of the data (at time step 43). As seen in Figure \ref{fig:resultovertime}, this event causes all methods to perform poorly after the shutdown. Even a Random Forest model re-trained after every test time step, assuming the availability of ground truth after each time, is not able to reliably capture new illicit transactions after the dark market shutdown. The robustness of methods to such events emerges as a major challenge to address.
+
+
+
+%\begin{figure}[h]
+%  \centering
+%  \includegraphics[width=\linewidth]{EvolveGCN.png}
+%  \caption{EvolveGCN}
+%  \Description{Rather than using a fixed neural network to handle dynamic graphs, we %capture the dynamism through evolving the neural network (parameters).}
+%\end{figure}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+We have seen Random Forest significantly outperforms Logistic Regression; in fact, it also outperforms GCN even though the latter is empowered by the graph structure information. Random Forest uses a voting mechanism to ensemble the prediction results from a number of decision trees, each trained by using a subsample of the data set. GCN, in contrast, like most deep learning models, uses Logistic Regression as the final output layer; hence, it can be considered a nontrivial generalization of Logistic Regression.
+
+The question arises: \textit{Is it possible to combine a Random Forest with a graph neural network?} One simple idea is to augment the node features with the embeddings computed from GCN before running Random Forest. This idea helps only marginally according to prior experimentation. Another idea, as proposed by~\cite{Kontschieder2015}, is to parameterize every node in the decision tree(s) by using a feed-forward neural network. This idea organically combines Random Forest with neural networks, but it does not suggest how graph information can be incorporated. One possible approach is to replace the Logistic Regression output layer in GCN by this differentiable version of the decision tree, so that end-to-end training is enabled. We leave the execution of this idea as future investigation.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Beyond Current Methods}
+%Evident from the preceding section, graph-based machine learning models like GCN offer a higher representation power than do models that are agnostic to the graph structure. In this section, we suggest a few avenues for extending GCN to cope with the nature of the data for predicting labels more accurately.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Graph Visualization}
+Lastly, in support of analysis and explainability, which are important for AML compliance, we have created a visualization prototype called \emph{Chronograph}. Visualizing a high-dimensional graph imposes a layer of complexity on top of plain feature vectors with respect to explaining model performance. Chronograph aims to address this by supporting the human analyst with an integrated representation of the model.
+
+\subsection{Visual Investigation of the Elliptic Data Set}
+
+In Chronograph, transactions are visualized as nodes of a graph with edges representing the flow of BTC from one transaction to the next. Node coordinates are computed simultaneously across all time steps using the projection technique UMAP \cite{mcinnes2018umap}. This global computation makes layouts comparable across time. The time step slider control at the top of the interface allows the user to navigate through time by rendering only nodes in the selected time step. Illicit transactions are dyed red; licit ones are blue. Unclassified transactions are not colored.
+
+When clicking a transaction node, or entering a transaction ID in the control on the left (filters as substring) the visualization highlights the selected transaction(s) in orange, and all neighboring transactions (in-or-out-flowing) in green. On the left of the interface, the user can see general statistics on the graph and a table about transfer numbers between different transaction classes.
+
+In this simple prototype, Chronograph enables simple exploration scenarios to visually inspect clusters and their existence over time, observe conspicuous transfer patterns, or detect other deviations like single outliers. As a more involved use case we additionally facilitate the degree of freedom of the input to the UMAP computation: raw transaction feature data (Figure 4a), as well as neuron activations of the last layer of the network (Figure 4b) seem to be two interesting alternatives; similar approaches have been proposed for general neural networks \citet{rauber2016visualizing}. Differences in the resulting visualizations would then hint towards peculiarities of the model, i.e. we postulate shifts in similarities among the data can be indicative to explain which underlying features matter to the model.
+
+Figure 4 shows the results from the two alternative inputs for a single time step, with raw feature data in the top and model activations in the bottom row. We further dye the nodes using actual labels in the left column, and GCN-predicted labels in the right column, and obtain a total of 4 network visualizations.
+
+In the model-based layout illicit nodes are less scattered but more concentrated, which seems to be a desirable property: illicit nodes should share some important characteristics, and similarity of nodes yields closer proximity in the layout. However, since they are not perfectly collapsing in one location it is quite plausible there are qualitative differences within the set of illicit nodes. The visualizations further reveals where exactly the model is unable to detect illicit nodes. In case of multiple erroneous predictions in a nearby area this could further hint to a systemic underperformance of the the model. Studying the characteristics of such transactions in detail could inspire the discussion from new angles and lead to further model improvements.
+
+\begin{figure}[h]
+  \label{fig:projections}
+  \centering
+  \includegraphics[width=0.49\linewidth]{viz/41_raw_gt.png}
+  \includegraphics[width=0.49\linewidth]{viz/41_raw_gcn.png}
+  \begin{center}
+      a) Projection of raw transaction feature vectors
+  \end{center}
+  \includegraphics[width=0.49\linewidth]{viz/41_gcn_gt.png}
+  \includegraphics[width=0.49\linewidth]{viz/41_gcn_gcn.png}
+  \begin{center}
+      b) Projection of last GCN layer activations
+  \end{center}
+  \caption{Two alternative inputs to UMAP projection. Left: colored by input labels; right: colored by GCN prediction.}
+  \Description{}
+\end{figure}
+
+\begin{figure}[h]
+  \label{fig:chronograph}
+  \centering
+  \includegraphics[width=\linewidth]{viz/prototype_v2.png}
+  \caption{Chronograph User Interface: User can navigate through time-sliced transaction data and observe transaction patterns and patterns of change. Illicit transactions are dyed red. Further statistics are displayed on the left.}
+  \Description{}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Summary}
+
+In summary, we have set forth cryptocurrency forensics, and specifically Bitcoin, as a unique ecosystem for crowdsourcing the development of new methods to fight criminal activity. We have contributed a large, labelled transaction data set to the AML community, the likes of which has never before been publicly available. We have shared early experimental results using a variety of methods including Graph Convolutional Networks, and discussed possible next steps for algorithmic advances. We have provided a prototype for visualization of such data and models for augmenting human analysis and explainability. Most important, we hope to have inspired others to work on this societally important challenge of making our financial systems safer and more inclusive.
+
+%The insights we can glean from cryptocurrency forensics are relevant to the traditional financial system. Cryptocurrency provides the perfect sandbox to do so.
+
+
+%\section{Template Overview}
+%As noted in the introduction, the ``\verb|acmart|'' document class can be used to prepare many different kinds of documentation --- a double-blind initial submission of a full-length technical paper, a two-page SIGGRAPH Emerging Technologies abstract, a ``camera-ready'' journal article, a SIGCHI Extended Abstract, and more --- all by selecting the appropriate {\it template style} and {\it template parameters}.
+
+%This document will explain the major features of the document class. For further information, the {\it \LaTeX\ User's Guide} is available from \url{https://www.acm.org/publications/proceedings-template}.
+
+%\subsection{Template Styles}
+
+%The primary parameter given to the ``\verb|acmart|'' document class is the {\it template style} which corresponds to the kind of publication or SIG publishing the work. This parameter is enclosed in square brackets and is a part of the {\verb|documentclass|} command:
+%\begin{verbatim}
+%  \documentclass[STYLE]{acmart}
+%\end{verbatim}
+
+%Journals use one of three template styles. All but three ACM journals use the {\verb|acmsmall|} template style:
+%\begin{itemize}
+%\item {\verb|acmsmall|}: The default journal template style.
+%\item {\verb|acmlarge|}: Used by JOCCH and TAP.
+%\item {\verb|acmtog|}: Used by TOG.
+%\end{itemize}
+
+%The majority of conference proceedings documentation will use the {\verb|acmconf|} template style.
+%\begin{itemize}
+%\item {\verb|acmconf|}: The default proceedings template style.
+%\item{\verb|sigchi|}: Used for SIGCHI conference articles.
+%\item{\verb|sigchi-a|}: Used for SIGCHI ``Extended Abstract'' articles.
+%\item{\verb|sigplan|}: Used for SIGPLAN conference articles.
+%\end{itemize}
+
+%\subsection{Template Parameters}\subsection{Prototype Visualization Interface}
+
+%In addition to specifying the {\it template style} to be used in formatting your work, there are a number of {\it template parameters} which modify some part of the applied template style. A complete list of these parameters can be found in the {\it \LaTeX\ User's Guide.}
+
+%Frequently-used parameters, or combinations of parameters, include:
+%\begin{itemize}
+%\item {\verb|anonymous,review|}: Suitable for a ``double-blind'' conference submission. Anonymizes the work and includes line numbers. Use with the \verb|\acmSubmissionID| command to print the submission's unique ID on each page of the work.
+%\item{\verb|authorversion|}: Produces a version of the work suitable for posting by the author.
+%\item{\verb|screen|}: Produces colored hyperlinks.
+%\end{itemize}
+
+%This document uses the following string as the first command in the source file: \verb|\documentclass[sigconf,screen]{acmart}|.
+
+
+%\section{Typefaces}
+
+%The ``\verb|acmart|'' document class requires the use of the ``Libertine'' typeface family. Your \TeX\ installation should include this set of packages. Please do not substitute other typefaces. The ``\verb|lmodern|'' and ``\verb|ltimes|'' packages should not be used, as they will override the built-in typeface families.
+
+%\section{Title Information}
+
+%The title of your work should use capital letters appropriately - \url{https://capitalizemytitle.com/} has useful rules for capitalization. Use the {\verb|title|} command to define the title of your work. If your work has a subtitle, define it with the {\verb|subtitle|} command.
+%Do not insert line breaks in your title.
+
+%If your title is lengthy, you must define a short version to be used in the page headers, to prevent overlapping text. The \verb|title| command has a ``short title'' parameter:
+%\begin{verbatim}
+%  \title[short title]{full title}
+%\end{verbatim}
+
+%\section{Authors and Affiliations}
+
+%The \verb|authornote| and \verb|authornotemark| commands allow a note to apply to multiple authors --- for example, if the first two authors of an article contributed equally to the work. 
+
+%If your author list is lengthy, you must define a shortened version of the list of authors to be used in the page headers, to prevent overlapping text. The following command should be placed just after the last \verb|\author{}| definition:
+%\begin{verbatim}
+%  \renewcommand{\shortauthors}{McCartney, et al.}
+%\end{verbatim}
+%Omitting this command will force the use of a concatenated list of all of the authors' names, which may result in overlapping text in the page headers.
+
+%The article template's documentation, available at  \url{https://www.acm.org/publications/proceedings-template}, has a complete explanation of these commands and tips for their effective use.
+
+%\section{Rights Information}
+
+%Authors of any work published by ACM will need to complete a rights form. Depending on the kind of work, and the rights management choice made by the author, this may be copyright transfer, permission, license, or an OA (open access) agreement.
+
+%Regardless of the rights management choice, the author will receive a copy of the completed rights form once it has been submitted. This form contains \LaTeX\ commands that must be copied into the source document. When the document source is compiled, these commands and their parameters add formatted text to several areas of the final document:
+%\begin{itemize}
+%\item the ``ACM Reference Format'' text on the first page.
+%\item the ``rights management'' text on the first page.
+%\item the conference information in the page header(s).
+%\end{itemize}
+
+%Rights information is unique to the work; if you are preparing several works for an event, make sure to use the correct set of commands with each of the works.
+
+%\section{CCS Concepts and User-Defined Keywords}
+
+%Two elements of the ``acmart'' document class provide powerful taxonomic tools for you to help readers find your work in an online search. 
+
+%The ACM Computing Classification System --- \url{https://www.acm.org/publications/class-2012} --- is a set of classifiers and concepts that describe the computing discipline. Authors can select entries from this classification system, via \url{https://dl.acm.org/ccs/ccs.cfm}, and generate the commands to be included in the \LaTeX\ source. 
+
+%User-defined keywords are a comma-separated list of words and phrases of the authors' choosing, providing a more flexible way of describing the research being presented.
+
+%CCS concepts and user-defined keywords are required for all short- and full-length articles, and optional for two-page abstracts. 
+
+%\section{Sectioning Commands}
+
+%Your work should use standard \LaTeX\ sectioning commands: \verb|section|, \verb|subsection|, \verb|subsubsection|, and \verb|paragraph|. They should be numbered; do not remove the numbering from the commands. 
+
+
+%\section{Tables}
+
+%The ``\verb|acmart|'' document class includes the ``\verb|booktabs|'' package --- \url{https://ctan.org/pkg/booktabs} --- for preparing high-quality tables. 
+
+%Table captions are placed {\it above} the table.
+
+%Because tables cannot be split across pages, the best placement for them is typically the top of the page nearest their initial cite.  To ensure this proper ``floating'' placement of tables, use the environment \textbf{table} to enclose the table's contents and the table caption.  The contents of the table itself must go in the \textbf{tabular} environment, to be aligned properly in rows and columns, with the desired horizontal and vertical rules.  Again, detailed instructions on \textbf{tabular} material are found in the \textit{\LaTeX\ User's Guide}.
+
+%Immediately following this sentence is the point at which Table~\ref{tab:freq} is included in the input file; compare the placement of the table here with the table in the printed output of this document.
+
+%\begin{table}
+%  \caption{Frequency of Special Characters}
+%  \label{tab:freq}
+%  \begin{tabular}{ccl}
+%    \toprule
+%    Non-English or Math&Frequency&Comments\\
+%    \midrule
+%    \O & 1 in 1,000& For Swedish names\\
+%    $\pi$ & 1 in 5& Common in math\\
+%    \$ & 4 in 5 & Used in business\\
+%    $\Psi^2_1$ & 1 in 40,000& Unexplained usage\\
+%  \bottomrule
+%\end{tabular}
+%\end{table}
+
+%To set a wider table, which takes up the whole width of the page's live area, use the environment \textbf{table*} to enclose the table's contents and the table caption.  As with a single-column table, this wide table will ``float'' to a location deemed more desirable. Immediately following this sentence is the point at which Table~\ref{tab:commands} is included in the input file; again, it is instructive to compare the placement of the table here with the table in the printed output of this document.
+
+%\begin{table*}
+%  \caption{Some Typical Commands}
+%  \label{tab:commands}
+%  \begin{tabular}{ccl}
+%    \toprule
+%    Command &A Number & Comments\\
+%    \midrule
+%    \texttt{{\char'134}author} & 100& Author \\
+%    \texttt{{\char'134}table}& 300 & For tables\\
+%    \texttt{{\char'134}table*}& 400& For wider tables\\
+%    \bottomrule
+%  \end{tabular}
+%\end{table*}
+
+
+%\section{Figures}
+
+%The ``\verb|figure|'' environment should be used for figures. One or more images can be placed within a figure. If your figure contains third-party material, you must clearly identify it as such, as shown in the example below.
+%\begin{figure}[h]
+%  \centering
+%  \includegraphics[width=\linewidth]{sample-franklin}
+%  \caption{1907 Franklin Model D roadster. Photograph by Harris \& Ewing, Inc. [Public domain], via Wikimedia Commons. (\url{https://goo.gl/VLCRBB}).}
+%  \Description{The 1907 Franklin Model D roadster.}
+%\end{figure}
+
+%Your figures should contain a caption which describes the figure to the reader. Figure captions go below the figure. Your figures should {\bf also} include a description suitable for screen readers, to assist the visually-challenged to better understand your work.
+
+%Figure captions are placed {\it below} the figure.
+
+%\subsection{The ``Teaser Figure''}
+
+%A ``teaser figure'' is an image, or set of images in one figure, that are placed after all author and affiliation information, and before the body of the article, spanning the page. If you wish to have such a figure in your article, place the command immediately before the \verb|\maketitle| command:
+%\begin{verbatim}
+%  \begin{teaserfigure}
+%    \includegraphics[width=\textwidth]{sampleteaser}
+%    \caption{figure caption}
+%    \Description{figure description}
+%  \end{teaserfigure}
+%\end{verbatim}
+
+%\section{Citations and Bibliographies}
+
+%The use of \BibTeX\ for the preparation and formatting of one's references is strongly recommended. Authors' names should be complete --- use full first names (``Donald E. Knuth'') not initials (``D. E. Knuth'') --- and the salient identifying features of a reference should be included: title, year, volume, number, pages, article DOI, etc. 
+
+%The bibliography is included in your source document with these two commands, placed just before the \verb|\end{document}| command:
+%\begin{verbatim}
+%  \bibliographystyle{ACM-Reference-Format}
+%  \bibliography{bibfile}
+%\end{verbatim}
+%where ``\verb|bibfile|'' is the name, without the ``\verb|.bib|'' suffix, of the \BibTeX\ file.
+
+%Citations and references are numbered by default. A small number of ACM publications have citations and references formatted in the ``author year'' style; for these exceptions, please include this command in the {\bf preamble} (before ``\verb|\begin{document}|'') of your \LaTeX\ source: 
+%\begin{verbatim}
+%  \citestyle{acmauthoryear}
+%\end{verbatim}
+
+%Some examples.  A paginated journal article \cite{Abril07}, an enumerated journal article \cite{Cohen07}, a reference to an entire issue \cite{JCohen96}, a monograph (whole book) \cite{Kosiur01}, a monograph/whole book in a series (see 2a in spec. document)
+%\cite{Harel79}, a divisible-book such as an anthology or compilation \cite{Editor00} followed by the same example, however we only output the series if the volume number is given \cite{Editor00a} (so Editor00a's series should NOT be present since it has no vol. no.),
+%a chapter in a divisible book \cite{Spector90}, a chapter in a divisible book in a series \cite{Douglass98}, a multi-volume work as book \cite{Knuth97}, an article in a proceedings (of a conference, symposium, workshop for example) (paginated proceedings article) \cite{Andler79}, a proceedings article with all possible elements \cite{Smith10}, an example of an enumerated proceedings article \cite{VanGundy07}, an informally published work \cite{Harel78}, a doctoral dissertation \cite{Clarkson85}, a master's thesis: \cite{anisi03}, an online document / world wide web resource \cite{Thornburg01, Ablamowicz07, Poker06}, a video game (Case 1) \cite{Obama08} and (Case 2) \cite{Novak03} and \cite{Lee05} and (Case 3) a patent \cite{JoeScientist001}, work accepted for publication \cite{rous08}, 'YYYYb'-test for prolific author \cite{SaeediMEJ10} and \cite{SaeediJETC10}. Other cites might contain 'duplicate' DOI and URLs (some SIAM articles) \cite{Kirschmer:2010:AEI:1958016.1958018}. Boris / Barbara Beeton: multi-volume works as books \cite{MR781536} and \cite{MR781537}. A couple of citations with DOIs: \cite{2004:ITE:1009386.1010128,Kirschmer:2010:AEI:1958016.1958018}. Online citations: \cite{TUGInstmem, Thornburg01, CTANacmart}.
+
+
+
+%
+%ACKNOWLEDGEMENTS
+\begin{acks}
+This work was funded by the MIT-IBM Watson AI Lab (mitibm.mit.edu), a joint research initiative between the Massachusetts Institute of Technology and IBM Research. Data and domain expertise were provided by Elliptic (www.elliptic.co).
+\end{acks}
+
+%
+% The next two lines define the bibliography style to be used, and the bibliography file.
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{bibliography}
+% 
+% If your work has an appendix, this is the place to put it.
+%\appendix
+
+%\section{Research Methods}
+
+
+\end{document}

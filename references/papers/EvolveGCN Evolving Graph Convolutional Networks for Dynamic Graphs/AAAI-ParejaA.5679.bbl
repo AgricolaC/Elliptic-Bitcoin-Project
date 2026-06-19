@@ -1,0 +1,225 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Belkin and Niyogi}{2002}]{Belkin2002}
+Belkin, M., and Niyogi, P.
+\newblock 2002.
+\newblock Laplacian eigenmaps and spectral techniques for embedding and
+  clustering.
+\newblock In {\em NIPS}.
+
+\bibitem[\protect\citeauthoryear{Bruna \bgroup et al\mbox.\egroup
+  }{2014}]{Bruna2014}
+Bruna, J.; Zaremba, W.; Szlam, A.; and LeCun, Y.
+\newblock 2014.
+\newblock Spectral networks and locally connected networks on graphs.
+\newblock In {\em ICLR}.
+
+\bibitem[\protect\citeauthoryear{Cangea \bgroup et al\mbox.\egroup
+  }{2018}]{Cangea2018}
+Cangea, C.; Veli\v{c}kovi\'{c}, P.; Jovanovi\'{c}, N.; and Thomas~Kipf, P.~L.
+\newblock 2018.
+\newblock Towards sparse hierarchical graph classifiers.
+\newblock In {\em NIPS Workshop on Relational Representation Learning}.
+
+\bibitem[\protect\citeauthoryear{Cao, Lu, and Xu}{2015}]{Cao2015}
+Cao, S.; Lu, W.; and Xu, Q.
+\newblock 2015.
+\newblock {GraRep}: Learning graph representations with global structural
+  information.
+\newblock In {\em CIKM}.
+
+\bibitem[\protect\citeauthoryear{Chen, Ma, and Xiao}{2018}]{Chen2018}
+Chen, J.; Ma, T.; and Xiao, C.
+\newblock 2018.
+\newblock {FastGCN}: Fast learning with graph convolutional networks via
+  importance sampling.
+\newblock In {\em ICLR}.
+
+\bibitem[\protect\citeauthoryear{Defferrard, Bresson, and
+  Vandergheynst}{2016}]{Defferrard2016}
+Defferrard, M.; Bresson, X.; and Vandergheynst, P.
+\newblock 2016.
+\newblock Convolutional neural networks on graphs with fast localized spectral
+  filtering.
+\newblock In {\em NIPS}.
+
+\bibitem[\protect\citeauthoryear{Duvenaud \bgroup et al\mbox.\egroup
+  }{2015}]{Duvenaud2015}
+Duvenaud, D.; Maclaurin, D.; Aguilera-Iparraguirre, J.; G\'{o}mez-Bombarelli,
+  R.; Hirzel, T.; Aspuru-Guzik, A.; and Adams, R.~P.
+\newblock 2015.
+\newblock Convolutional networks on graphs for learning molecular fingerprints.
+\newblock In {\em NIPS}.
+
+\bibitem[\protect\citeauthoryear{Gao and Ji}{2019}]{Gao2019}
+Gao, H., and Ji, S.
+\newblock 2019.
+\newblock Graph {U-Nets}.
+\newblock In {\em ICML}.
+
+\bibitem[\protect\citeauthoryear{Gilmer \bgroup et al\mbox.\egroup
+  }{2017}]{Gilmer2017}
+Gilmer, J.; Schoenholz, S.~S.; Riley, P.~F.; Vinyals, O.; and Dahl, G.~E.
+\newblock 2017.
+\newblock Neural message passing for quantum chemistry.
+\newblock In {\em ICML}.
+
+\bibitem[\protect\citeauthoryear{Goyal \bgroup et al\mbox.\egroup
+  }{2017}]{Goyal2017}
+Goyal, P.; Kamra, N.; He, X.; and Liu, Y.
+\newblock 2017.
+\newblock {DynGEM}: Deep embedding method for dynamic graphs.
+\newblock In {\em IJCAI Workshop on Representation Learning for Graphs}.
+
+\bibitem[\protect\citeauthoryear{Goyal, Chhetri, and Canedo}{2019}]{Goyal2019}
+Goyal, P.; Chhetri, S.~R.; and Canedo, A.
+\newblock 2019.
+\newblock dyngraph2vec: Capturing network dynamics using dynamic graph
+  representation learning.
+\newblock {\em Knowledge-Based Systems}.
+
+\bibitem[\protect\citeauthoryear{Grover and Leskovec}{2016}]{Grover2016}
+Grover, A., and Leskovec, J.
+\newblock 2016.
+\newblock node2vec: Scalable feature learning for networks.
+\newblock In {\em KDD}.
+
+\bibitem[\protect\citeauthoryear{Hamilton, Ying, and
+  Leskovec}{2017}]{Hamilton2017}
+Hamilton, W.~L.; Ying, R.; and Leskovec, J.
+\newblock 2017.
+\newblock Inductive representation learning on large graphs.
+\newblock In {\em NIPS}.
+
+\bibitem[\protect\citeauthoryear{Jin \bgroup et al\mbox.\egroup
+  }{2017}]{Jin2017}
+Jin, W.; Coley, C.~W.; Barzilay, R.; and Jaakkola, T.
+\newblock 2017.
+\newblock Predicting organic reaction outcomes with {Weisfeiler-Lehman}
+  network.
+\newblock In {\em NIPS}.
+
+\bibitem[\protect\citeauthoryear{Kipf and Welling}{2017}]{Kipf2017}
+Kipf, T.~N., and Welling, M.
+\newblock 2017.
+\newblock Semi-supervised classification with graph convolutional networks.
+\newblock In {\em ICLR}.
+
+\bibitem[\protect\citeauthoryear{Li \bgroup et al\mbox.\egroup }{2016}]{Li2016}
+Li, Y.; Tarlow, D.; Brockschmidt, M.; and Zemel, R.
+\newblock 2016.
+\newblock Gated graph sequence neural networks.
+\newblock In {\em ICLR}.
+
+\bibitem[\protect\citeauthoryear{Li \bgroup et al\mbox.\egroup }{2017}]{Li2017}
+Li, J.; Dani, H.; Hu, X.; Tang, J.; Chang, Y.; and Liu, H.
+\newblock 2017.
+\newblock Attributed network embedding for learning in a dynamic environment.
+\newblock In {\em CIKM}.
+
+\bibitem[\protect\citeauthoryear{Manessia, Rozza, and
+  Manzo}{2017}]{Manessia2017}
+Manessia, F.; Rozza, A.; and Manzo, M.
+\newblock 2017.
+\newblock Dynamic graph convolutional networks.
+\newblock arXiv:1704.06199.
+
+\bibitem[\protect\citeauthoryear{Narayan and Roe}{2018}]{Narayan2018}
+Narayan, A., and Roe, P. H.~O.
+\newblock 2018.
+\newblock Learning graph dynamics using deep neural networks.
+\newblock {\em IFAC-PapersOnLine} 51(2):433--438.
+
+\bibitem[\protect\citeauthoryear{Nguyen \bgroup et al\mbox.\egroup
+  }{2018}]{Nguyen2018}
+Nguyen, G.~H.; Lee, J.~B.; Rossi, R.~A.; Ahmed, N.~K.; Koh, E.; and Kim, S.
+\newblock 2018.
+\newblock Continuous-time dynamic network embeddings.
+\newblock In {\em WWW}.
+
+\bibitem[\protect\citeauthoryear{Ou \bgroup et al\mbox.\egroup }{2016}]{Ou2016}
+Ou, M.; Cui, P.; Pei, J.; Zhang, Z.; and Zhu, W.
+\newblock 2016.
+\newblock Asymmetric transitivity preserving graph embedding.
+\newblock In {\em KDD}.
+
+\bibitem[\protect\citeauthoryear{Perozzi, Al-Rfou, and
+  Skiena}{2014}]{Perozzi2014}
+Perozzi, B.; Al-Rfou, R.; and Skiena, S.
+\newblock 2014.
+\newblock {DeepWalk}: Online learning of social representations.
+\newblock In {\em KDD}.
+
+\bibitem[\protect\citeauthoryear{Roweis and Saul}{2000}]{Roweis2000}
+Roweis, S.~T., and Saul, L.~K.
+\newblock 2000.
+\newblock Nonlinear dimensionality reduction by locally linear embedding.
+\newblock {\em Science} 290(5500):2323--2326.
+
+\bibitem[\protect\citeauthoryear{Seo \bgroup et al\mbox.\egroup
+  }{2016}]{Seo2016}
+Seo, Y.; Defferrard, M.; Vandergheynst, P.; and Bresson, X.
+\newblock 2016.
+\newblock Structured sequence modeling with graph convolutional recurrent
+  networks.
+\newblock arXiv:1612.07659.
+
+\bibitem[\protect\citeauthoryear{Tang \bgroup et al\mbox.\egroup
+  }{2015}]{Tang2015}
+Tang, J.; Qu, M.; Wang, M.; Zhang, M.; Yan, J.; and Mei, Q.
+\newblock 2015.
+\newblock {LINE}: Large-scale information network embedding.
+\newblock In {\em WWW}.
+
+\bibitem[\protect\citeauthoryear{Trivedi \bgroup et al\mbox.\egroup
+  }{2017}]{Trivedi2017}
+Trivedi, R.; Dai, H.; Wang, Y.; and Song, L.
+\newblock 2017.
+\newblock {Know-Evolve}: Deep temporal reasoning for dynamic knowledge graphs.
+\newblock In {\em ICML}.
+
+\bibitem[\protect\citeauthoryear{Trivedi \bgroup et al\mbox.\egroup
+  }{2018}]{Trivedi2018}
+Trivedi, R.; Farajtabar, M.; Biswal, P.; and Zha, H.
+\newblock 2018.
+\newblock Representation learning over dynamic graphs.
+\newblock arXiv:1803.04051.
+
+\bibitem[\protect\citeauthoryear{Veli\u{c}kovi\'{c} \bgroup et al\mbox.\egroup
+  }{2018}]{Velickovic2018}
+Veli\u{c}kovi\'{c}, P.; Cucurull, G.; Casanova, A.; Romero, A.; Li\`{o}, P.;
+  and Bengio, Y.
+\newblock 2018.
+\newblock Graph attention networks.
+\newblock In {\em ICLR}.
+
+\bibitem[\protect\citeauthoryear{Yu \bgroup et al\mbox.\egroup
+  }{2018}]{Yu2018a}
+Yu, W.; Cheng, W.; Aggarwal, C.; Zhang, K.; Chen, H.; and Wang, W.
+\newblock 2018.
+\newblock {NetWalk}: A flexible deep embedding approach for anomaly detection
+  in dynamic networks.
+\newblock In {\em KDD}.
+
+\bibitem[\protect\citeauthoryear{Yu, Yin, and Zhu}{2018}]{Yu2018}
+Yu, B.; Yin, H.; and Zhu, Z.
+\newblock 2018.
+\newblock Spatio-temporal graph convolutional networks: A deep learning
+  framework for traffic forecasting.
+\newblock In {\em IJCAI}.
+
+\bibitem[\protect\citeauthoryear{Zhou \bgroup et al\mbox.\egroup
+  }{2018}]{Zhou2018}
+Zhou, L.; Yang, Y.; Ren, X.; Wu, F.; and Zhuang, Y.
+\newblock 2018.
+\newblock Dynamic network embedding by modeling triadic closure process.
+\newblock In {\em AAAI}.
+
+\bibitem[\protect\citeauthoryear{Zuo \bgroup et al\mbox.\egroup
+  }{2018}]{Zuo2018}
+Zuo, Y.; Liu, G.; Lin, H.; Guo, J.; Hu, X.; and Wu, J.
+\newblock 2018.
+\newblock Embedding temporal network via neighborhood formation.
+\newblock In {\em KDD}.
+
+\end{thebibliography}

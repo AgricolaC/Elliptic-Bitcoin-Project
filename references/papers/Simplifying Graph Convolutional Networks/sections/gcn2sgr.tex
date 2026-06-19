@@ -1,0 +1,84 @@
+%!TEX root=main.tex
+We follow \citet{gcn} to introduce GCNs (and subsequently \method{}) in the context of node classification. Here, GCNs take a graph with some labeled nodes as input and generate label predictions for all graph nodes. Let us formally define such a graph as ${\mathcal{G}} = ({\mathcal{V}}, \rmA)$, where $\mathcal{V}$ represents the vertex set consisting of nodes $\{v_1, \dots, v_n\}$, and 
+$\rmA\in\mathbb{R}^{n \times n}$ is a symmetric (typically sparse) adjacency matrix
+where $a_{ij}$ denotes the edge weight between nodes $v_i$ and $v_j$. A missing edge is represented through $a_{ij} = 0$.
+ We define the degree matrix $\rmD = \text{diag}(d_1, \dots, d_n)$ as a diagonal matrix where each entry on the diagonal is equal to the row-sum of the adjacency matrix $d_i =  \sum_j a_{ij}$. 
+
+
+% machine learning on graphs background
+Each node $v_i$ in the graph has a corresponding $d$-dimensional feature vector $\rvx_i \in \mathbb{R}^{d}$. The entire feature matrix $\rmX \in \mathbb{R}^{n \times d}$ stacks $n$ feature vectors on top of one another, $\rmX=\left[\rvx_1,\dots,\rvx_n\right]^\top$. 
+Each node belongs to one out of $C$ classes and can be labeled with a $C$-dimensional one-hot vector $\rvy_i\in\{0,1\}^C$.
+We only know the labels of a subset of the nodes and want to predict the unknown labels.
+
+\subsection{Graph Convolutional Networks}
+Similar to CNNs or MLPs, GCNs  learn a new feature representation for the feature $\mathbf{x}_i$ of each node over multiple layers, which is subsequently used as input into a linear classifier.  For the $k$-th graph convolution layer, we denote the input node representations of all nodes by the matrix  $\mathbf{H}^{(k-1)}$ and the output node representations $\mathbf{H}^{(k)}$. Naturally, the initial node representations are just the original input features: 
+%
+\begin{equation} \label{eq:initial_feature}
+    \mathbf{H}^{(0)} = \mathbf{X}, 
+\end{equation}
+%
+which serve as input to the first GCN layer. 
+
+A $K$-layer GCN is identical to applying a $K$-layer MLP to the feature vector $\mathbf{x}_i$ of each node in the graph, except that the hidden representation of each node is averaged with its neighbors at the beginning of each layer. In each graph convolution layer, node representations are updated in three stages: feature propagation, linear transformation, and a pointwise nonlinear activation (see \autoref{fig:method}). For the sake of clarity, we describe each step in detail. 
+
+
+% feature propagation
+\paragraph{Feature propagation} is what distinguishes a GCN from an MLP. 
+At the beginning of each layer the features $\mathbf{h}_i$ of each node $v_i$ are averaged with  the feature vectors  in its local neighborhood, 
+\begin{equation}
+    \bar{\mathbf{h}}_i^{(k)} \leftarrow \frac{1}{d_i + 1} \mathbf{h}_i^{(k-1)}+\sum_{j=1}^n \frac{a_{ij}}{\sqrt{(d_i + 1) (d_j + 1)}}\mathbf{h}_j^{(k-1)}.\label{eq:update}
+\end{equation}
+More compactly, we can express this update over the entire graph as a simple matrix operation.  Let $\rmS$ denote the ``normalized'' adjacency matrix with added self-loops, 
+\begin{align} 
+\label{eq:propagation_matrix}
+    \mathbf{S} & = \tilde{\rmD}^{-\frac{1}{2}} \tilde{\rmA} \tilde{\rmD}^{-\frac{1}{2}},
+\end{align}
+where $\tilde{\rmA} = \rmA + \rmI$ and $\tilde{\rmD}$ is the degree matrix of $\tilde{\rmA}$. The simultaneous update in~\autoref{eq:update} for all nodes becomes a simple sparse matrix multiplication
+%
+\begin{equation}
+    \bar{\mathbf{H}}^{(k)} \leftarrow \mathbf{S} \mathbf{H}^{(k-1)}.
+%
+\end{equation}
+%
+Intuitively, this step smoothes the hidden representations locally along the edges of the graph and ultimately encourages similar predictions among locally connected nodes.
+
+
+% Linear Transformation
+\paragraph{Feature transformation and nonlinear transition.} 
+After the local smoothing, a GCN layer is identical to a standard MLP.  Each layer is associated with a learned weight matrix $\boldsymbol{\Theta}^{(k)}$, and the smoothed hidden feature representations are transformed linearly. 
+Finally, a nonlinear activation function such as $\relu$ is applied pointwise before outputting feature representation $\rmH^{(k)}$. In summary, the representation updating rule of the $k$-th layer is: 
+\begin{align} \label{eq:gcn_propagation}
+    \mathbf{H}^{(k)} & \leftarrow  \relu \left( \bar{\mathbf{H}}^{(k)} \boldsymbol{\Theta}^{(k)}\right). 
+\end{align}
+The pointwise nonlinear transformation of the $k$-th layer is followed by the feature propagation of the $(k+1)$-th layer.
+% node classification
+\paragraph{Classifier.} For node classification, and similar to a standard MLP, the last layer of a GCN predicts the labels using a \textit{softmax} classifier. Denote the class predictions for $n$ nodes as $\hat{\mathbf{Y}} \in \mathbb{R}^{n\times C}$ where 
+$\hat{y}_{ic}$ denotes the probability of node $i$ belongs to class $c$.
+The class prediction $\hat{\mathbf{Y}}$ of a $K$-layer GCN can be written as:
+\begin{align}
+\hat{\mathbf{Y}}_{\text{GCN}} & = \softmax\left( \rmS \mathbf{H}^{(K-1)} \boldsymbol{\Theta}^{(K)}\right),
+\end{align}
+where $\softmax(\rvx) = \exp(\rvx) / \sum_{c=1}^C \exp(x_c)$ acts as a normalizer across all classes. 
+
+\subsection{Simple Graph Convolution}
+% transition to SGC
+In a traditional MLP, deeper layers increase the expressivity because it allows the creation of feature hierarchies, e.g. features in the second layer build on top of the features of the first layer. In GCNs, the layers have a second important function: in each layer the hidden representations are averaged among neighbors that are one hop away. This implies that after $k$ layers a node obtains feature information from all nodes that are $k-$hops away in the graph. This effect is similar to convolutional neural networks, where depth increases the receptive field of internal features~\cite{hariharan2015hypercolumns}.  Although convolutional networks can benefit substantially from increased depth~\cite{huang2016deep}, typically MLPs obtain little benefit beyond 3 or 4 layers. 
+
+\paragraph{Linearization.}
+We hypothesize that the nonlinearity between GCN layers is not critical - but that the majority of the benefit arises from the local averaging. We therefore remove the nonlinear transition functions between each layer and only keep the final softmax (in order to obtain probabilistic outputs). 
+The resulting model is linear, but still has the same increased ``receptive field'' of a $K$-layer GCN,
+\begin{align}
+    \hat{\mathbf{Y}} & = \softmax\left(\mathbf{S}\ldots\mathbf{S}\mathbf{S} \mathbf{X} \boldsymbol{\Theta}^{(1)}\boldsymbol{\Theta}^{(2)}\ldots\boldsymbol{\Theta}^{(K)} \right).
+    \end{align}
+To simplify notation we can collapse the repeated multiplication with the normalized adjacency matrix $\rmS$ into a single matrix by raising $\rmS$ to the $K$-th power, $\rmS^K$. Further, we can reparameterize our weights into a single matrix  $\boldsymbol{\Theta}=\boldsymbol{\Theta}^{(1)} \boldsymbol{\Theta}^{(2)} \ldots \boldsymbol{\Theta}^{(K)}$.  The resulting classifier becomes
+\begin{equation}
+    \hat{\mathbf{Y}}_{\text{\method{}}}=\softmax\left(\mathbf{S}^K \mathbf{X} \boldsymbol{\Theta} \right),\label{eq:SGC}
+\end{equation}
+which we refer to as \Method{} (\method{}). 
+
+% SGC conclusion 
+\paragraph{Logistic regression.} \autoref{eq:SGC} gives rise to a  natural and intuitive interpretation of \method{}: by distinguishing between feature extraction and classifier, \method{} consists of a fixed (i.e., parameter-free) feature extraction/smoothing component $\bar{\rmX}= \rmS^K \rmX$ followed by a linear logistic regression classifier $\hat{\mathbf{Y}}=\softmax(\bar{\rmX}\boldsymbol{\Theta})$. Since the computation of $\bar{\rmX}$ requires no weight it is essentially equivalent to a feature pre-processing step and the entire training of the model reduces to straight-forward multi-class logistic regression on the pre-processed features $\bar \rmX$.
+
+
+\paragraph{Optimization details.} The training of logistic regression is a well studied convex optimization problem and can be performed with any efficient second order method or stochastic gradient descent~\cite{bottou2010large}. Provided the graph connectivity pattern  is sufficiently sparse, SGD naturally scales to very large graph sizes and the training of \method{} is  drastically faster than that of GCNs.   
+

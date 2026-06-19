@@ -1,0 +1,373 @@
+% !TEX root = paper-graphnet.tex
+
+\section{Minibatch pseudocode}\label{sec:minibatch}
+
+In order to use stochastic gradient descent, we adapt our algorithm to allow forward and backward
+propagation for minibatches of nodes and edges. 
+Here we focus on the minibatch forward propagation
+algorithm, analogous to Algorithm \ref{alg:basic}.
+In the forward propagation of \name\, the minibatch $\mathcal{B}$ contains nodes that we want to generate representations for. 
+Algorithm 2 gives the pseudocode for the minibatch approach. 
+
+\setcounter{algocf}{1}
+\begin{algorithm}
+\caption{\name\ minibatch forward propagation algorithm}
+	\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+    \Input{~Graph $\G(\V,\E)$;\\
+     input features $\{\mb{x}_v, \forall v\in \mathcal{B}\}$; \\
+     depth $K$; weight matrices $\mb{W}^{k}, \forall k \in \{1,...,K\}$; \\
+     non-linearity $\sigma$; \\
+     differentiable aggregator functions $\textsc{aggregate}_k, \forall k \in \{1,...,K\}$;\\
+      neighborhood sampling functions, $\mathcal{N}_k : v \rightarrow 2^{\V}, \forall k \in \{1,...,K\}$}
+    \Output{~Vector representations $\mb{z}_v$ for all $v \in \mathcal{B}$}
+    \BlankLine
+         $\mathcal{B}^K \leftarrow \mathcal{B}$\;
+        \For{$k=K...1$}{
+            $B^{k-1} \leftarrow \mathcal{B}^{k}$ \;
+            \For{$u \in \mathcal{B}^{k}$}{
+                $\mathcal{B}^{k-1} \leftarrow \mathcal{B}^{k-1} \cup \mathcal{N}_k(u)$\;
+            }
+    	}
+        $\mb{h}^0_u \leftarrow \mb{x}_v, \forall v \in \mathcal{B}^0$ \;
+        \For{$k=1...K$}{
+            \For{$u \in \mathcal{B}^k$}{
+    	        $\mb{h}^{k}_{\mathcal{N}(u)} \leftarrow \textsc{aggregate}_k(\{\mb{h}_{u'}^{k-1},
+                    \forall u' \in \mathcal{N}_k(u)\})$\;
+    	        $\mb{h}^k_u \leftarrow \sigma\left(\mb{W}^{k}\cdot\textsc{concat}(\mb{h}_u^{k-1}, \mb{h}^{k}_{\mathcal{N}(u)})\right)$\;
+    	         $\mb{h}^{k}_u\leftarrow \mb{h}^{k}_u/ \|\mb{h}^{k}_u\|_2$\;
+            }
+        }
+     $\mb{z}_u\leftarrow \mb{h}^{K}_u, \forall u \in \mathcal{B}$ 
+\end{algorithm}
+
+The main idea is to sample all the nodes needed for the computation first. 
+Lines 2-7 of Algorithm 2 correspond to the sampling stage. 
+Each set $\mathcal{B}^k$ contains the nodes that are needed to compute the representations of
+nodes $v \in \mathcal{B}^{k+1}$, i.e., the nodes in the $(k+1)$-st iteration, or ``layer'', of Algorithm 1.
+Lines 9-15 correspond to the aggregation stage, which is almost identical to the batch inference
+algorithm. 
+Note that in Lines 12 and 13, the representation at iteration $k$ of any node in set $\mathcal{B}^k$ can be computed, because its representation at iteration $k-1$  and the representations of its sampled neighbors at iteration $k-1$ have already been computed
+in the previous loop.
+The algorithm thus avoids computing the representations for nodes that are not in the current
+minibatch and not used during the current iteration of stochastic gradient descent.
+We use the notation $\mathcal{N}_k(u)$ to denote a deterministic function which specifies a random sample of a node's neighborhood (i.e., the randomness is assumed to be pre-computed in the mappings).
+We index this function by $k$ to denote the fact that the random samples are independent across iterations over $k$.
+We use a uniform sampling function in this work and sample with replacement in cases where the sample size is larger than the node's degree. 
+
+Note that the sampling process in Algorithm 2 is conceptually reversed compared to the iterations over $k$ in Algorithm \ref{alg:basic}: we start with the ``layer-K'' nodes (i.e., the nodes in $\mathcal{B}$) that we want to generate representations for; then we sample their neighbors (i.e., the nodes at ``layer-K-1'' of the algorithm) and so on.
+One consequence of this is that the definition of neighborhood sampling sizes can be somewhat counterintuitive.
+In particular, if we use $K=2$ total iterations with sample sizes $S_1$ and $S_2$ then this means that we sample $S_1$ nodes during iteration $k=1$ of Algorithm 1 and $S_2$ nodes during iteration $k=2$, and---from the perspective of the ``target'' nodes in $\mathcal{B}$ that we want to generate representations for after iteration $k=2$---this amounts to sampling $S_2$ of their immediate neighbors and $S_1\cdot S_2$ of their 2-hop neighbors. 
+
+
+\section{Additional Dataset Details}
+
+In this section, we provide some additional, relevant dataset details.
+The full PPI and Reddit datasets are available at: \url{http://snap.stanford.edu/graphsage/}.
+The Web of Science dataset (WoS) is licensed by Thomson Reuters and can be made available to groups with valid WoS licenses. 
+
+\paragraph{Reddit data}
+
+To sample communities, we ranked communities by their total number of comments in 2014 and selected the communities with ranks [11,50] (inclusive).
+We omitted the largest communities because they are large, generic default communities that substantially skew the class distribution.  
+We selected the largest connected component of the graph defined over the union of these communities. 
+We performed early validation experiments and model development on data from October and November, 2014. 
+
+Details on the source of the Reddit data are at: \url{https://archive.org/details/FullRedditSubmissionCorpus2006ThruAugust2015} and
+\url{https://archive.org/details/2015_reddit_comments_corpus}.
+
+\paragraph{WoS data}
+
+We selected the following subfields manually, based on them being of relatively equal size and all biology-related fields.
+We performed early validation and model development on the neuroscience subfield (code=RU, which is excluded from our final set). 
+We did not run any experiments on any other subsets of the WoS data. 
+We took the largest connected component of the graph defined over the union of these fields. 
+\begin{itemize}
+\item
+Immunology (code: NI, number of documents: 77356)
+\item
+Ecology (code: GU, number of documents: 37935)
+\item
+Biophysics (code: DA, number of documents: 36688)
+\item
+Endocrinology and Metabolism (code: IA, number of documents: 52225). 
+\item
+Cell Biology (code: DR, number of documents: 84231)
+\item
+Biology (other) (code: CU, number of documents: 13988)
+\end{itemize}
+
+\paragraph{PPI Tissue Data}
+
+For training, we randomly selected 20 PPI networks that had at least 15,000 edges. For testing and validation, we selected 4 large networks (2 for validation, 2 for testing, each with at least 35,000 edges). All experiments for model design and development were performed on the same 2 validation networks, and we used the same random training set in all experiments.
+
+We selected features that included at least 10\% of the proteins that appear in any of the PPI graphs. 
+Note that the feature data is very sparse for dataset ($42\%$ of nodes have no non-zero feature values), which makes leveraging neighborhood information critical. 
+
+\section{Details on the Experimental Setup and Hyperparameter Tuning}\label{sec:hyper}
+
+\paragraph{Random walks for the unsupervised objective}
+For all settings, we ran 50 random walks of length 5 from each node in order to obtain the pairs needed for the unsupervised loss (Equation \ref{eq:neg}).
+Our implementation of the random walks is in pure Python and is based directly on Python code provided by Perozzi et al.~\cite{perozzi2014deepwalk}.
+
+\paragraph{Logistic regression model}
+For the feature only model and to make predictions on the embeddings output from the unsupervised models, 
+we used the logistic SGDClassifier from the scikit-learn Python package \cite{scikit-learn}, with all default settings.
+Note that this model is always optimized only on the training nodes and it is not fine-tuned on the embeddings that are generated for the test data.
+
+
+\paragraph{Hyperparameter selection}
+
+In all settings, we performed hyperparameter selection on the learning rate and the model dimension.
+With the exception of DeepWalk, we performed a parameter sweep on initial learning rates $\{0.01, 0.001, 0.0001\}$ for the supervised models and $\{2\times10^{-6}, 2\times10^{-7}, 2\times10^{-8}\}$ for the unsupervised models.\footnote{Note that these values differ from our previous reported pre-print values because they are corrected to account for an extraneous normalization by the batch size. We thank Ben Johnson for pointing out this discrepancy.}
+When applicable, we tested a ``big'' and ``small'' version of each model, where we tried to keep the overall model sizes comparable.
+For the pooling aggregator, the ``big'' model had a pooling dimension of 1024, while the ``small'' model had a dimension of  512.
+For the LSTM aggregator, the ``big'' model had a hidden dimension of 256, while the ``small'' model had a hidden dimension of 128; note that the actual parameter count for the LSTM is roughly $4{\times}$ this number, due to weights for the different gates. 
+In all experiments and for all models we specify the output dimension of the $\mb{h}^k_i$ vectors at every depth $k$ of the recursion to be $256$. 
+All models use rectified linear units as a non-linear activation function.
+All the unsupervised \name\ models and DeepWalk used 20 negative samples with context distribution smoothing over node degrees using a smoothing parameter of $0.75$, following \cite{grover2016node2vec,mikolov2013distributed,perozzi2014deepwalk}.
+Initial experiments revealed that DeepWalk performed much better with large learning rates, so we swept over rates in the set $\{0.2,0.4,0.8\}$. 
+For the supervised \name\ methods, we ran 10 epochs for all models. 
+All methods except DeepWalk use batch sizes of 512.
+We found that DeepWalk achieved faster wall-clock convergence with a smaller batch size of 64. 
+
+\paragraph{Hardware}
+Except for DeepWalk, we ran experiments single a machine with 4 NVIDIA Titan X Pascal GPUs (12Gb of RAM at 10Gbps speed), 16 Intel Xeon CPUs (E5-2623 v4 @ 2.60GHz), and 256Gb of RAM.  
+DeepWalk was faster on a CPU intensive machine with 144 Intel Xeon CPUs (E7-8890 v3 @ 2.50GHz) and 2Tb of RAM. 
+Overall, our experiments took about 3 days in a shared resource setting. 
+We expect that a consumer-grade single-GPU machine (e.g., with a Titan X GPU) could complete our full set of experiments in 4-7 days, if its full resources were dedicated. 
+
+\paragraph{Notes on the DeepWalk implementation}
+Existing DeepWalk implementations \cite{perozzi2014deepwalk,grover2016node2vec} are simply wrappers around dedicated word2vec code, and they do not easily support embedding new nodes and other variations. 
+Moreover, this makes it difficult to compare runtimes and other statistics for these approaches.
+For this reason, we reimplemented DeepWalk in pure TensorFlow, using the vector initializations etc that are described in the TensorFlow word2vec tutorial.\footnote{\url{https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py}}
+
+We found that DeepWalk was much slower to converge than the other methods, and since it is 2-5X faster at training, we gave it 5 passes over the random walk data, instead of one.
+To update the DeepWalk method on new data, we ran 50 random walks of length 5 (as described above) and performed updates on the embeddings for the new nodes while holding the already trained embeddings fixed. 
+We also tested two variants, one where we restricted the sampled random walk ``context nodes'' to only be from the set of already trained nodes (which alleviates statistical drift) and an approach without this restriction. 
+We always selected the better performing variant. 
+Note that despite DeepWalk's poor performance on the inductive task, it is far more competitive when tested in the transductive setting, where it can be extensively trained on a single, fixed graph. 
+(That said, Kipf et al \cite{kipf2016semi}\cite{kipf2016variational} found that GCN-based approach consistently outperformed DeepWalk, even in the transductive setting on link prediction, a task that theoretically favors DeepWalk.)
+We did observe DeepWalk's performance {\em could} improve with further training, and in some cases it could become competitive with the unsupervised \name\ approaches (but not the supervised approaches) if we let it run for ${>}1000{\times}$ longer than the other approaches (in terms of wall clock time for prediction on the test set); however, we did not deem this to be a meaningful comparison for the inductive task. 
+
+Note that DeepWalk is also equivalent to the node2vec model \cite{grover2016node2vec} with $p=q=1$. 
+
+\paragraph{Notes on neighborhood sampling}
+Due to the heavy-tailed nature of degree distributions we downsample the edges in all graphs before feeding them into the \name\ algorithm.
+In particular, we subsample edges so that no node has degree larger than $128$. 
+Since we only sample at most $25$ neighbors per node, this is a reasonable tradeoff.
+This downsampling allows us to store neighborhood information as dense adjacency lists, which drastically improves computational efficiency. 
+For the Reddit data we also downsampled the edges of the original graph as a pre-processing step, since the original graph is extremely dense. 
+All experiments are on the downsampled version, but we release the full version on the project website for reference. 
+
+
+\section{Alignment Issues and Orthogonal Invariance for DeepWalk and Related Approaches}\label{sec:rotational}
+
+DeepWalk \cite{perozzi2014deepwalk}, node2vec \cite{grover2016node2vec}, and other recent successful node embedding approaches employ objective functions of the form:
+\begin{equation}\label{eq:n2vobj}
+\alpha\sum_{i,j \in \mathcal{A}}f(\mb{z}_i^\top\mb{z}_{j}) + \beta\sum_{i,j \in \mathcal{B}}g(\mb{z}_i^\top\mb{z}_{j}) 
+\end{equation}
+where $f$, $g$ are smooth, continuous functions, $\mb{z}_i$ are the node representations that are being directly optimized (i.e., via embedding look-ups), and $\mathcal{A}, \mathcal{B}$ are sets of pairs of nodes. 
+Note that in many cases, in the actual code implementations used by the authors of these approaches, nodes are associated with two unique embedding vectors and the arguments to the dot products in $f$ and $g$ are drawn for distinct embedding look-ups (e.g., \cite{grover2016node2vec,perozzi2014deepwalk}); however, this does not fundamentally alter the learning algorithm. 
+The majority of approaches also normalize the learned embeddings to unit length, so we assume this post-processing as well.
+
+By connection to word embedding approaches and the arguments of \cite{levy2014neural}, these approaches can also be viewed as stochastic, implicit matrix factorizations where we are trying to learn a matrix $\mb{Z} \in \mathbb{R}^{|\V| \times d}$ such that
+\begin{equation}
+\mb{Z}\mb{Z}^\top \approx \mb{M},
+\end{equation}
+where $\mb{M}$ is some matrix containing random walk statistics. 
+
+An important consequence of this structure is that the embeddings can be rotated by an arbitrary orthogonal matrix, without impacting the objective:
+\begin{equation}
+\mb{Z}\mb{Q}^\top\mb{Q}\mb{Z}^\top = \mb{Z}\mb{Z}^\top,
+\end{equation}
+where $\mb{Q} \in \mathbb{R}^{d\times d}$ is any orthogonal matrix. 
+Since the embeddings are otherwise unconstrained and the only error signal comes from the orthogonally-invariant objective \eqref{eq:n2vobj}, the entire embedding space is free to arbitrarily rotate during training.  
+
+Two clear consequences of this are:
+\begin{enumerate}
+\item
+	Suppose we run an embedding approach based on \eqref{eq:n2vobj} on two separate graphs A and B using the same output dimension. Without some explicit penalty enforcing alignment, the learned embeddings spaces for the two graphs will be arbitrarily rotated with respect to each other after training. 
+	Thus, for any node classification method that is trained on individual embeddings from graph A, inputting the embeddings from graph B will be essentially random. 
+	This fact is also simply true by virtue of the fact that the $\mb{M}$ matrices of these graphs are completely disjoint. 
+	Of course, if we had a way to match ``similar'' nodes between the graphs, then it could be possible to use an alignment procedure to share information between the graphs, such as the procedure proposed by \cite{hamilton2016diachronic} for aligning the output of word embedding algorithms. 
+	Investigating such alignment procedures is an interesting direction for future work; though these approaches will inevitably be slow run on new data, compared to approaches like \name\ that can simply generate embeddings for new nodes without any additional training or alignment. 
+\item
+  Suppose that we run an embedding approach based on \eqref{eq:n2vobj} on graph C at time $t$ and train a classifier on the learned embeddings. Then at time $t+1$ we add more nodes to C and run a new round of SGD and update all embeddings.
+  Two issues arise: First by analogy to point 1 above, if the new nodes are only connected to a very small number of the old nodes, then the embedding space for the new nodes can essentially become rotated with respect to the original embedding space.
+  Moreover, if we update all embeddings during training (not just for the new nodes), as suggested by \cite{perozzi2014deepwalk}'s streaming approach to DeepWalk, then the embedding space can arbitrarily rotate compared to the embedding space that we trained our classifier on, which only further exasperates the problem.  
+\end{enumerate}
+
+Note that this rotational invariance is not problematic for tasks that only rely on pairwise node distances (e.g., link prediction via dot products). 
+Moreover, some reasonable approaches to alleviate this issue of statistical drift are to (1) not update the already trained embeddings when optimizing the embeddings for new test nodes and (2) to only keep existing nodes as ``context nodes'' in the sampled random walks, i.e. to ensure that every dot-product in the skip-gram objective is the product of an already-trained node and a new/test node.
+We tried both of these approaches in this work and always selected the best performing DeepWalk variant. 
+
+Also note that empirically DeepWalk performs better on the citation data than the Reddit data (Section \ref{sec:evolving}) because this statistical drift is worse in the Reddit data, compared to the citation graph.
+In particular, the Reddit data has fewer edges from the test set to the train set, which help prevent mis-alignment: 96\% of the 2005 citation links connect back to the 2000-2004 data, while only 73\% of edges in the Reddit test set connect back to the train data. 
+
+\section{Proof of Theorem 1}
+
+\newcommand{\R}{\mathbb{R}}
+To prove Theorem 1, we first prove three lemmas:
+\begin{itemize}
+\item
+Lemma 1 states that there exists a continuous function that is guaranteed to only be positive in closed balls around a fixed number of points, with some noise tolerance. 
+\item
+Lemma 2 notes that we can approximate the function in Lemma 1 to an arbitrary precision using a multilayer perceptron with a single hidden layer.
+\item
+Lemma 3 builds off the preceding two lemmas to prove that the pooling architecture can learn to map nodes to unique indicator vectors, assuming that all the input feature vectors are sufficiently distinct. 
+\end{itemize}
+We also rely on fact that the max-pooling operator (with at least one hidden layer) is capable of approximating any Hausdorff continuous, symmetric function to an arbitrary $\epsilon$ precision \cite{qi2016pointnet}.
+
+We note that all of the following are essentially {\em identifiability} arguments. 
+We show that there exists a parameter setting for which Algorithm \ref{alg:basic} can learn nodes clustering coefficients, which is non-obvious given that it operates by aggregating feature information.
+The {\em efficient learnability} of the functions described is the subject of future work. 
+We also note that these proofs are conservative in the sense that clustering coefficients may be in fact identifiable in fewer iterations, or with less restrictions, than we impose. 
+Moreover, due to our reliance on two universal approximation theorems \cite{hornik1991approximation,qi2016pointnet}, the required dimensionality is in principle $O(|\V|)$.
+We can provide a more informative bound on the required output dimension of some particular layers (e..g., Lemma 3); however, in the worst case this identifiability argument relies on having a dimension of $O(|\V|)$. 
+It is worth noting, however,  that Kipf et al's ``featureless'' GCN approach has parameter dimension $O(|\V|)$, so this requirement is not entirely unreasonable \cite{kipf2016semi,kipf2016variational}.
+
+Following Theorem 1, we let $\mb{x}_v \in U, \forall v \in \V$ denote the feature inputs for Algorithm \ref{alg:basic} on graph $\mathcal{G}=(\mathcal{V}, \mathcal{E})$, where $U$ is any compact subset of $\mathbb{R}^d$.
+
+\begin{lemma}
+Let $C \in \mathbb{R}^+$ be a fixed positive constant. 
+Then for any non-empty finite subset of nodes $\mathcal{D} \subseteq \mathcal{V}$, there exists a continuous function $g : U \rightarrow \R$ such that 
+\begin{equation}
+\begin{cases}
+g(\mb{x}) > \epsilon,& \textrm{if $\|\mb{x}-\mb{x}_v\|_2 = 0$ for some $v \in \mathcal{D}$}\\
+g(\mb{x}) \leq {-}\epsilon,&\textrm{if $\|\mb{x}-\mb{x}_v\|_2 > C, \forall v \in \mathcal{D}$},
+\end{cases}
+\end{equation}
+where $\epsilon < 0.5$ is a chosen error tolerance. 
+\end{lemma}
+\begin{proof}
+Many such functions exist. For concreteness, we provide one construction that satisfies these criteria. 
+Let $\mb{x} \in U$ denote an arbitrary input to $g$, let $d_v = \|\mb{x} - \mb{x}_v\|_2, \forall v \in \mathcal{D}$, and let $g$ be defined as $g(\mb{x}) = \sum_{v \in \mathcal{D}} g_v(\mb{x})$ with
+\newcommand{\setsize}{|\mathcal{D}|}
+\begin{equation}
+g_v(\mb{x}) =  \frac{3\setsize\epsilon}{bd_v^2 + 1} - 2\epsilon
+\end{equation}
+where $b = \frac{3\setsize - 1}{C^2}>0$.
+By construction:
+\begin{enumerate}
+\item
+	$g_v$ has a unique maximum of $3\setsize\epsilon-2\epsilon>2\setsize\epsilon$ at $d_v = 0$. 
+\item
+	$\lim_{d_v \rightarrow \infty}\left(  \frac{3\setsize\epsilon}{bd_v^2 + 1} - 2\epsilon \right) = -2\epsilon$
+\item 
+   $\frac{3\setsize\epsilon}{bd_v^2 + 1} - 2\epsilon \leq -\epsilon$ if $d_v \geq C$. 
+\end{enumerate}
+Note also that $g$ is continuous on its domain ($d_v \in \mathbb{R}^+$) since it is the sum of finite set of continuous functions. 
+Moreover, we have that, for a given input $\mb{x} \in U$, if $d_v\geq C$ for all points $v \in \mathcal{D}$ then $g(\mb{x}) = \sum_{v \in \mathcal{D}} g_v(\mb{a}) \leq {-}\epsilon$ by property 3 above. 
+And, if $d_v=0$ for any $v \in \mathcal{D}$, then $g$ is positive by construction, by properties 1 and 2, since in this case,
+\begin{align*}
+g_v(\mb{x}) + \sum_{v' \in \mathcal{D}\setminus v}g_{v'}(\mb{x}) &\geq g_v(\mb{x}) - (\setsize -1)2\epsilon\\
+&> g_v(\mb{x}) - 2(\setsize)\epsilon\\
+&>2(\setsize)\epsilon - 2(\setsize)\epsilon\\
+& >0,
+\end{align*}
+ so we know that $g$ is positive whenever $d_v = 0$ for any node and negative whenever $d_v > C$ for all nodes.  
+\end{proof}
+
+\begin{lemma}
+The function $g : U \rightarrow \mathbb{R}$ can be approximated to an arbitrary degree of precision by standard multilayer perceptron (MLP) with least one hidden layer and a non-constant monotonically increasing activation function (e.g., a rectified linear unit).  In precise terms, if we let $f_{\theta_\sigma}$ denote this MLP and $\theta_\sigma$ its parameters, we have that $\forall \epsilon$, $\exists \theta_\sigma$ such that 
+$|f_{\theta_\sigma}(\mb{x}) - g(\mb{x})| < \epsilon|, \forall \mb{x} \in U$.
+\end{lemma}
+\begin{proof}
+This is a direct consequence of Theorem 2 in \cite{hornik1991approximation}.
+\end{proof}
+
+\begin{lemma}
+Let $\mb{A}$ be the adjacency matrix of $G$, let $\mathcal{N}^2(v)$ denote the 2-hop neighborhood of a node, $v$, and define $\chi(G^4)$ as the chromatic number of the graph with adjacency matrix $\mb{A}^4$ (ignoring self-loops). Suppose that there exists a fixed positive constant $C \in \mathbb{R}^+$ such that $\|\mb{x}_v  - \mb{x}_{v'}\|_2 > C$ for all pairs of nodes. Then we have that there exists a parameter setting for Algorithm \ref{alg:basic}, using a pooling aggregator at depth $k=1$, where this pooling aggregator has $\geq 2$ hidden layers with rectified non-linear units, such that 
+$$\mb{h}^1_v \neq \mb{h}^1_{v'}, \forall (v,v') \in \{(v,v') : \exists u \in \V, v,v' \in \mathcal{N}^2(u)\}, \mb{h}^1_v, \mb{h}^1_{v'} \in \mathcal{E}^{\chi(\G^4)}_I$$
+where $\mathcal{E}^{\chi(\G^4)}_I$ is the set of one-hot indicator vectors of dimension $\mathcal{\chi}(\G^4)$.
+\end{lemma}
+\begin{proof}
+By the definition of the chromatic number, we know that we can label every node in $\mathcal{V}$ using $\chi(\G^4)$ unique colors, such that no two nodes that co-occur in any node's 2-hop neighborhood are assigned the same color. 
+Thus, with exactly $\chi(\G^4)$ dimensions we can assign a unique one-hot indicator vector to every node, where no two nodes that co-occur in any 2-hop neighborhood have the same vector. 
+In other words, each color defines a subset of nodes $\mathcal{D} \subseteq \mathcal{V}$ and this subset of nodes can all be mapped to the same indicator vector without introducing conflicts. 
+
+By Lemma 1 and 2 and the assumption that $\|\mb{x}_v  - \mb{x}_{v'}\|_2 > C$ for all pairs of nodes, we can choose an $\epsilon < 0.5$ and there exists a single-layer MLP, $f_{\theta_\sigma}$, such that for any subset of nodes $\mathcal{D} \subseteq \mathcal{V}$:
+\begin{equation}
+\begin{cases}
+f_{\theta_\sigma}(\mb{x}_v) > 0 ,&\forall v \in \mathcal{D}\\
+f_{\theta_\sigma}(\mb{x}_v) < 0,& \forall v \in \V \setminus \mathcal{D}.
+\end{cases}
+\end{equation}
+By making this MLP one layer deeper and specifically using a rectified linear activation function, we can return a positive value only for nodes in the subset $\mathcal{D}$ and zero otherwise, and, since we normalize after applying the aggregator layer, this single positive value can be mapped to an indicator vector. 
+Moreover, we can create $\chi(\G^4)$ such MLPs, where each MLP corresponds to a different color/subset; equivalently each MLP corresponds to a different max-pooling dimension in equation \ref{eq:pool} of the main text. 
+\end{proof}
+
+
+
+We now restate Theorem 1 and provide a proof. 
+
+\renewcommand{\thetheorem}{\ref{thm:main}}
+\begin{theorem}
+Let $\mb{x}_v \in \mathbb{R}^d, \forall v \in \mathcal{V}$ denote the feature inputs for Algorithm \ref{alg:basic} on graph $\mathcal{G}=(\mathcal{V}, \mathcal{E})$, where $U$ is any compact subset of $\mathbb{R}^d$. Suppose that there exists a fixed positive constant $C \in \mathbb{R}^+$ such that $\|\mb{x}_v  - \mb{x}_{v'}\|_2 > C$ for all pairs of nodes. Then we have that $\forall \epsilon > 0$ there exists a parameter setting $\mb{\Theta}^*$ for Algorithm \ref{alg:basic} such that after $K=4$ iterations 
+$$|{z}_v - c_v| < \epsilon , \forall v \in \mathcal{\V},$$ where $z_v \in \mathbb{R}$ are final output values generated by Algorithm 1 and $c_v$ are node clustering coefficients, as defined in \cite{watts1998collective}. 
+\end{theorem}
+
+\begin{proof}
+Without loss of generality, we describe how to compute the clustering coefficient for an arbitrary node $v$.
+For notational convenience we use $\oplus$ to denote vector concatenation and $d_v$ to denote the degree of node $v$.
+This proof requires 4 iterations of Algorithm 1, where we use the pooling aggregator at all depths. 
+For clarity and we ignore issues related to vector normalization and we use the fact that the pooling aggregator can approximate any Hausdorff continuous function to an arbitrary $\epsilon$ precision \cite{qi2016pointnet}.
+Note that we can always account for normalization constants (line 7 in Algorithm 1) by having aggregators prepend a unit value to all output representations; the normalization constant can then be recovered at later layers by taking the inverse of this prepended value. 
+Note also that almost certainly exist settings where the symmetric functions described below can be computed exactly by the pooling aggregator (or a variant of it), but the symmetric universal approximation theorem of \cite{qi2016pointnet} along with Lipschitz continuity arguments suffice for the purposes of proving identifiability of clustering coefficients (up to an arbitrary precision).
+In particular, the functions described below, that we need approximate to compute clustering coefficients, are all Lipschitz continuous on their domains (assuming we only run on nodes with positive degrees) so the errors introduced by approximation remain bounded by fixed constants (that can be made arbitrarily small). 
+
+We assume that the weight matrices, $\mb{W}^1, \mb{W}^2$ at depths $k=2$ and $k=3$ are the identity, and that all non-linearities are rectified linear units. 
+In addition, for the final iteration (i.e, $k=4$) we completely ignore neighborhood information and simply treat this layers as an MLP with a single hidden layer.
+Theorem 1 can be equivalently stated as requiring $K=3$ iterations of Algorithm 1, with the representations then being fed to a single-layer MLP. 
+
+By Lemma 3, we can assume that at depth $k=1$ all nodes in $v$'s 2-hop neighborhood have unique, one-hot indicator vectors, $\mb{h}^1_v \in \mathcal{E}_I$. 
+Thus, at depth $k=2$ in Algorithm 1, suppose that we sum the unnormalized representations of the neighboring nodes. Then without loss of generality, we will have that $\mb{h}^{2}_v = \mb{h}^1_v \oplus \mb{A}_{v}$ where $\mb{A}$ is the adjacency matrix of the subgraph containing all nodes connected to $v$ in $G^4$ and $\mb{A}_v$ is the row of the adjacency matrix corresponding to $v$. 
+Then, at depth $k=3$, again assume that we sum the neighboring representations (with the weight matrices as the identity), then we will have that 
+\begin{equation}
+\mb{h}_v^3 = \mb{h}^1_v \oplus \mb{A}_{v} \oplus \left(\sum_{v \in \mathcal{N}(v)} \mb{h}^1_v \oplus \mb{A}_{v}\right).
+\end{equation}
+Letting $m$ denote the dimensionality of the $\mb{h}^1_v$ vectors (i.e., $m \equiv \chi(G^4)$ from Lemma 3) and using square brackets to denote vector indexing, we can observe that
+\begin{itemize}
+\item
+	$\mb{a} \equiv \mb{h}^3_v[0:m]$ is $v$'s one-hot indicator vector. 
+\item
+	$\mb{b} \equiv \mb{h}^3_v[m:2m]$ is $v$'s row in the adjacency matrix, $\mb{A}$.
+\item
+	$\mb{c} \equiv \mb{h}^3_v[3m:4m]$ is the sum of the adjacency rows of $v$'s neighbors. 
+\end{itemize}
+
+Thus, we have that $\mb{b}^\top\mb{c}$ is the number of edges in the subgraph containing only $v$ and it's immediate neighbors and $\sum_{i=0}^{m}\mb{b}[i] = d_v$.
+Finally we can compute
+\begin{align}
+\frac{2(\mb{b}^\top\mb{c} - d_v)}{(d_v)(d_v - 1)}  &= \frac{2 | \{ e_{v,v'} : v, v' \in \mathcal{N}(v), e_{v,v'} \in \E \}|}{(d_v)(d_v - 1)}\\
+&=c_v,
+\end{align}
+and since this is a continuous function of $\mb{h}^{3}_v$, we can approximate it to an arbitrary $\epsilon$ precision with a single-layer MLP (or equivalently, one more iteration of Algorithm 1, ignoring neighborhood information). 
+Again this last step follows directly from \cite{hornik1991approximation}.
+\end{proof}
+
+\renewcommand{\thetheorem}{2}
+\begin{corollary}
+Suppose we sample nodes features from any probability distribution $\mu$ over $\mb{x} \in U$, where $\mu$ is absolutely continuous with respect to the Lebesgue measure. Then the conditions of Theorem 1 are almost surely satisfied with feature inputs $\mb{x}_v \sim \mu$. 
+\end{corollary}
+
+Corollary 2 is a direct consequence of Theorem 1 and the fact that, for any probability distribution that is absolutely continuous w.r.t. the Lebesgue measure, the probability of sampling two identical points is zero. 
+Empirically, we found that \name-pool was in fact capable of maintaining modest performance by leveraging graph structure, even with completely random feature inputs (see Figure \ref{fig:noise}).
+However, the performance \name-GCN was not so robust, which makes intuitive sense given that the Lemmas 1, 2, and 3 rely directly on the universal expressive capability of the pooling aggregator. 
+
+\renewcommand{\thetheorem}{3}
+\begin{figure}
+\centering
+\includegraphics[scale=1.0]{noise.png}
+\caption{Accuracy (in F1-score) for different approaches on the citation data as the feature matrix is incrementally replaced with random Gaussian noise.}
+\label{fig:noise}
+\end{figure}
+
+Finally, we note that Theorem 1 and Corollary 2 are expressed with respect to a particular given graph and are thus somewhat transductive.
+For the inductive setting, we can state
+\begin{corollary}
+Suppose that for all graphs $\G=(\V,\E)$ belonging to some class of graphs $G^*$, we have that $\exists k,d \geq 0, k,d \in \mathbb{Z}$ such that
+$$\mb{h}^k_v \neq \mb{h}^k_{v'}, \forall (v,v') \in \{(v,v') : \exists u \in \V, v,v' \in \mathcal{N}^3(u)\}, \mb{h}^k_v, \mb{h}^k_{v'} \in \mathcal{E}^{d}_I,$$
+then we can approximate clustering coefficients to an arbitrary epsilon after $K=k+4$ iterations of Algorithm \ref{alg:basic}.
+\end{corollary}
+Corollary 3 simply states that if after $k$ iterations of Algorithm 1, we can learn to uniquely identify nodes for a class of graphs, then we can also approximate clustering coefficients to an arbitrary precision for this class of graphs. 

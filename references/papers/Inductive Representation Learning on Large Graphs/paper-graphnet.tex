@@ -1,0 +1,139 @@
+\documentclass{article}
+\usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage[final,nonatbib]{nips_2017}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+%\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{verbatim} % allows multiline comments
+\usepackage{graphicx}
+\usepackage{caption} 
+\usepackage{subcaption} % for the subfloat in the figs
+\usepackage{multirow}
+%\usepackage{algorithm}
+%\usepackage[noend]{algorithmic}
+\usepackage{xspace}
+\usepackage{epsfig}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{times}
+\usepackage{xr}
+%\externaldocument{appendix-graphnet}
+
+
+\newcommand{\note}[1]{{{\textcolor{blue}{[note: #1]}}}}
+\newcommand{\jure}[1]{{{\textcolor{red}{[Jure: #1]}}}}
+\newcommand{\rex}[1]{{{\textcolor{magenta}{[Rex: #1]}}}}
+\newcommand{\will}[1]{{{\textcolor{teal}{[Will: #1]}}}}
+
+\newcommand{\xhdr}[1]{{\noindent\bfseries #1}.}
+\newcommand{\todo}[1]{{\textcolor{red}{TODO: #1}}}
+\newcommand{\red}[1]{{\textcolor{red}{#1}}}
+\newcommand{\CITE}{{\textcolor{red}{CITE}}}
+\newcommand{\name}{GraphSAGE}
+
+\newcommand{\V}{\mathcal{V}}
+\newcommand{\E}{\mathcal{E}}
+\newcommand{\G}{\mathcal{G}}
+
+
+\newcommand{\nedge}{k}
+\newcommand{\mb}{\mathbf}
+\newcommand{\cut}[1]{}
+%\newcommand{\xhdr}[1]{\vspace{1.7mm}\noindent{{\bf #1}}}
+\newcommand{\casc}{{\mathbf{t}}}
+\newcommand{\alphs}{{\mathbf{A}}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}{Lemma}
+\newcommand{\xsketch}{\noindent {\it Proof Sketch.}}
+\newcommand{\netinf}{{\textsc{Net\-Inf}}\xspace}
+\newcommand{\multitree}{{\textsc{Multi\-Tree}}\xspace}
+\newcommand{\netrate}{{\textsc{Net\-Rate}}\xspace}
+\newcommand{\connie}{{\textsc{Co\-nNIe}}\xspace}
+\newcommand{\maxinf}{{\textsc{Max\-Inf}}\xspace}
+\newcommand{\expo}{{\textsc{Exp}}\xspace}
+\newcommand{\pow}{{\textsc{Pow}}\xspace}
+\newcommand{\ray}{{\textsc{Ray}}\xspace}
+\newcommand{\eg}{\emph{e.g.}}
+\newcommand{\ie}{\emph{i.e.}}
+\newcommand{\unobs}{{\infty}}
+\newcommand\T{\rule{0pt}{2.6ex}}
+\newcommand\B{\rule[-1.2ex]{0pt}{0pt}}
+\DeclareMathOperator*{\argmax}{argmax}
+
+\graphicspath{{./FIG/}}
+
+\title{Inductive Representation Learning on Large Graphs}
+
+\def\sharedaffiliation{%
+\end{tabular}
+\begin{tabular}{c}}
+%
+\newcommand*\samethanks[1][\value{footnote}]{\footnotemark[#1]}
+
+\author{
+William L. Hamilton\thanks{The two first authors made equal contributions.}\\
+\texttt{wleif@stanford.edu}
+\And 
+Rex Ying\samethanks\\
+\texttt{rexying@stanford.edu}
+\And 
+Jure Leskovec \\
+\texttt{jure@cs.stanford.edu}
+\vspace{10pt}
+\sharedaffiliation
+Department of Computer Science\\
+Stanford University\\
+Stanford, CA, 94305
+}
+
+
+\begin{document}
+\maketitle
+\setcounter{footnote}{0}
+
+\begin{abstract}
+\input{000abstract}
+\end{abstract}
+
+\input{010intro}
+
+\input{020related}
+
+\input{030proposed}
+
+\input{040experiments}
+
+\input{060conclusion}
+
+\vspace{10pt}
+\subsection*{Acknowledgments}
+\vspace{-5pt}
+The authors thank Austin Benson, Aditya Grover, Bryan He, Dan Jurafsky, Alex Ratner, Marinka Zitnik, and Daniel Selsam for their helpful discussions and comments on early drafts. 
+The authors would also like to thank Ben Johnson for his many useful questions and comments on our code and Nikhil Mehta and Yuhui Ding for catching some minor errors in a previous version of the appendix. 
+This research has been supported in part by NSF IIS-1149837, DARPA SIMPLEX,
+Stanford Data Science Initiative, Huawei, and Chan Zuckerberg Biohub.
+WLH was also supported by the SAP Stanford Graduate Fellowship and an NSERC PGS-D grant. 
+The views and conclusions expressed in this material are those of the authors
+and should not be interpreted as necessarily representing the official policies or endorsements, either expressed or
+implied, of the above funding agencies, corporations, or the U.S. and Canadian governments. 
+\newpage
+\bibliographystyle{abbrv}
+\bibliography{refs}
+\newpage
+\section*{{\Large Appendices}}
+\appendix
+\input{070appendix}
+
+
+
+\end{document}
+

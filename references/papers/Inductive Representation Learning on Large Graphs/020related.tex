@@ -1,0 +1,31 @@
+% !TEX root = paper-graphnet.tex
+
+\section{Related work}
+
+Our algorithm is conceptually related to previous node embedding approaches, general supervised approaches to learning over graphs, and recent advancements in applying convolutional neural networks to graph-structured data.\footnote{In the time between this papers original submission to NIPS 2017 and the submission of the final, accepted (i.e., ``camera-ready'') version, there have been a number of closely related (e.g., follow-up) works published on pre-print servers. For temporal clarity, we do not review or compare against these papers in detail.}
+
+\xhdr{Factorization-based embedding approaches}
+There are a number of recent node embedding approaches that learn low-dimensional embeddings using random walk statistics and matrix factorization-based learning objectives \cite{cao2015grarep,grover2016node2vec,perozzi2014deepwalk,tang2015line,wang2016structural}.
+These methods also bear close relationships to more classic approaches to spectral clustering \cite{ng2001spectral}, multi-dimensional scaling \cite{kruskal1964multidimensional}, as well as the PageRank algorithm \cite{page1999pagerank}. 
+Since these embedding algorithms directly train node embeddings for individual nodes, they are inherently transductive and, at the very least, require expensive additional training (e.g., via stochastic gradient descent) to make predictions on new nodes.
+In addition, for many of these approaches (e.g., \cite{grover2016node2vec,perozzi2014deepwalk,tang2015line,wang2016structural}) the objective function is invariant to orthogonal transformations of the embeddings, which means that the embedding space does not naturally generalize between graphs and can drift during re-training.
+One notable exception to this trend is the Planetoid-I algorithm introduced by Yang et al.\ \cite{yang2016revisiting}, which is an inductive, embedding-based approach to semi-supervised learning.
+However, Planetoid-I does not use any graph structural information during inference; instead, it uses the graph structure as a form of regularization during training.
+Unlike these previous approaches, we leverage feature information in order to train a model to produce embeddings for unseen nodes. 
+
+\xhdr{Supervised learning over graphs}
+Beyond node embedding approaches, there is a rich literature on supervised learning over graph-structured data. 
+This includes a wide variety of kernel-based approaches, where feature vectors for graphs are derived from various graph kernels (see \cite{shervashidze2011weisfeiler} and references therein). 
+There are also a number of recent neural network approaches to supervised learning over graph structures \cite{dai2016discriminative,gori2005new,li2015gated,scarselli2009graph}.
+Our approach is conceptually inspired by a number of these algorithms.
+However, whereas these previous approaches attempt to classify entire graphs (or subgraphs), the focus of this work is generating useful representations for individual nodes. 
+
+\xhdr{Graph convolutional networks}
+In recent years, several convolutional neural network architectures for learning over graphs have been proposed (e.g., \cite{bruna2013spectral,duvenaud2015convolutional,
+defferrard2016convolutional,kipf2016semi,niepert2016learning}).
+The majority of these methods do not scale to large graphs or are designed for whole-graph classification (or both) \cite{bruna2013spectral,duvenaud2015convolutional,
+defferrard2016convolutional,niepert2016learning}.
+However, our approach is closely related to the graph convolutional network (GCN), introduced by Kipf et al. \cite{kipf2016semi,kipf2016variational}. 
+The original GCN algorithm \cite{kipf2016semi} is designed for semi-supervised learning in a transductive setting, and the exact algorithm requires that the full graph Laplacian is known during training. 
+A simple variant of our algorithm can be viewed as an extension of the GCN framework to the inductive setting, a point which we revisit in Section \ref{sec:aggs}. 
+

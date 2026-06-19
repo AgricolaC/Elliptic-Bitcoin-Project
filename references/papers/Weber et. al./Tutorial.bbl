@@ -1,0 +1,321 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{24}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Bishop}{Bishop}{2006}]%
+        {Bishop}
+\bibfield{author}{\bibinfo{person}{Christopher Bishop}.}
+  \bibinfo{year}{2006}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{Pattern Recognition and Machine Learning}}.
+\newblock \bibinfo{publisher}{Springer-Verlag}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Breiman}{Breiman}{2001}]%
+        {breiman2001random}
+\bibfield{author}{\bibinfo{person}{Leo Breiman}.}
+  \bibinfo{year}{2001}\natexlab{}.
+\newblock \showarticletitle{Random forests}.
+\newblock \bibinfo{journal}{\emph{Machine learning}} \bibinfo{volume}{45},
+  \bibinfo{number}{1} (\bibinfo{year}{2001}), \bibinfo{pages}{5--32}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Bruna, Zaremba, Szlam, and LeCun}{Bruna
+  et~al\mbox{.}}{2014}]%
+        {Bruna2014}
+\bibfield{author}{\bibinfo{person}{Joan Bruna}, \bibinfo{person}{Wojciech
+  Zaremba}, \bibinfo{person}{Arthur Szlam}, {and} \bibinfo{person}{Yann
+  LeCun}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Spectral Networks and Locally Connected Networks on
+  Graphs}. In \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Buitinck, Louppe, Blondel, Pedregosa, Mueller,
+  Grisel, Niculae, Prettenhofer, Gramfort, Grobler, Layton, VanderPlas, Joly,
+  Holt, and Varoquaux}{Buitinck et~al\mbox{.}}{2013}]%
+        {sklearn_api}
+\bibfield{author}{\bibinfo{person}{Lars Buitinck}, \bibinfo{person}{Gilles
+  Louppe}, \bibinfo{person}{Mathieu Blondel}, \bibinfo{person}{Fabian
+  Pedregosa}, \bibinfo{person}{Andreas Mueller}, \bibinfo{person}{Olivier
+  Grisel}, \bibinfo{person}{Vlad Niculae}, \bibinfo{person}{Peter
+  Prettenhofer}, \bibinfo{person}{Alexandre Gramfort}, \bibinfo{person}{Jaques
+  Grobler}, \bibinfo{person}{Robert Layton}, \bibinfo{person}{Jake VanderPlas},
+  \bibinfo{person}{Arnaud Joly}, \bibinfo{person}{Brian Holt}, {and}
+  \bibinfo{person}{Ga{\"{e}}l Varoquaux}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{{API} design for machine learning software:
+  experiences from the scikit-learn project}. In \bibinfo{booktitle}{\emph{ECML
+  PKDD Workshop: Languages for Data Mining and Machine Learning}}.
+  \bibinfo{pages}{108--122}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Chen, Ma, and Xiao}{Chen
+  et~al\mbox{.}}{2018}]%
+        {Chen2018}
+\bibfield{author}{\bibinfo{person}{Jie Chen}, \bibinfo{person}{Tengfei Ma},
+  {and} \bibinfo{person}{Cao Xiao}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{FastGCN: Fast Learning with Graph Convolutional
+  Networks via Importance Sampling}. In \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Defferrard, Bresson, and
+  Vandergheynst}{Defferrard et~al\mbox{.}}{2016}]%
+        {Defferrard2016}
+\bibfield{author}{\bibinfo{person}{Micha\"{e}l Defferrard},
+  \bibinfo{person}{Xavier Bresson}, {and} \bibinfo{person}{Pierre
+  Vandergheynst}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Convolutional Neural Networks on Graphs with Fast
+  Localized Spectral Filtering}. In \bibinfo{booktitle}{\emph{NIPS}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Demirguc-Kunt, Klapper, Singer, Ansar, and
+  Hess}{Demirguc-Kunt et~al\mbox{.}}{2017}]%
+        {WorldBank2017}
+\bibfield{author}{\bibinfo{person}{Demirguc-Kunt}, \bibinfo{person}{Leora
+  Klapper}, \bibinfo{person}{Dorothe Singer}, \bibinfo{person}{Sinya Ansar},
+  {and} \bibinfo{person}{Jake Hess}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \bibinfo{title}{The Global Findex Database 2017: Measuring Financial
+  Inclusion and the Fintech Revolution}.
+\newblock
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Gilmer, Schoenholz, Riley, Vinyals, and
+  Dahl}{Gilmer et~al\mbox{.}}{2017}]%
+        {Gilmer2017}
+\bibfield{author}{\bibinfo{person}{Justin Gilmer}, \bibinfo{person}{Samuel~S.
+  Schoenholz}, \bibinfo{person}{Patrick~F. Riley}, \bibinfo{person}{Oriol
+  Vinyals}, {and} \bibinfo{person}{George~E. Dahl}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Neural Message Passing for Quantum Chemistry}. In
+  \bibinfo{booktitle}{\emph{ICML}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Hamilton, Ying, and Leskovec}{Hamilton
+  et~al\mbox{.}}{2017}]%
+        {Hamilton2017}
+\bibfield{author}{\bibinfo{person}{William~L. Hamilton}, \bibinfo{person}{Rex
+  Ying}, {and} \bibinfo{person}{Jure Leskovec}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Inductive Representation Learning on Large Graphs}.
+  In \bibinfo{booktitle}{\emph{NIPS}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Harrigan and Fretter}{Harrigan and
+  Fretter}{2016}]%
+        {harrigan2016unreasonable}
+\bibfield{author}{\bibinfo{person}{Martin Harrigan} {and}
+  \bibinfo{person}{Christoph Fretter}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{The unreasonable effectiveness of address
+  clustering}. In \bibinfo{booktitle}{\emph{2016 Intl IEEE Conferences on
+  Ubiquitous Intelligence \& Computing, Advanced and Trusted Computing,
+  Scalable Computing and Communications, Cloud and Big Data Computing, Internet
+  of People, and Smart World Congress
+  (UIC/ATC/ScalCom/CBDCom/IoP/SmartWorld)}}. IEEE, \bibinfo{pages}{368--373}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Kipf and Welling}{Kipf and Welling}{2017}]%
+        {Kipf2017}
+\bibfield{author}{\bibinfo{person}{Thomas~N. Kipf} {and} \bibinfo{person}{Max
+  Welling}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Semi-Supervised Classification with Graph
+  Convolutional Networks}. In \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Knomad and Group}{Knomad and Group}{2019}]%
+        {WorldBank2019}
+\bibfield{author}{\bibinfo{person}{Knomad} {and} \bibinfo{person}{World~Bank
+  Group}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \bibinfo{title}{Migration and Remittances: Recent Developments and
+  Outlook}.
+\newblock \bibinfo{howpublished}{Migration and Development Brief 31}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Kontschieder, Fiterau, Criminisi, and
+  Bulo}{Kontschieder et~al\mbox{.}}{2015}]%
+        {Kontschieder2015}
+\bibfield{author}{\bibinfo{person}{Peter Kontschieder},
+  \bibinfo{person}{Madalina Fiterau}, \bibinfo{person}{Antonio Criminisi},
+  {and} \bibinfo{person}{Samuel~Rota Bulo}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{Deep Neural Decision Forests}. In
+  \bibinfo{booktitle}{\emph{ICCV}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Li, Tarlow, Brockschmidt, and Zemel}{Li
+  et~al\mbox{.}}{2016}]%
+        {Li2016}
+\bibfield{author}{\bibinfo{person}{Yujia Li}, \bibinfo{person}{Daniel Tarlow},
+  \bibinfo{person}{Marc Brockschmidt}, {and} \bibinfo{person}{Richard Zemel}.}
+  \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Gated Graph Sequence Neural Networks}. In
+  \bibinfo{booktitle}{\emph{ICLR}}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{McInnes, Healy, and Melville}{McInnes
+  et~al\mbox{.}}{2018}]%
+        {mcinnes2018umap}
+\bibfield{author}{\bibinfo{person}{Leland McInnes}, \bibinfo{person}{John
+  Healy}, {and} \bibinfo{person}{James Melville}.}
+  \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Umap: Uniform manifold approximation and projection
+  for dimension reduction}.
+\newblock \bibinfo{journal}{\emph{arXiv preprint arXiv:1802.03426}}
+  (\bibinfo{year}{2018}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Mitchell}{Mitchell}{2012}]%
+        {WorldBank2012}
+\bibfield{author}{\bibinfo{person}{Daniel~J. Mitchell}.}
+  \bibinfo{year}{2012}\natexlab{}.
+\newblock \bibinfo{title}{World Bank Study Shows How Anti-Money Laundering
+  Rules Hurt the Poor}.
+\newblock \bibinfo{howpublished}{Forbes}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Nakamoto}{Nakamoto}{2008}]%
+        {nakamoto}
+\bibfield{author}{\bibinfo{person}{Satoshi Nakamoto}.}
+  \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{Bitcoin: A peer-to-peer electronic cash system}.
+\newblock  (\bibinfo{year}{2008}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Network}{Network}{2019}]%
+        {FinCEN}
+\bibfield{author}{\bibinfo{person}{Financial Crimes~Enforcement Network}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Application of FinCEN’s Regulations to Certain
+  Business Models Involving Convertible Virtual Currencies}.
+\newblock   \bibinfo{volume}{FIN-2019-G001} (\bibinfo{date}{May}
+  \bibinfo{year}{2019}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Pareja, Domeniconi, Chen, Ma, Suzumura,
+  Kanezashi, Kaler, and Leiserson}{Pareja et~al\mbox{.}}{2019}]%
+        {Pareja2019}
+\bibfield{author}{\bibinfo{person}{Aldo Pareja}, \bibinfo{person}{Giacomo
+  Domeniconi}, \bibinfo{person}{Jie Chen}, \bibinfo{person}{Tengfei Ma},
+  \bibinfo{person}{Toyotaro Suzumura}, \bibinfo{person}{Hiroki Kanezashi},
+  \bibinfo{person}{Tim Kaler}, {and} \bibinfo{person}{Charles~E. Leiserson}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \bibinfo{title}{{EvolveGCN}: Evolving Graph Convolutional Networks
+  for Dynamic Graphs}.
+\newblock \bibinfo{howpublished}{Preprint arXiv:1902.10191}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Rauber, Fadel, Falcao, and Telea}{Rauber
+  et~al\mbox{.}}{2016}]%
+        {rauber2016visualizing}
+\bibfield{author}{\bibinfo{person}{Paulo~E Rauber}, \bibinfo{person}{Samuel~G
+  Fadel}, \bibinfo{person}{Alexandre~X Falcao}, {and}
+  \bibinfo{person}{Alexandru~C Telea}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Visualizing the hidden activity of artificial
+  neural networks}.
+\newblock \bibinfo{journal}{\emph{IEEE transactions on visualization and
+  computer graphics}} \bibinfo{volume}{23}, \bibinfo{number}{1}
+  (\bibinfo{year}{2016}), \bibinfo{pages}{101--110}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Weber, Chen, Suzumura, Pareja, Ma, Kanezashi,
+  Kaler, Leiserson, and Schardl}{Weber et~al\mbox{.}}{2018}]%
+        {Weber}
+\bibfield{author}{\bibinfo{person}{Mark Weber}, \bibinfo{person}{Jie Chen},
+  \bibinfo{person}{Toyotaro Suzumura}, \bibinfo{person}{Aldo Pareja},
+  \bibinfo{person}{Tengfei Ma}, \bibinfo{person}{Hiroki Kanezashi},
+  \bibinfo{person}{Tim Kaler}, \bibinfo{person}{Charles~E. Leiserson}, {and}
+  \bibinfo{person}{Tao~B. Schardl}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Scalable Graph Learning for Anti-Money Laundering:
+  {A} First Look}.
+\newblock \bibinfo{journal}{\emph{CoRR}}  \bibinfo{volume}{abs/1812.00076}
+  (\bibinfo{year}{2018}).
+\newblock
+\showeprint[arxiv]{1812.00076}
+\urldef\tempurl%
+\url{http://arxiv.org/abs/1812.00076}
+\showURL{%
+\tempurl}
+
+
+\bibitem[\protect\citeauthoryear{Wikipedia}{Wikipedia}{[n. d.]a}]%
+        {1MDB}
+\bibfield{author}{\bibinfo{person}{Wikipedia}.} \bibinfo{year}{[n.
+  d.]}\natexlab{a}.
+\newblock \bibinfo{title}{1Malaysia Development Berhad scandal}.
+\newblock
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Wikipedia}{Wikipedia}{[n. d.]b}]%
+        {Danske}
+\bibfield{author}{\bibinfo{person}{Wikipedia}.} \bibinfo{year}{[n.
+  d.]}\natexlab{b}.
+\newblock \bibinfo{title}{Danske Bank money laundering scandal}.
+\newblock
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Ying, He, Chen, Eksombatchai, Hamilton, and
+  Leskovec}{Ying et~al\mbox{.}}{2018}]%
+        {Ying2018}
+\bibfield{author}{\bibinfo{person}{Rex Ying}, \bibinfo{person}{Ruining He},
+  \bibinfo{person}{Kaifeng Chen}, \bibinfo{person}{Pong Eksombatchai},
+  \bibinfo{person}{William~L. Hamilton}, {and} \bibinfo{person}{Jure
+  Leskovec}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Graph Convolutional Neural Networks for Web-Scale
+  Recommender Systems}. In \bibinfo{booktitle}{\emph{KDD}}.
+\newblock
+
+
+\end{thebibliography}

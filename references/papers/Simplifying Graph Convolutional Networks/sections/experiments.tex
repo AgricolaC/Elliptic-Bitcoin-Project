@@ -1,0 +1,246 @@
+\label{sec:experiment}
+
+We first evaluate \method{} on citation networks and social networks and then extend our empirical analysis to a wide range of downstream tasks.
+%
+\subsection{Citation Networks \& Social Networks} \label{sec:citation-networks}
+We evaluate the semi-supervised node classification performance of \method{} on the Cora, Citeseer, and Pubmed citation network datasets (\autoref{table:citation-base}) \cite{sen2008collective}. 
+We supplement our citation network analysis by using \method{} to inductively predict community structure on Reddit (\autoref{table:reddit}), which consists of a much larger graph. Dataset statistics are summarized in \autoref{table:citation-dataset}.
+
+\paragraph{Datasets and experimental setup.}
+\begin{table}[tb!]
+\small
+\centering
+\caption{Dataset statistics of the citation networks and Reddit.}
+\label{table:citation-dataset}
+\begin{tabular}{l|cccccc}
+\toprule
+Dataset & \# Nodes & \# Edges & Train/Dev/Test Nodes \\
+\midrule
+Cora & $2,708$ & $5,429$ & $140/500/1,000$\\
+Citeseer & $3,327$ & $4,732$ & $120/500/1,000$\\
+Pubmed & $19,717$ & $44,338$ & $60/500/1,000$\\
+\midrule
+Reddit & $233$K & $11.6$M & $152$K/$24$K/$55$K\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{table}[htb!]
+\centering
+        \small
+        \caption{Test accuracy (\%) averaged over 10 runs on citation networks. $^\dagger$We remove the outliers (accuracy $< 75/65/75 \%$) when calculating their statistics due to high variance.}
+        \label{table:citation-base}
+        \begin{tabular}{l|c|c|c}
+        \toprule
+         & Cora & Citeseer & Pubmed \\ 
+        \midrule
+        \multicolumn{4}{l}{\textbf{Numbers from literature:}} \\
+        % \midrule
+        GCN  & $81.5$ & $70.3$ & $79.0$  \\
+        GAT  & $83.0 \pm 0.7$ & $72.5 \pm{0.7}$ & $79.0 \pm{0.3}$ \\
+        GLN  & $81.2 \pm 0.1$ & $70.9 \pm{0.1}$ & $78.9 \pm{0.1}$ \\
+        AGNN & $83.1 \pm 0.1$ & $71.7 \pm{0.1}$ & $79.9 \pm{0.1}$ \\
+        LNet & $79.5 \pm 1.8$ & $66.2 \pm 1.9$  & $78.3 \pm 0.3$ \\
+        AdaLNet & $80.4 \pm 1.1$ & $68.7 \pm 1.0$  & $78.1 \pm 0.4$ \\
+        DeepWalk & $70.7 \pm 0.6$ & $51.4 \pm 0.5$ & $76.8 \pm 0.6$\\
+        DGI & $82.3 \pm 0.6$ & $71.8 \pm 0.7$ & $76.8 \pm 0.6$ \\
+         \midrule
+        \multicolumn{4}{l}{\textbf{Our experiments:}} \\
+        % \midrule
+        GCN & $81.4 \pm{0.4}$ & $70.9\pm 0.5$ & $79.0 \pm{0.4}$ \\
+        % GCN - test w/o relu & $81.8 \pm{0.66}$ & $70.7\pm 0.93$ & $79.1 \pm{0.65}$ \\
+        GAT & $83.3 \pm{0.7}$ & $72.6 \pm{0.6}$ &  $78.5 \pm{0.3}$ \\
+        FastGCN & $79.8 \pm{0.3}$ & $68.8 \pm{0.6} $ & $77.4 \pm{0.3}$ \\
+        GIN & $77.6 \pm 1.1$ &  $66.1 \pm 0.9$ & $77.0 \pm 1.2$ \\
+        LNet & $80.2 \pm 3.0^\dagger$ & $67.3 \pm 0.5$  & $78.3 \pm 0.6^\dagger$ \\
+        AdaLNet & $81.9 \pm 1.9^\dagger$ & $70.6 \pm 0.8^\dagger$ & $77.8 \pm 0.7^\dagger$ \\
+        DGI & $82.5 \pm 0.7$ & $71.6 \pm 0.7 $ & $78.4 \pm 0.7$\\
+        {\color{modelblue} \method{}} & $81.0 \pm 0.0$ & $71.9 \pm 0.1$ & $78.9 \pm 0.0$ \\
+         \bottomrule
+        \end{tabular}
+\end{table}
+\begin{table}[htb!]
+        \centering
+        \small
+        \caption{Test Micro F1 Score (\%) averaged over 10 runs on Reddit. Performances of models are cited from their original papers. \textbf{OOM:} Out of memory.}
+        \label{table:reddit}
+        \begin{tabular}{l|l|l}
+        \toprule
+        Setting & Model & Test F1 \\
+         \midrule
+        \multirow{5}{*}{\shortstack[c]{Supervised}}
+        & GaAN  & $96.4$ \\
+        & SAGE-mean & $95.0$\\
+        & SAGE-LSTM & $95.4$\\
+        & SAGE-GCN & $93.0$\\
+        & FastGCN & $93.7$\\
+        & GCN & \textbf{OOM} \\
+        \midrule
+        \multirow{3}{*}{\shortstack[c]{Unsupervised}} 
+        & SAGE-mean & $89.7$ \\
+        & SAGE-LSTM & $90.7$\\
+        & SAGE-GCN  & $90.8$\\
+        & DGI & $94.0$\\
+        \midrule
+        \multirow{2}{*}{\shortstack[c]{No Learning}} 
+        & Random-Init DGI & $93.3$ \\
+        & {\color{modelblue} \method{}} & $94.9$ \\
+        \bottomrule
+        \end{tabular}
+\end{table}
+%
+On the citation networks, we train \method{} for 100 epochs using Adam~\citep{adam} with learning rate 0.2. In addition, we use weight decay and tune this hyperparameter on each dataset using hyperopt~\citep{hyperopt} for 60 iterations on the public split validation set. 
+Experiments on citation networks are conducted \emph{transductively}. 
+On the Reddit dataset, we train \method{} with L-BFGS \cite{lbfgs} using no regularization, and remarkably, training converges in 2 steps. 
+We evaluate \method{} \emph{inductively} by following \citet{FastGCN}: we train \method{} on a subgraph comprising only training nodes and test with the original graph.
+On all datasets, we tune the number of epochs based on both convergence behavior and validation accuracy.
+% We implemented \method{} with PyTorch~\cite{pytorch}.
+
+\paragraph{Baselines.} For citation networks, we compare against GCN~\citep{gcn}
+% \footnote{\url{https://github.com/matenure/FastGCN}}, 
+GAT~\citep{gat}
+% \footnote{\url{github.com/PetarV-/GAT}}, 
+FastGCN~\citep{FastGCN}
+% \footnote{\url{github.com/matenure/FastGCN}},
+LNet, AdaLNet~\citep{liao2018lanczosnet} 
+% \footnote{\url{github.com/lrjconan/LanczosNetwork}},
+and DGI~\citep{infomax} using the publicly released implementations.
+Since GIN is not initially evaluated on citation networks, we implement GIN following ~\citet{xu2018how} and use hyperopt to tune weight decay and learning rate for 60 iterations. 
+Moreover, we tune the hidden dimension by hand.
+
+For Reddit, we compare \method{} to the reported performance of GaAN~\cite{zhang2018gaan}, supervised and unsupervised variants of GraphSAGE~\cite{Hamilton17}, FastGCN, and DGI. \autoref{table:reddit} also highlights the setting of the feature extraction step for each method. 
+We note that \method{} involves no learning because the feature extraction step, $\rmS^K\rmX$, has no parameter. Both unsupervised and no-learning approaches train logistic regression models with labels afterward.
+
+
+\paragraph{Performance.}
+Based on results in \autoref{table:citation-base} and \autoref{table:reddit}, we conclude that \method{} is very competitive. 
+Table~\ref{table:citation-base} shows the performance of \method{} can match the performance of GCN and state-of-the-art graph networks on citation networks.
+In particular on Citeseer, \method{} is about 1\% better than GCN, and we reason this performance boost is caused by \method{} having fewer parameters and therefore suffering less from overfitting.
+Remarkably, GIN performs slight worse because of overfitting. Also, both LNet and AdaLNet are unstable on citation networks.
+On Reddit, \autoref{table:reddit} shows that \method{} outperforms the previous sampling-based GCN variants, SAGE-GCN and FastGCN by more than 1\%. 
+
+Notably, \citet{infomax} report that the performance of a randomly initialized DGI encoder nearly matches that of a trained encoder; however, both models underperform \method{} on Reddit.   
+This result may suggest that the extra weights and nonlinearities in the DGI encoder are superfluous, if not outright detrimental. 
+
+\paragraph{Efficiency.} 
+In \autoref{fig:run_time}, we plot the performance of the state-of-the-arts graph networks over their training time relative to that of \method{} on the Pubmed and Reddit datasets. In particular, we precompute $\rmS^K\rmX$ and the training time of \method{} takes into account this precomputation time.
+We measure the training time on a NVIDIA GTX 1080 Ti GPU and present the benchmark details in supplementary materials.
+
+On large graphs (e.g. Reddit), GCN cannot be trained due to excessive memory requirements. 
+Previous approaches tackle this limitation by either sampling to reduce neighborhood size~\cite{FastGCN, Hamilton17} or limiting their model sizes~\cite{infomax}.
+By applying a fixed filter and precomputing $\rmS^K\rmX$, \method{} minimizes memory usage and only learns a single weight matrix during training. Since $\rmS$ is typically sparse and $K$ is usually small, we can exploit fast sparse-dense matrix multiplication to compute $\rmS^K\rmX$.
+% $\rmS ( \ldots \rmS(\rmS \rmX)\ldots)$.
+ \autoref{fig:run_time} shows that \method{} can be trained up to two orders of magnitude faster than fast sampling-based methods while having little or no drop in performance.
+
+\subsection{Downstream Tasks}
+We extend our empirical evaluation to 5 downstream applications --- text classification, semi-supervised user geolocation, relation extraction, zero-shot image classification, and graph classification --- to study the applicability of \method{}. 
+We describe experimental setup in supplementary materials.
+
+\begin{table}[tb!]
+\centering
+\small
+\caption{Test Accuracy (\%) on text classification datasets. The numbers are averaged over 10 runs.}
+\begin{tabular}{l|l|cc}
+\toprule
+Dataset & Model & Test Acc. $\uparrow$ & Time (seconds) $\downarrow$ \\
+\midrule
+\multirow{2}{*}{20NG} & GCN & $87.9 \pm{0.2}$ & $1205.1 \pm{144.5}$ \\ & {\color{modelblue} \method{}} & $88.5 \pm{0.1}$ & $19.06 \pm{0.15}$ \\
+\midrule
+\multirow{2}{*}{R8} & GCN & $97.0 \pm{0.2}$ & $129.6 \pm{9.9}$ \\ & {\color{modelblue} \method{}} & $97.2 \pm{0.1}$ & $1.90 \pm{0.03}$ \\
+\midrule
+\multirow{2}{*}{R52} & GCN & $93.8 \pm{0.2}$ & $245.0 \pm{13.0}$ \\ & {\color{modelblue} \method{}} & $94.0 \pm{0.2}$ & $3.01 \pm{0.01}$ \\
+\midrule
+\multirow{2}{*}{Ohsumed} & GCN & $68.2 \pm{0.4}$ & $252.4 \pm{14.7}$ \\ & {\color{modelblue} \method{}} & $68.5 \pm{0.3}$ & $3.02 \pm{0.02}$ \\
+\midrule
+\multirow{2}{*}{MR} & GCN & $76.3 \pm{0.3}$ & $16.1 \pm{0.4}$ \\ & {\color{modelblue} \method{}} & $75.9 \pm{0.3}$ & $4.00 \pm{0.04}$ \\
+\bottomrule
+\end{tabular}
+\label{table:text-base-time}
+\end{table}
+
+
+\paragraph{Text classification} assigns labels to documents. 
+\citet{textGCN} use a 2-layer GCN to achieve state-of-the-art results by creating a corpus-level graph which treats both documents and words as nodes in a graph. 
+Word-word edge weights are pointwise mutual information (PMI) and word-document edge weights are normalized TF-IDF scores. 
+\autoref{table:text-base-time} shows that an SGC ($K=2$) rivals their model on 5 benchmark datasets, while being up to $83.6\times$ faster.
+%
+\begin{table}[t!]
+\centering
+\small
+\caption{Test accuracy (\%) within 161 miles on semi-supervised user geolocation. The numbers are averaged over 5 runs.}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{l|l|rrrr}
+\toprule
+Dataset & Model & Acc.@161$\uparrow$ & Time $\downarrow$ \\
+\midrule
+\multirow{2}{*}{GEOTEXT} & GCN+H & $60.6 \pm 0.2$ & $153.0$s\\
+& {\color{modelblue} \method{}} & $61.1 \pm 0.1$ & $5.6$s\\
+\midrule
+\multirow{2}{*}{TWITTER-US} & GCN+H & $61.9 \pm 0.2$ & $9$h $54$m \\
+& {\color{modelblue} \method{}} & $62.5 \pm 0.1$ & $4$h $33$m  \\
+\midrule
+\multirow{2}{*}{TWITTER-WORLD} & GCN+H & $53.6 \pm 0.2$ & $2$d $05$h $17$m \\
+& {\color{modelblue} \method{}} & $54.1 \pm 0.2$ & $22$h $53$m \\
+\bottomrule
+\end{tabular}
+}
+\label{table:geo_result}
+\end{table}
+
+\paragraph{Semi-supervised user geolocation} locates the ``home'' position of users on social media given users' posts, connections among users, and a small number of labelled users. \citet{Rahimi18} apply GCNs with highway connections on this task and achieve close to state-of-the-art results.
+\autoref{table:geo_result} shows that \method{} outperforms GCN with highway connections on GEOTEXT \citep{eisenstein2010latent}, TWITTER-US \citep{roller2012supervised}, and TWITTER-WORLD \citep{han2012geolocation} under \citet{Rahimi18}'s framework, while saving $30+$ hours on TWITTER-WORLD.
+
+\begin{table}[t!]
+\centering
+\caption{Test Accuracy (\%) on Relation Extraction. The numbers are averaged over 10 runs.}
+\label{table:relation-base}
+\begin{tabular}{l|c}
+\toprule
+TACRED & Test Accuracy $\uparrow$ \\
+\midrule
+C-GCN \citep{relation-extraction} & $66.4$ \\
+C-GCN & $66.4 \pm{0.4}$\\
+{\color{modelblue} C-\method{}} & $67.0 \pm{0.4}$\\
+ \bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Relation extraction} involves predicting the relation between subject and object in a sentence.
+\citet{relation-extraction} propose C-GCN which uses an LSTM~\citep{LSTM} followed by a GCN and an MLP.
+We replace GCN with SGC ($K=2$) and call the resulting model C-SGC. \autoref{table:relation-base} shows that C-SGC sets new state-of-the-art on TACRED~\citep{TACRED}.
+
+\begin{table}[t!]
+\centering
+\small
+\caption{Top-1 accuracy (\%) averaged over 10 runs in the 2-hop and 3-hop setting of the zero-shot image task on ImageNet. ADGPM~\citep{ADGPM} and EXEM 1-nns~\citep{EXEM} use more powerful visual features.}
+\label{table:zero_shot}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{l|l|l|l}
+\toprule
+Model & \# Param. $\downarrow$ & 2-hop Acc. $\uparrow$ & 3-hop Acc. $\uparrow$\\
+ \midrule
+\multicolumn{4}{l}{\textbf{Unseen categories only:}} \\
+EXEM 1-nns & - & $27.0$ & $7.1$ \\ 
+ADGPM & - & $26.6$ & $6.3$ \\
+GCNZ  & - & $19.8$  & $4.1$ \\
+GCNZ (ours) & $9.5M$ & $20.9 \pm 0.2$  & $4.3 \pm 0.0$ \\
+{\color{modelblue} MLP-\method{}Z (ours)}  & $4.3M$ &  $21.2 \pm 0.2$ & $4.4 \pm 0.1$ \\
+\midrule
+\multicolumn{4}{l}{\textbf{Unseen categories \& seen categories:}} \\
+ADGPM & - & $10.3$ & $2.9$ \\
+GCNZ  & - & $9.7$ & $2.2$ \\
+GCNZ (ours) & $9.5M$ & $10.0 \pm 0.2$ & $2.4 \pm 0.0$ \\
+{\color{modelblue} MLP-\method{}Z (ours)} & $4.3M$ &  $10.5 \pm 0.1$ & $2.5 \pm 0.0$ \\
+ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{Zero-shot image classification} consists of learning an image classifier without access to any images or labels from the test categories. 
+GCNZ~\citep{wang2018zero} uses a GCN to map the category names --- based on their relations in WordNet~\citep{miller1995wordnet} --- to image feature domain, and find the most similar category to a query image feature vector.
+\autoref{table:zero_shot} shows that replacing GCN with an MLP followed by \method{} can improve performance while reducing the number of parameters by $55\%$.
+We find that an MLP feature extractor is necessary in order to map the pretrained GloVe vectors to the space of visual features extracted by a ResNet-50.
+Again, this downstream application demonstrates that learned graph convolution filters are superfluous; similar to \citet{EXEM}'s observation that GCNs may not be necessary. 
+
+
+\paragraph{Graph classification} requires models to use graph structure to categorize graphs.
+\citet{xu2018how} theoretically show that GCNs are not sufficient to distinguish certain graph structures and show that their GIN is more expressive and achieves state-of-the-art results on various graph classification datasets. We replace the GCN in DCGCN~\citep{zhang2018end} with an \method{} and get $71.0\%$ and $76.2\%$ on NCI1 and COLLAB datasets~\citep{yanardag2015deep} respectively, which is on par with an GCN counterpart, but far behind GIN. Similarly, on QM8 quantum chemistry dataset~\citep{ramakrishnan2015electronic}, more advanced AdaLNet and LNet~\citep{liao2018lanczosnet} get $0.01$ MAE on QM8, outperforming \method{}'s $0.03$ MAE by a large margin.
