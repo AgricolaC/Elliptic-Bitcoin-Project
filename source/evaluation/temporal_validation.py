@@ -79,7 +79,8 @@ def train_lstm_conditioned(
     cfg: Config,
     device: torch.device,
     epochs: int = 100,
-    embed_dim: int = 32,
+    embed_dim: int = 128,
+    shuffle_train: bool = False,
 ) -> Tuple[SnapshotEmbedder, TemporalLSTM, LSTMConditionedHead]:
     """
     Trains the end-to-end LSTM conditioned model on a sequence of snapshots.
@@ -95,11 +96,11 @@ def train_lstm_conditioned(
     )
     opt = torch.optim.AdamW(all_params, lr=cfg.sgc_lr, weight_decay=cfg.sgc_weight_decay)
     
-    sorted_train_steps = sorted([t for t in train_steps if t in dm.graphs])
-    if not sorted_train_steps:
+    base_train_steps = sorted([t for t in train_steps if t in dm.graphs])
+    if not base_train_steps:
         return embedder, lstm, head
         
-    ytr_all = torch.cat([dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]] for t in sorted_train_steps])
+    ytr_all = torch.cat([dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]] for t in base_train_steps])
     cls_w = _compute_class_weights(ytr_all, device)
     loss_fn = build_loss(cfg, cls_w)
     
@@ -108,7 +109,7 @@ def train_lstm_conditioned(
     lstm.train()
     head.train()
     
-    t0 = sorted_train_steps[0]
+    t0 = base_train_steps[0]
     g0 = dm.graphs[t0]
     m0 = g0["labeled_mask"]
     # We need at least one labeled node for the smoke test
@@ -128,12 +129,18 @@ def train_lstm_conditioned(
                     f"GRAD FLOW GUARD: {name}.{pname} received no gradient — optimizer would skip it"
         opt.zero_grad()
     
+    import random
     for epoch in range(epochs):
         opt.zero_grad()
         
+        # Shuffle order per epoch if control test is active
+        seq_steps = base_train_steps.copy()
+        if shuffle_train:
+            random.shuffle(seq_steps)
+            
         # 1. Compute embeddings for all historical snapshots in sequence
         embeddings = []
-        for t in sorted_train_steps:
+        for t in seq_steps:
             g = dm.graphs[t]
             emb = embedder(g["prop"].to(device))
             embeddings.append(emb)
@@ -142,13 +149,18 @@ def train_lstm_conditioned(
         # 2. Pass sequence through LSTM
         hidden_states = lstm(embeddings_tensor) # (T, hidden_dim)
         
+        # CAUSAL SHIFT: h_t must only see steps [0 ... t-1] to prevent leakage
+        shifted_hidden_states = torch.zeros_like(hidden_states)
+        if hidden_states.size(0) > 1:
+            shifted_hidden_states[1:] = hidden_states[:-1]
+        
         # 3. Compute loss over all snapshots
         total_loss = 0.0
-        for i, t in enumerate(sorted_train_steps):
+        for i, t in enumerate(seq_steps):
             g = dm.graphs[t]
             m = g["labeled_mask"]
             if m.sum() > 0:
-                h_t = hidden_states[i]
+                h_t = shifted_hidden_states[i]
                 logits = head(g["prop"][m].to(device), h_t)
                 total_loss += loss_fn(logits, g["y"][m].to(device))
 
@@ -164,7 +176,7 @@ def walk_forward_lstm_conditioned(
     cfg: Config,
     device: torch.device,
     sweep_name: str = "LSTM",
-    embed_dim: int = 32,
+    embed_dim: int = 128,
     epochs: int = 100,
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of LSTM conditioned head."""
@@ -226,7 +238,7 @@ def train_ema_conditioned(
     cfg: Config,
     device: torch.device,
     epochs: int = 100,
-    embed_dim: int = 32,
+    embed_dim: int = 128,
     alpha: float = 0.3,
 ) -> Tuple[SnapshotEmbedder, SnapshotEMA, LSTMConditionedHead]:
     """
@@ -265,12 +277,17 @@ def train_ema_conditioned(
         
         hidden_states = ema(embeddings_tensor)
         
+        # CAUSAL SHIFT: h_t must only see steps [0 ... t-1] to prevent leakage
+        shifted_hidden_states = torch.zeros_like(hidden_states)
+        if hidden_states.size(0) > 1:
+            shifted_hidden_states[1:] = hidden_states[:-1]
+        
         total_loss = 0.0
         for i, t in enumerate(sorted_train_steps):
             g = dm.graphs[t]
             m = g["labeled_mask"]
             if m.sum() > 0:
-                h_t = hidden_states[i]
+                h_t = shifted_hidden_states[i]
                 logits = head(g["prop"][m].to(device), h_t)
                 total_loss += loss_fn(logits, g["y"][m].to(device))
                 
@@ -286,7 +303,7 @@ def walk_forward_ema_conditioned(
     cfg: Config,
     device: torch.device,
     sweep_name: str = "EMA",
-    embed_dim: int = 32,
+    embed_dim: int = 128,
     epochs: int = 100,
     alpha: float = 0.3,
 ) -> Tuple[float, float]:

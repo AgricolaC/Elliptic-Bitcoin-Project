@@ -230,8 +230,8 @@ def run_single_sweep(
     model_dir = os.path.join(OUTPUT_DIR, "models")
     os.makedirs(model_dir, exist_ok=True)
     
-    # Dump static OOT model, DM, and Walk-Forward records
-    joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
+    # Dump static OOT model, and Walk-Forward records
+    # joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
     joblib.dump(cfg, os.path.join(model_dir, f"{safe_name}_cfg.pkl"))
     if not only_wf:
         torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
@@ -282,23 +282,13 @@ def run_static_only_sweep(
         Xtr_g = torch.tensor(pca.fit_transform(Xtr_g.numpy()), dtype=torch.float32)
         Xval_g = torch.tensor(pca.transform(Xval_g.numpy()), dtype=torch.float32)
         Xte_g = torch.tensor(pca.transform(Xte_g.numpy()), dtype=torch.float32)
-    elif variation == "RF_Pruned":
-        from sklearn.ensemble import RandomForestClassifier
-        m_tr = (ytr_g != -1)
-        rf = RandomForestClassifier(n_estimators=100, n_jobs=1, random_state=cfg.seed)
-        rf.fit(Xtr_g[m_tr].numpy(), ytr_g[m_tr].numpy())
-        mask = rf.feature_importances_ > 0.000
-        if mask.sum() > 0:
-            Xtr_g = Xtr_g[:, mask]
-            Xval_g = Xval_g[:, mask]
-            Xte_g = Xte_g[:, mask]
 
     valid_ytr = ytr_g[ytr_g != -1]
     counts    = torch.bincount(valid_ytr, minlength=2).float().clamp(min=1.0)
     cls_w     = (counts.sum() / (2.0 * counts)).to(DEVICE)
 
     with profile_resources() as stat_res:
-        model = fit_head(Xtr_g, ytr_g, dm.sgc_input_dim, cfg, cls_w, DEVICE)
+        model = fit_head(Xtr_g, ytr_g, Xtr_g.shape[1], cfg, cls_w, DEVICE)
         model.eval()
         
         # Val evaluation (P0-C: used for model selection)
@@ -325,7 +315,7 @@ def run_static_only_sweep(
     safe_name = re.sub(r"[^\w\-]", "_", name)
     model_dir = os.path.join(OUTPUT_DIR, "models")
     os.makedirs(model_dir, exist_ok=True)
-    joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
+    # joblib.dump(dm, os.path.join(model_dir, f"{safe_name}_dm.pkl"))
     joblib.dump(cfg, os.path.join(model_dir, f"{safe_name}_cfg.pkl"))
     torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
 
@@ -529,7 +519,7 @@ def walk_forward_ae(dm, cfg, device):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega", "temporal"])
+    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "mega", "mega_k5", "temporal"])
     parser.add_argument("--only-static", action="store_true", help="Run only static OOT")
     parser.add_argument("--only-wf", action="store_true", help="Run only walk-forward")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
@@ -815,8 +805,14 @@ def main():
         topo_vals = []
     elif args.mode == "mega":
         seeds = [42, 43, 44]
-        variations = ["Base", "PCA", "RF_Pruned"]
+        variations = ["Base", "PCA"]
         k_vals = [1, 2, 3]
+        dir_vals = [False, True]
+        topo_vals = [None, 'late', 'early']
+    elif args.mode == "mega_k5":
+        seeds = [42, 43, 44]
+        variations = ["PCA"]
+        k_vals = [5]
         dir_vals = [False, True]
         topo_vals = [None, 'late', 'early']
     else:
@@ -871,7 +867,7 @@ def main():
             best_grid_key = None
             best_grid_f1 = -1.0
             
-            for k, directional, topo, injection in itertools.product([1, 2, 3], [False, True], [False, True], ['late', 'early']):
+            for k, directional, topo, injection in itertools.product(k_vals, [False, True], [False, True], ['late', 'early']):
                 if not topo and injection == 'early':
                     continue # Avoid duplicates: if no topo, injection mode doesn't matter
                     
@@ -934,9 +930,7 @@ def main():
                     targets.append((challenger_cfg, challenger_key, "Challenger"))
 
                 mlp_variations = [
-                    ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
-                    ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
-                    ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True})
+                    ("Normal", {"mlp_hidden": (128, 64), "use_residual": False})
                 ]
 
                 for _, base_key, target_role in targets:
@@ -955,11 +949,16 @@ def main():
     best_f1 = -1.0
     best_sweep_name = None
     for r in results:
-        # Check if it's an SGC sweep and has valid F1 (including MLP variants)
         if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"] or "MLP-" in r["Sweep"]):
+            if r["Sweep"].startswith("Best WF") or r["Sweep"].startswith("F1:") or r["Sweep"].startswith("EMA") or r["Sweep"].startswith("LSTM"):
+                continue
             f1_val = r.get("Static_Val_F1", "")
-            if f1_val == "" or pd.isna(f1_val):
+            if f1_val == "N/A":
+                f1_val = 0.0
+            elif f1_val == "" or pd.isna(f1_val):
                 f1_val = r.get("Static_OOT_F1", 0.0)
+            if f1_val == "N/A":
+                f1_val = 0.0
             if f1_val == "" or pd.isna(f1_val):
                 f1_val = 0.0
             f1_val = float(f1_val)

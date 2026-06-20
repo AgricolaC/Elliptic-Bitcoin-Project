@@ -236,7 +236,7 @@ class EllipticDataModule:
             self.graphs[t]["prop"] = torch.tensor(prop_np, dtype=torch.float32)
 
         # ── Step 8: PCA Dimensionality Reduction ──────────────────────────────
-        if getattr(c, 'use_pca', False):
+        if getattr(c, 'use_pca', False) or getattr(c, 'use_ipca', False):
             print(f"[DataModule] Applying PCA (variance retained: {c.pca_variance}) to propagated features...")
             train_props = []
             for t in c.train_steps:
@@ -246,50 +246,27 @@ class EllipticDataModule:
             
             # Scikit-learn requires svd_solver='full' when n_components is a float between 0 and 1
             solver = 'full' if isinstance(c.pca_variance, float) else 'auto'
-            pca = PCA(n_components=c.pca_variance, svd_solver=solver)
-            pca.fit(train_props_full)
-            n_components = pca.n_components_
+            pca_base = PCA(n_components=c.pca_variance, svd_solver=solver)
+            pca_base.fit(train_props_full)
+            n_components = pca_base.n_components_
             print(f"[DataModule] PCA selected {n_components} components to retain {c.pca_variance} variance.")
+            
+            if getattr(c, 'use_ipca', False):
+                from sklearn.decomposition import IncrementalPCA
+                b_size = max(n_components, 512)
+                pca = IncrementalPCA(n_components=n_components, batch_size=b_size)
+                pca.fit(train_props_full)
+                self.ipca = pca
+            else:
+                pca = pca_base
             
             for t in self.graphs:
                 prop_np = self.graphs[t]["prop"].numpy()
+                self.graphs[t]["prop_raw"] = prop_np
                 prop_pca = pca.transform(prop_np)
                 self.graphs[t]["prop"] = torch.tensor(prop_pca, dtype=torch.float32)
                 
             self.sgc_input_dim = n_components
-            
-        elif getattr(c, 'use_rf_selection', False):
-            print(f"[DataModule] Applying Random Forest Feature Selection (cumulative importance: {c.rf_importance_threshold})...")
-            from sklearn.ensemble import RandomForestClassifier
-            train_props = []
-            train_labels = []
-            for t in c.train_steps:
-                if t in self.graphs:
-                    mask = self.graphs[t]["y"].numpy() != -1
-                    train_props.append(self.graphs[t]["prop"].numpy()[mask])
-                    train_labels.append(self.graphs[t]["y"].numpy()[mask])
-            train_props_full = np.concatenate(train_props, axis=0)
-            train_labels_full = np.concatenate(train_labels, axis=0)
-            
-            rf = RandomForestClassifier(n_estimators=50, random_state=c.seed, n_jobs=-1, class_weight='balanced')
-            rf.fit(train_props_full, train_labels_full)
-            
-            importances = rf.feature_importances_
-            indices = np.argsort(importances)[::-1]
-            cumulative_importance = np.cumsum(importances[indices])
-            
-            num_features = np.argmax(cumulative_importance >= c.rf_importance_threshold) + 1
-            selected_indices = np.sort(indices[:num_features])
-            
-            print(f"[DataModule] RF selected {num_features} components to retain {c.rf_importance_threshold} cumulative importance.")
-            
-            for t in self.graphs:
-                prop_np = self.graphs[t]["prop"].numpy()
-                prop_rf = prop_np[:, selected_indices]
-                self.graphs[t]["prop"] = torch.tensor(prop_rf, dtype=torch.float32)
-                
-            self.sgc_input_dim = num_features
-
 
         n_base = len(self.feature_cols)
         n_topo = 2 if c.use_graph_structural else 0

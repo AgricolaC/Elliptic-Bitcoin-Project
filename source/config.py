@@ -64,10 +64,8 @@ class Config:
     
     # Feature Selection & Dim. Reduction
     use_pca: bool = False
+    use_ipca: bool = False             # Walk-forward Incremental PCA
     pca_variance: float = 0.99         # % of variance to retain when use_pca=True
-    
-    use_rf_selection: bool = False
-    rf_importance_threshold: float = 0.99 # Cumulative importance to retain
 
     # Seed
     seed: int = RANDOM_SEED
