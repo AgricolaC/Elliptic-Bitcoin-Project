@@ -44,6 +44,7 @@ def aggregate_sweeps():
     numeric_cols = [
         "Static_OOT_F1", "Static_OOT_PRAUC",
         "WF_Pooled_F1", "WF_Pooled_PRAUC",
+        "WF_Macro_F1", "WF_Macro_PRAUC",
         "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC",
         "WF_Shock_F1", "WF_Shock_PRAUC",
         "WF_Recovery_Pooled_F1", "WF_Recovery_PRAUC"

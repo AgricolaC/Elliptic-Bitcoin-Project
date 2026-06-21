@@ -83,5 +83,104 @@ def main():
     df_tsne.to_csv(tsne_csv, index=False)
     print(f"Saved {len(df_tsne)} TSNE coordinates to {tsne_csv}")
 
+    # 3. Temporal Edge Homophily (Panel D)
+    print("Computing Temporal Edge Homophily...")
+    homo_rows = []
+    for t in df.ts.unique():
+        sub = df[df.ts == t]
+        if len(sub) == 0: continue
+        ei, X, y, txids = reindex_timestep(sub, df_edge, feature_cols)
+        
+        src_labels = y[ei[0]]
+        tgt_labels = y[ei[1]]
+        
+        ll = ((src_labels == 0) & (tgt_labels == 0)).sum().item()
+        ii = ((src_labels == 1) & (tgt_labels == 1)).sum().item()
+        il_licit = (((src_labels == 1) & (tgt_labels == 0)) | ((src_labels == 0) & (tgt_labels == 1))).sum().item()
+        il_unk = (((src_labels == 1) & (tgt_labels == -1)) | ((src_labels == -1) & (tgt_labels == 1))).sum().item()
+        
+        homo_rows.append({"tau": t, "licit_licit": ll, "illicit_illicit": ii, "illicit_licit": il_licit, "illicit_unknown": il_unk})
+        
+    df_homo = pd.DataFrame(homo_rows)
+    df_homo.to_csv(os.path.join(OUTPUT_DIR, "eda_homophily.csv"), index=False)
+
+    # 4. Degree Distribution (Panel E)
+    print("Computing Degree Distributions...")
+    from torch_geometric.utils import degree
+    deg_rows = []
+    for t in df.ts.unique():
+        sub = df[df.ts == t]
+        if len(sub) == 0: continue
+        ei, X, y, txids = reindex_timestep(sub, df_edge, feature_cols)
+        
+        n_nodes = len(y)
+        in_deg = degree(ei[1], num_nodes=n_nodes).numpy()
+        out_deg = degree(ei[0], num_nodes=n_nodes).numpy()
+        
+        mask = y != -1
+        y_lab = y[mask]
+        in_lab = in_deg[mask]
+        out_lab = out_deg[mask]
+        
+        for label, indeg, outdeg in zip(y_lab, in_lab, out_lab):
+            deg_rows.append({"label": label, "in_degree": indeg, "out_degree": outdeg})
+            
+    df_deg = pd.DataFrame(deg_rows)
+    df_deg.to_csv(os.path.join(OUTPUT_DIR, "eda_degree.csv"), index=False)
+    
+    # 5. Manifold Drift Diagnostics (Panel F)
+    print("Computing Manifold Drift (MMD & ND-Wasserstein)...")
+    from sklearn.metrics.pairwise import rbf_kernel
+    try:
+        from scipy.stats import wasserstein_distance_nd
+    except ImportError:
+        wasserstein_distance_nd = None
+        print("Warning: scipy.stats.wasserstein_distance_nd not found. Using an alternative if needed.")
+    
+    drift_rows = []
+    prev_X = None
+    prev_X_pca = None
+    
+    for t in sorted(df.ts.unique()):
+        sub = df[df.ts == t]
+        if len(sub) == 0: continue
+        ei, X, y, txids = reindex_timestep(sub, df_edge, feature_cols)
+        X_np = X
+        
+        pca = PCA(n_components=3)
+        X_pca = pca.fit_transform(X_np)
+        
+        if prev_X is not None:
+            # Subsample to max 250 nodes for memory-safe RBF kernel and fast ND-Wasserstein
+            max_nodes = 250
+            
+            idx_prev = np.random.choice(len(prev_X), min(len(prev_X), max_nodes), replace=False)
+            idx_curr = np.random.choice(len(X_np), min(len(X_np), max_nodes), replace=False)
+            
+            pX = prev_X[idx_prev]
+            cX = X_np[idx_curr]
+            pX_pca = prev_X_pca[idx_prev]
+            cX_pca = X_pca[idx_curr]
+
+            # MMD with RBF
+            XX = rbf_kernel(pX, pX, gamma=None)
+            YY = rbf_kernel(cX, cX, gamma=None)
+            XY = rbf_kernel(pX, cX, gamma=None)
+            mmd = XX.mean() + YY.mean() - 2 * XY.mean()
+            
+            # ND-Wasserstein on PCA
+            if wasserstein_distance_nd is not None:
+                w_dist = wasserstein_distance_nd(pX_pca, cX_pca)
+            else:
+                w_dist = 0.0
+            
+            drift_rows.append({"tau": t, "mmd": mmd, "wasserstein_pca": w_dist})
+            
+        prev_X = X_np
+        prev_X_pca = X_pca
+        
+    df_drift = pd.DataFrame(drift_rows)
+    df_drift.to_csv(os.path.join(OUTPUT_DIR, "eda_drift.csv"), index=False)
+
 if __name__ == "__main__":
     main()
