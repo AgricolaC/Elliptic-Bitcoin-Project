@@ -209,3 +209,18 @@ F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,46,712,2,710,True,recovery,44,0.00
 F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,47,846,22,824,False,recovery,45,0.0041,True,0.0154,0.046,0.0093,0.0455,fixed
 F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,48,471,36,435,False,recovery,46,0.0,False,0.4626,0.3541,0.3063,0.9444,fixed
 F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,49,476,56,420,False,recovery,47,0.0,False,0.1739,0.2341,0.1463,0.2143,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,35,1341,182,1159,False,pre_shock,34,0.0779,False,0.9446,0.9928,0.9086,0.9835,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,36,1708,33,1675,False,pre_shock,35,0.1416,False,0.8767,0.9914,0.8,0.9697,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,37,498,40,458,False,pre_shock,36,0.0238,False,0.7895,0.9147,0.8333,0.75,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,38,756,111,645,False,pre_shock,37,0.0889,False,0.9231,0.9803,0.9897,0.8649,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,39,1183,81,1102,False,pre_shock,38,0.1509,False,0.9747,0.997,1.0,0.9506,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,40,1211,112,1099,False,pre_shock,39,0.0726,False,0.7817,0.7888,0.9059,0.6875,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,41,1132,116,1016,False,pre_shock,40,0.1062,False,0.9492,0.9731,0.9333,0.9655,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,42,2154,239,1915,False,pre_shock,41,0.1088,False,0.8678,0.9315,0.9163,0.8243,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,43,1370,24,1346,False,shock,42,0.1283,False,0.2632,0.3049,0.3571,0.2083,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,44,1591,24,1567,False,recovery,43,0.044,False,0.4651,0.3543,0.5263,0.4167,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,45,1221,5,1216,True,recovery,44,0.0292,False,0.375,0.1933,0.2727,0.6,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,46,712,2,710,True,recovery,45,0.0061,True,0.2,0.5112,0.125,0.5,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,47,846,22,824,False,recovery,46,0.0032,True,0.3846,0.2631,0.2679,0.6818,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,48,471,36,435,False,recovery,47,0.0388,False,0.7812,0.8436,0.8929,0.6944,fixed
+F5: SGC+XGBoost Synthesis (decay λ=0.25),42,49,476,56,420,False,recovery,48,0.0877,False,0.8687,0.9751,1.0,0.7679,fixed

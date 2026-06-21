@@ -1,2 +1,0 @@
-Test_ID,Test_Name,World_Eliminated,Readout_Metric,Decision_Rule,Observed_Value,Verdict,Sweep_Refs,Notes
-F3,Instrument check (clean baselines & graph reference),broken-instrument,Static_OOT_F1,"XGB>=0.74 & RF>=0.79 & SGC>=0.50 & GCN in [0.5,0.75]",0.6587,FAIL,"F3a: XGB, F3b: RF, F3c: SGC+MLP, F3d: GCN, F3e: LR","XGB F1=0.7844(>=0.74); RF F1=0.8039(>=0.79); SGC+MLP F1=0.6587(>=0.50); GCN F1=0.4964([0.5,0.75]); LR F1=0.3146"
