@@ -59,13 +59,11 @@ def _select_feature_cols(columns) -> List:
 
 
 def download_and_load_data() -> Tuple[pd.DataFrame, pd.DataFrame, int, List[str]]:
-    """Download and load Elliptic dataset from Kaggle."""
-    import os
+    """Load the Elliptic dataset from the KaggleHub version-1 cache."""
     DATA_ROOT = os.path.expanduser("~/.cache/kagglehub/datasets/ellipticco/elliptic-data-set/versions/1")
     def _find(name):
         hits = glob.glob(os.path.join(DATA_ROOT, "**", name), recursive=True)
         assert hits, f"Could not locate {name} under {DATA_ROOT}"
-        return hits[0]
         return hits[0]
 
     feat_path  = _find("elliptic_txs_features.csv")

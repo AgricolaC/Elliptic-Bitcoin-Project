@@ -552,6 +552,20 @@ class TestTemporalModels:
             expected_width = 31 * w - 15
             assert feats.shape[0] == expected_width
 
+    def test_temporal_edge_count_uses_raw_directed_edges(self, mock_dm):
+        from source.data.temporal_features import build_snapshot_temporal_features
+
+        # target_step=5, window=1 reads snapshot 4. Its edge_index stores each
+        # raw directed edge once, so E is the full second dimension, not E/2.
+        feats = build_snapshot_temporal_features(
+            mock_dm, target_step=5, window=1, label_lag=0
+        )
+        n_nodes = mock_dm.graphs[4]["x"].shape[0]
+        n_edges = mock_dm.graphs[4]["edge_index"].shape[1]
+
+        assert feats[2] == n_edges
+        assert feats[3] == pytest.approx(2.0 * n_edges / n_nodes)
+
     def test_temporal_loss_respects_labeled_mask(self):
         """Axiom-falsify: the temporal training loss must be gated by
         ``labeled_mask`` — perturbing the labels of masked-out nodes (which a
@@ -855,6 +869,32 @@ class TestStratifiedWFMetrics:
         # pre43 pool = only τ=41 here
         expected = average_precision_score(recs[0]["y_true"], recs[0]["scores"])
         assert abs(agg["WF_Pre43_PRAUC"] - expected) < 1e-9
+
+    def test_pooled_and_regime_f1_use_supplied_calibrated_predictions(self):
+        from source.evaluation.wf_metrics import stratified_wf_metrics
+
+        # Every score is below the default 0.5 threshold, but the supplied
+        # predictions represent valid per-timestep calibrated thresholds.
+        recs = [
+            {
+                "tau": 41,
+                "y_true": np.array([1, 0]),
+                "scores": np.array([0.4, 0.1]),
+                "y_pred": np.array([1, 0]),
+            },
+            {
+                "tau": 43,
+                "y_true": np.array([1, 0]),
+                "scores": np.array([0.3, 0.2]),
+                "y_pred": np.array([1, 0]),
+            },
+        ]
+
+        agg, _ = stratified_wf_metrics(recs)
+
+        assert agg["WF_Pooled_F1"] == 1.0
+        assert agg["WF_Pre43_Pooled_F1"] == 1.0
+        assert agg["WF_Shock_F1"] == 1.0
 
 
 class TestTimestepNotAFeature:

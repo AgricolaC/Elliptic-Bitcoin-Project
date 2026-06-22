@@ -58,27 +58,34 @@ Elliptic Bitcoin Project/
    ```
 
 ### Dataset
-The Elliptic dataset will be automatically downloaded and unpacked into the local directory upon the first execution of any pipeline script. Ensure you have approximately 2GB of free disk space.
+Download version 1 of the `ellipticco/elliptic-data-set` dataset through KaggleHub before running the pipeline. The loader expects KaggleHub's cached files under:
+
+```text
+~/.cache/kagglehub/datasets/ellipticco/elliptic-data-set/versions/1
+```
+
+Ensure you have approximately 2GB of free disk space.
 
 ---
 
 ## ⚙️ Execution Pipeline
 
-The core experiments are divided into four distinct phases. You can execute them sequentially or individually using the master pipeline script.
+The core experiments are divided into four distinct phases. The runner executes one required phase per invocation:
 
 ```bash
-# Run the entire experimental pipeline
-python source/execution/run_pipeline.py
-
-# Run specific phases (e.g., F1 Walk-Forward and F3 Baselines)
-python source/execution/run_pipeline.py --phases f1 f3
+python source/execution/run_pipeline.py --phase f1
+python source/execution/run_pipeline.py --phase f2
+python source/execution/run_pipeline.py --phase f3
+python source/execution/run_pipeline.py --phase f4
 ```
 
+Run all four commands to execute the complete phased pipeline.
+
 ### Phase Details
-* **Phase F1 (Walk-Forward):** Executes the top configurations from the static grid search through a strict, one-step-ahead Walk-Forward temporal validation. Includes the Incremental PCA tracking to diagnose manifold shifts.
+* **Phase F1 (Walk-Forward):** Executes selected configurations from the static grid search through a strict, one-step-ahead Walk-Forward temporal validation. Includes the Incremental PCA tracking to diagnose manifold shifts. The checked-in winner list currently contains the directional K=3 PCA configuration; the base XGBoost and K=2 SGC calls remain available but commented out.
 * **Phase F2 (LSTM):** Evaluates Temporal Graph Networks by injecting historical node embeddings into an LSTM backbone.
 * **Phase F3 (Baselines):** Computes Reference Baselines including raw XGBoost, Multi-Layer Perceptron (MLP), and foundational 2-layer Graph Convolutional Networks (GCN).
-* **Phase F4 (Exponential Decay):** Applies exponential temporal decay to historical training samples to mitigate the impact of stale pre-shock graph structures.
+* **Phase F4 (Exponential Decay):** Applies exponential temporal decay to historical training samples to mitigate the impact of stale pre-shock graph structures. The checked-in runner currently executes the SGC decay grid; XGBoost decay is temporarily disabled to avoid duplicating existing CSV rows.
 
 ---
 

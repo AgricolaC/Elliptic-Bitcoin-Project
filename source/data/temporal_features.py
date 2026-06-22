@@ -55,7 +55,9 @@ def build_snapshot_temporal_features(
         for t in train_graphs:
             g = dm.graphs[t]
             n_nodes = g["x"].shape[0]
-            e_count = g["edge_index"].shape[1] // 2 if g["edge_index"].shape[1] > 0 else 0
+            # edge_index stores each raw directed edge once. Symmetrization is
+            # performed later inside SGC propagation and does not mutate it.
+            e_count = g["edge_index"].shape[1]
             n_counts.append(n_nodes)
             e_counts.append(e_count)
             m_degs.append(2.0 * e_count / n_nodes if n_nodes > 0 else 0)
@@ -98,7 +100,7 @@ def build_snapshot_temporal_features(
         if s in dm.graphs:
             g = dm.graphs[s]
             n_nodes = g["x"].shape[0]
-            e_count = g["edge_index"].shape[1] // 2 if g["edge_index"].shape[1] > 0 else 0
+            e_count = g["edge_index"].shape[1]
             node_count = n_nodes
             edge_count = e_count
             mean_degree = 2.0 * e_count / n_nodes if n_nodes > 0 else 0.0

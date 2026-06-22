@@ -10,3 +10,7 @@ scipy
 umap-learn
 plotly
 matplotlib
+seaborn
+nbformat
+nbconvert
+pytest

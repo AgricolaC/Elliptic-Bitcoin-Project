@@ -6,10 +6,11 @@ Given per-τ predictions, produces:
   - an aggregate dict (CSV-1 schema fields): pooled + macro + regime-stratified
     (pre_shock τ≤42, shock τ=43, recovery τ≥44) F1 and PRAUC.
 
-PRAUC (average precision) is the primary, threshold-free readout. F1 here uses a
-fixed 0.5 cut on the supplied scores; callers that calibrate a threshold should
-pass already-thresholded predictions via `y_pred` if they want F1 on that cut.
-Any τ with < 10 illicit is flagged Low_Confidence.
+PRAUC (average precision) is the primary, threshold-free readout. F1 uses each
+record's already-thresholded `y_pred` when supplied; otherwise it falls back to
+the function-level threshold (0.5 by default). The same prediction policy is
+used for per-τ, macro, pooled, and regime-stratified F1. Any τ with < 10
+illicit is flagged Low_Confidence.
 """
 import numpy as np
 from sklearn.metrics import (f1_score, average_precision_score,
@@ -72,7 +73,12 @@ def stratified_wf_metrics(records, threshold: float = 0.5):
         y, s = _pool(recs)
         if len(y) == 0:
             return float("nan"), float("nan")
-        yp = (s >= threshold).astype(int)
+        yp = np.concatenate([
+            np.asarray(r["y_pred"])
+            if "y_pred" in r
+            else (np.asarray(r["scores"]) >= threshold).astype(int)
+            for r in recs
+        ])
         return round(_f1(y, yp), 4), round(_prauc(y, s), 4)
 
     pre = [r for r in records if regime_of(r["tau"]) == "pre_shock"]
