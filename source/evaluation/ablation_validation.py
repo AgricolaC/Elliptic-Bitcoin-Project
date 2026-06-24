@@ -6,8 +6,9 @@ import pandas as pd
 from xgboost import XGBClassifier
 
 from config import Config, set_global_seeds, DEVICE, OUTPUT_DIR
+from sweep import profile_resources
 from evaluation.validation import fit_head, stack_prop, _compute_class_weights, _calibrate_threshold
-from evaluation.temporal_validation import _train_illicit_rate, _walk_forward_blocks
+from evaluation.temporal_validation import _walk_forward_blocks
 from evaluation.wf_metrics import stratified_wf_metrics
 from evaluation.validation import SGCHead
 
@@ -16,12 +17,15 @@ CSV2_COLS = ["Sweep", "Seed", "Tau", "N_labeled", "N_illicit", "N_licit",
              "Low_Confidence", "Regime", "Train_Window_Size", "Calib_Threshold",
              "Calib_Fallback", "F1", "PRAUC", "Precision", "Recall", "Selfcond_Bug"]
 
-def _write_csv2(sweep, rows, extra):
+def _write_csv2(sweep, rows, extra, seed=42):
     out = []
     for r in rows:
-        e = extra.get(r["Tau"], {})
+        # Cast to int to avoid float-key mismatch when extra dict uses int keys
+        # but r["Tau"] may be float if it was re-read from a CSV.
+        tau_key = int(r["Tau"])
+        e = extra.get(tau_key, {})
         out.append({
-            "Sweep": sweep, "Seed": 42, "Tau": r["Tau"], "N_labeled": r["N_labeled"],
+            "Sweep": sweep, "Seed": seed, "Tau": tau_key, "N_labeled": r["N_labeled"],
             "N_illicit": r["N_illicit"], "N_licit": r["N_licit"],
             "Low_Confidence": r["Low_Confidence"], "Regime": r["Regime"],
             "Train_Window_Size": e.get("Train_Window_Size", "N/A"),
@@ -55,55 +59,50 @@ def _tab_step(dm, tau):
     feat = g["x"].numpy()[m]
     return feat, g["y"].numpy()[m]
 
-def evaluate_xgboost_wf(dm, cfg, make_result_fn):
+def evaluate_xgboost_wf(dm, cfg):
+    """Walk-forward XGBoost baseline using [1..τ-2] training window + τ-1 calibration.
+
+    Returns the stratified agg dict. The caller (sweep.py) is responsible for
+    building the sweep_results.csv row via _make_result so it can merge in the
+    static OOT metrics computed separately.
+    """
     print("\n--- Running Baseline XGBoost Walk-Forward ---")
     set_global_seeds(42)
-    gir = _train_illicit_rate(dm, cfg)
-    
     t0 = time.time()
     recs, extra = [], {}
-    for tau in cfg.test_steps:
-        tb, cal = _walk_forward_blocks(dm.graphs, tau)
-        if not tb:
-            continue
-        Xtr, ytr = _tab_block(dm, tb)
-        if len(np.unique(ytr)) < 2:
-            continue
-        spw = (ytr == 0).sum() / max((ytr == 1).sum(), 1)
-        model = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                              scale_pos_weight=spw, eval_metric="logloss",
-                              n_jobs=-1, random_state=42)
-        model.fit(Xtr, ytr)
-        Xte, yte = _tab_step(dm, tau)
-        if len(yte) == 0:
-            continue
-        s = model.predict_proba(Xte)[:, 1]
-        thr, fb = 0.5, False
-        if cal in dm.graphs:
-            Xc, yc = _tab_step(dm, cal)
-            if len(yc) > 0 and len(np.unique(yc)) >= 2:
-                sc = model.predict_proba(Xc)[:, 1]
-                thr, fb = _calibrate_threshold(yc, sc, gir)
-        recs.append({"tau": tau, "y_true": yte, "scores": s, "y_pred": (s >= thr).astype(int)})
-        extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4),
-                      "Calib_Fallback": bool(fb)}
-        print(f"    [XGBoost] τ={tau} done", flush=True)
+    with profile_resources() as wf_metrics:
+        for tau in cfg.test_steps:
+            tb, cal = _walk_forward_blocks(dm.graphs, tau)
+            if not tb:
+                continue
+            Xtr, ytr = _tab_block(dm, tb)
+            if len(np.unique(ytr)) < 2:
+                continue
+            spw = (ytr == 0).sum() / max((ytr == 1).sum(), 1)
+            model = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+                                  scale_pos_weight=spw, eval_metric="aucpr",
+                                  n_jobs=1, random_state=42)
+            model.fit(Xtr, ytr)
+            Xte, yte = _tab_step(dm, tau)
+            if len(yte) == 0:
+                continue
+            s = model.predict_proba(Xte)[:, 1]
+            thr, fb = 0.5, False
+            if cal in dm.graphs:
+                Xc, yc = _tab_step(dm, cal)
+                if len(yc) > 0:
+                    sc = model.predict_proba(Xc)[:, 1]
+                    thr, fb = _calibrate_threshold(yc, sc)
+            recs.append({"tau": tau, "y_true": yte, "scores": s, "y_pred": (s >= thr).astype(int)})
+            extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4),
+                          "Calib_Fallback": bool(fb)}
+            print(f"    [XGBoost] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    _write_csv2("Baseline: XGBoost (166)", rows, extra)
-    
-    res = make_result_fn(
-        seed=42, variation="Base", sweep="Baseline: XGBoost (166)",
-        static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
-        wf_time=round(time.time() - t0, 3), wf_mem="N/A",
-        wf_f1=agg["WF_Macro_F1"], wf_prauc=agg["WF_Macro_PRAUC"],
-        wf_pooled_f1=agg["WF_Pooled_F1"], wf_pooled_prauc=agg["WF_Pooled_PRAUC"],
-        wf_pre43_pooled_f1=agg["WF_Pre43_Pooled_F1"], wf_pre43_prauc=agg["WF_Pre43_PRAUC"],
-        wf_shock_f1=agg["WF_Shock_F1"], wf_shock_prauc=agg["WF_Shock_PRAUC"],
-        wf_recovery_pooled_f1=agg["WF_Recovery_Pooled_F1"], wf_recovery_prauc=agg["WF_Recovery_PRAUC"],
-        feature_set="Raw-165 (no ts)", threshold="epsilon-fallback",
-    )
-    return res
+    _write_csv2("Baseline: XGBoost WF (epsilon-fallback)", rows, extra, seed=42)
+    print(f"[XGBoost WF] done in {time.time() - t0:.1f}s | "
+          f"Pooled F1={agg['WF_Pooled_F1']:.3f} PRAUC={agg['WF_Pooled_PRAUC']:.3f}")
+    return agg
 
 # ==========================================
 # 2. IPCA DYNAMIC WALK-FORWARD
@@ -111,7 +110,6 @@ def evaluate_xgboost_wf(dm, cfg, make_result_fn):
 def evaluate_ipca_wf(dm, cfg, w_name, make_result_fn):
     print(f"\n--- Running IPCA Walk-Forward: {w_name} ---")
     set_global_seeds(cfg.seed)
-    gir = _train_illicit_rate(dm, cfg)
     t0 = time.time()
     recs, extra = [], {}
     
@@ -147,17 +145,17 @@ def evaluate_ipca_wf(dm, cfg, w_name, make_result_fn):
         if cal in dm.graphs:
             Xc, yc_all = stack_prop(dm, [cal]); mc = yc_all != -1
             yc = yc_all[mc].numpy()
-            if mc.sum() > 0 and len(np.unique(yc)) >= 2:
+            if mc.sum() > 0:
                 with torch.no_grad():
                     sc = torch.softmax(model(Xc[mc].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
-                thr, fb = _calibrate_threshold(yc, sc, gir)
+                thr, fb = _calibrate_threshold(yc, sc)
                 
         recs.append({"tau": tau, "y_true": yte, "scores": s, "y_pred": (s >= thr).astype(int)})
         extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4), "Calib_Fallback": bool(fb)}
         print(f"    [IPCA] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    write_csv2_fn(w_name, rows, extra)
+    _write_csv2(w_name, rows, extra, seed=cfg.seed)
     
     res = make_result_fn(
         seed=cfg.seed, variation="PCA", sweep=w_name,
@@ -197,49 +195,49 @@ def evaluate_xgb_decay_wf(dm, cfg, lambda_decay, make_result_fn):
     w_name = f"Ablation: Decay λ={lambda_decay} on XGBoost"
     print(f"\n--- Running Decay (λ={lambda_decay}) Walk-Forward: XGBoost ---")
     set_global_seeds(cfg.seed)
-    gir = _train_illicit_rate(dm, cfg)
     t0 = time.time()
     recs, extra = [], {}
 
-    for tau in cfg.test_steps:
-        tb, cal = _walk_forward_blocks(dm.graphs, tau)
-        if not tb: continue
-        Xtr, ytr = _tab_block(dm, tb)
-        
-        snaps = []
-        for t in tb:
-            g = dm.graphs[t]; m = g["labeled_mask"].numpy()
-            if m.sum() > 0: snaps.extend([t] * int(m.sum()))
-        snaps = np.array(snaps)
-
-        sample_weights = compute_unified_xgb_weights(snaps, ytr, lambda_decay)
-        
-        model = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                              eval_metric="logloss", random_state=cfg.seed, n_jobs=-1)
-        model.fit(Xtr, ytr, sample_weight=sample_weights)
-
-        Xte, yte = _tab_step(dm, tau)
-        if len(yte) == 0: continue
-        preds_proba = model.predict_proba(Xte)[:, 1]
-
-        thr, fb = 0.5, False
-        if cal in dm.graphs:
-            Xc, yc = _tab_step(dm, cal)
-            if len(yc) > 0 and len(np.unique(yc)) >= 2:
-                cal_preds = model.predict_proba(Xc)[:, 1]
-                thr, fb = _calibrate_threshold(yc, cal_preds, gir)
-                
-        recs.append({"tau": tau, "y_true": yte, "scores": preds_proba, "y_pred": (preds_proba >= thr).astype(int)})
-        extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4), "Calib_Fallback": bool(fb)}
-        print(f"    [XGB Decay λ={lambda_decay}] τ={tau} done", flush=True)
+    with profile_resources() as wf_metrics:
+        for tau in cfg.test_steps:
+            tb, cal = _walk_forward_blocks(dm.graphs, tau)
+            if not tb: continue
+            Xtr, ytr = _tab_block(dm, tb)
+            
+            snaps = []
+            for t in tb:
+                g = dm.graphs[t]; m = g["labeled_mask"].numpy()
+                if m.sum() > 0: snaps.extend([t] * int(m.sum()))
+            snaps = np.array(snaps)
+    
+            sample_weights = compute_unified_xgb_weights(snaps, ytr, lambda_decay)
+            
+            model = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+                                  eval_metric="aucpr", random_state=cfg.seed, n_jobs=1)
+            model.fit(Xtr, ytr, sample_weight=sample_weights)
+    
+            Xte, yte = _tab_step(dm, tau)
+            if len(yte) == 0: continue
+            preds_proba = model.predict_proba(Xte)[:, 1]
+    
+            thr, fb = 0.5, False
+            if cal in dm.graphs:
+                Xc, yc = _tab_step(dm, cal)
+                if len(yc) > 0:
+                    cal_preds = model.predict_proba(Xc)[:, 1]
+                    thr, fb = _calibrate_threshold(yc, cal_preds)
+                    
+            recs.append({"tau": tau, "y_true": yte, "scores": preds_proba, "y_pred": (preds_proba >= thr).astype(int)})
+            extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4), "Calib_Fallback": bool(fb)}
+            print(f"    [XGB Decay λ={lambda_decay}] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    _write_csv2(w_name, rows, extra)
+    _write_csv2(w_name, rows, extra, seed=cfg.seed)
 
     res = make_result_fn(
         seed=cfg.seed, variation="Base", sweep=w_name,
         static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
-        wf_time=round(time.time() - t0, 3), wf_mem="N/A",
+        wf_time=round(time.time() - t0, 3), wf_mem=round(wf_metrics.get("peak_mem", 0.0), 2),
         wf_f1=agg["WF_Macro_F1"], wf_prauc=agg["WF_Macro_PRAUC"],
         wf_pooled_f1=agg["WF_Pooled_F1"], wf_pooled_prauc=agg["WF_Pooled_PRAUC"],
         wf_pre43_pooled_f1=agg["WF_Pre43_Pooled_F1"], wf_pre43_prauc=agg["WF_Pre43_PRAUC"],
@@ -283,61 +281,60 @@ def fit_head_decay(Xtr, ytr, snapshots, in_dim, cfg, tau_max, lambda_decay=0.25)
 def evaluate_decay_wf(dm, cfg, lambda_decay, w_name, make_result_fn):
     print(f"\n--- Running Decay (λ={lambda_decay}) Walk-Forward: {w_name} ---")
     set_global_seeds(cfg.seed)
-    gir = _train_illicit_rate(dm, cfg)
     t0 = time.time()
     recs, extra = [], {}
 
-    for tau in cfg.test_steps:
-        tb, cal = _walk_forward_blocks(dm.graphs, tau)
-        if not tb:
-            continue
-        Xs, ys, sn = [], [], []
-        for t in tb:
-            g = dm.graphs[t]
-            Xs.append(g["prop"])
-            ys.append(g["y"])
-            sn.append(torch.full_like(g["y"], t))
-
-        Xtr = torch.cat(Xs)
-        ytr = torch.cat(ys)
-        snapshots = torch.cat(sn)
-
-        model = fit_head_decay(Xtr, ytr, snapshots, in_dim=Xtr.shape[1], cfg=cfg,
-                               tau_max=tau - 1, lambda_decay=lambda_decay)
-        model.eval()
-
-        Xte = dm.graphs[tau]["prop"].to(DEVICE)
-        yte_full = dm.graphs[tau]["y"]
-        mask_te = dm.graphs[tau]["labeled_mask"]
-        if mask_te.sum() == 0:
-            continue
-        with torch.no_grad():
-            preds_proba = torch.softmax(model(Xte[mask_te]), dim=-1)[:, 1].cpu().numpy()
-        yte = yte_full[mask_te].numpy()
-
-        thr, fb = 0.5, False
-        if cal in dm.graphs:
-            Xc = dm.graphs[cal]["prop"].to(DEVICE)
-            yc_full = dm.graphs[cal]["y"]
-            mask_cal = dm.graphs[cal]["labeled_mask"]
-            if mask_cal.sum() > 0:
-                yc = yc_full[mask_cal].numpy()
-                if len(np.unique(yc)) >= 2:
+    with profile_resources() as wf_metrics:
+        for tau in cfg.test_steps:
+            tb, cal = _walk_forward_blocks(dm.graphs, tau)
+            if not tb:
+                continue
+            Xs, ys, sn = [], [], []
+            for t in tb:
+                g = dm.graphs[t]
+                Xs.append(g["prop"])
+                ys.append(g["y"])
+                sn.append(torch.full_like(g["y"], t))
+    
+            Xtr = torch.cat(Xs)
+            ytr = torch.cat(ys)
+            snapshots = torch.cat(sn)
+    
+            model = fit_head_decay(Xtr, ytr, snapshots, in_dim=Xtr.shape[1], cfg=cfg,
+                                   tau_max=tau - 1, lambda_decay=lambda_decay)
+            model.eval()
+    
+            Xte = dm.graphs[tau]["prop"].to(DEVICE)
+            yte_full = dm.graphs[tau]["y"]
+            mask_te = dm.graphs[tau]["labeled_mask"]
+            if mask_te.sum() == 0:
+                continue
+            with torch.no_grad():
+                preds_proba = torch.softmax(model(Xte[mask_te]), dim=-1)[:, 1].cpu().numpy()
+            yte = yte_full[mask_te].numpy()
+    
+            thr, fb = 0.5, False
+            if cal in dm.graphs:
+                Xc = dm.graphs[cal]["prop"].to(DEVICE)
+                yc_full = dm.graphs[cal]["y"]
+                mask_cal = dm.graphs[cal]["labeled_mask"]
+                if mask_cal.sum() > 0:
+                    yc = yc_full[mask_cal].numpy()
                     with torch.no_grad():
                         cal_preds = torch.softmax(model(Xc[mask_cal]), dim=-1)[:, 1].cpu().numpy()
-                    thr, fb = _calibrate_threshold(yc, cal_preds, gir)
-                    
-        recs.append({"tau": tau, "y_true": yte, "scores": preds_proba, "y_pred": (preds_proba >= thr).astype(int)})
-        extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4), "Calib_Fallback": bool(fb)}
-        print(f"    [Decay λ={lambda_decay}] τ={tau} done", flush=True)
+                    thr, fb = _calibrate_threshold(yc, cal_preds)
+                        
+            recs.append({"tau": tau, "y_true": yte, "scores": preds_proba, "y_pred": (preds_proba >= thr).astype(int)})
+            extra[tau] = {"Train_Window_Size": len(tb), "Calib_Threshold": round(float(thr), 4), "Calib_Fallback": bool(fb)}
+            print(f"    [Decay λ={lambda_decay}] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    write_csv2_fn(w_name, rows, extra)
+    _write_csv2(w_name, rows, extra, seed=cfg.seed)
 
     res = make_result_fn(
         seed=cfg.seed, variation="Base", sweep=w_name,
         static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
-        wf_time=round(time.time() - t0, 3), wf_mem="N/A",
+        wf_time=round(time.time() - t0, 3), wf_mem=round(wf_metrics.get("peak_mem", 0.0), 2),
         wf_f1=agg["WF_Macro_F1"], wf_prauc=agg["WF_Macro_PRAUC"],
         wf_pooled_f1=agg["WF_Pooled_F1"], wf_pooled_prauc=agg["WF_Pooled_PRAUC"],
         wf_pre43_pooled_f1=agg["WF_Pre43_Pooled_F1"], wf_pre43_prauc=agg["WF_Pre43_PRAUC"],

@@ -1,226 +1,271 @@
 Sweep,Seed,Tau,N_labeled,N_illicit,N_licit,Low_Confidence,Regime,Train_Window_Size,Calib_Threshold,Calib_Fallback,F1,PRAUC,Precision,Recall,Selfcond_Bug
-F1: Base XGBoost WF [v2],42,35,1341,182,1159,False,pre_shock,33,0.4451,False,0.9568,0.9932,0.9415,0.9725,fixed
-F1: Base XGBoost WF [v2],42,36,1708,33,1675,False,pre_shock,34,0.9076,False,0.9697,0.9983,0.9697,0.9697,fixed
-F1: Base XGBoost WF [v2],42,37,498,40,458,False,pre_shock,35,0.913,False,0.75,0.9156,1.0,0.6,fixed
-F1: Base XGBoost WF [v2],42,38,756,111,645,False,pre_shock,36,0.0703,False,0.9395,0.9588,0.9712,0.9099,fixed
-F1: Base XGBoost WF [v2],42,39,1183,81,1102,False,pre_shock,37,0.6123,False,0.8844,0.9618,0.9848,0.8025,fixed
-F1: Base XGBoost WF [v2],42,40,1211,112,1099,False,pre_shock,38,0.3863,False,0.7739,0.7936,0.8851,0.6875,fixed
-F1: Base XGBoost WF [v2],42,41,1132,116,1016,False,pre_shock,39,0.4995,False,0.9565,0.9704,0.9649,0.9483,fixed
-F1: Base XGBoost WF [v2],42,42,2154,239,1915,False,pre_shock,40,0.7114,False,0.8767,0.9273,0.9648,0.8033,fixed
-F1: Base XGBoost WF [v2],42,43,1370,24,1346,False,shock,41,0.734,False,0.0,0.1732,0.0,0.0,fixed
-F1: Base XGBoost WF [v2],42,44,1591,24,1567,False,recovery,42,0.0919,False,0.274,0.1872,0.2041,0.4167,fixed
-F1: Base XGBoost WF [v2],42,45,1221,5,1216,True,recovery,43,0.1581,False,0.0,0.048,0.0,0.0,fixed
-F1: Base XGBoost WF [v2],42,46,712,2,710,True,recovery,44,0.0069,True,0.0635,0.5233,0.0328,1.0,fixed
-F1: Base XGBoost WF [v2],42,47,846,22,824,False,recovery,45,0.0066,True,0.2516,0.5067,0.146,0.9091,fixed
-F1: Base XGBoost WF [v2],42,48,471,36,435,False,recovery,46,0.0724,False,0.4364,0.564,0.6316,0.3333,fixed
-F1: Base XGBoost WF [v2],42,49,476,56,420,False,recovery,47,0.268,False,0.7692,0.9845,1.0,0.625,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,35,1341,182,1159,False,pre_shock,33,0.8313,False,0.9176,0.94,0.9176,0.9176,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,36,1708,33,1675,False,pre_shock,34,0.3692,False,0.5195,0.6305,0.4545,0.6061,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,37,498,40,458,False,pre_shock,35,0.8651,False,0.6333,0.8022,0.95,0.475,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,38,756,111,645,False,pre_shock,36,0.7306,False,0.9014,0.9593,0.9412,0.8649,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,39,1183,81,1102,False,pre_shock,37,0.5699,False,0.8462,0.905,0.88,0.8148,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,40,1211,112,1099,False,pre_shock,38,0.8872,False,0.7594,0.7894,0.9467,0.6339,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,41,1132,116,1016,False,pre_shock,39,0.6649,False,0.9058,0.9431,0.9439,0.8707,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,42,2154,239,1915,False,pre_shock,40,0.9691,False,0.8178,0.8248,0.9259,0.7322,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,43,1370,24,1346,False,shock,41,0.747,False,0.0,0.0363,0.0,0.0,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,44,1591,24,1567,False,recovery,42,0.2683,False,0.0645,0.0308,0.04,0.1667,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,45,1221,5,1216,True,recovery,43,0.5166,False,0.0,0.014,0.0,0.0,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,46,712,2,710,True,recovery,44,0.0059,True,0.0,0.0102,0.0,0.0,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,47,846,22,824,False,recovery,45,0.0749,True,0.0926,0.0722,0.0581,0.2273,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,48,471,36,435,False,recovery,46,0.0031,False,0.495,0.3543,0.3846,0.6944,fixed
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,49,476,56,420,False,recovery,47,0.0306,False,0.4667,0.4616,0.4375,0.5,fixed
-F2: SGC-LSTM Chronological,42,35,1341,182,1159,False,pre_shock,33,0.9797,False,0.7819,0.6523,0.7577,0.8077,fixed
-F2: SGC-LSTM Chronological,42,36,1708,33,1675,False,pre_shock,34,0.7506,False,0.5128,0.31,0.4444,0.6061,fixed
-F2: SGC-LSTM Chronological,42,37,498,40,458,False,pre_shock,35,0.9744,False,0.5806,0.7906,0.8182,0.45,fixed
-F2: SGC-LSTM Chronological,42,38,756,111,645,False,pre_shock,36,0.8995,False,0.8868,0.9499,0.9307,0.8468,fixed
-F2: SGC-LSTM Chronological,42,39,1183,81,1102,False,pre_shock,37,0.6375,False,0.8056,0.852,0.9206,0.716,fixed
-F2: SGC-LSTM Chronological,42,40,1211,112,1099,False,pre_shock,38,0.5678,False,0.7423,0.7903,0.878,0.6429,fixed
-F2: SGC-LSTM Chronological,42,41,1132,116,1016,False,pre_shock,39,0.7688,False,0.8634,0.8965,0.8829,0.8448,fixed
-F2: SGC-LSTM Chronological,42,42,2154,239,1915,False,pre_shock,40,0.4377,False,0.8235,0.8701,0.8966,0.7615,fixed
-F2: SGC-LSTM Chronological,42,43,1370,24,1346,False,shock,41,0.8904,False,0.0,0.0237,0.0,0.0,fixed
-F2: SGC-LSTM Chronological,42,44,1591,24,1567,False,recovery,42,0.0726,False,0.0727,0.0353,0.0465,0.1667,fixed
-F2: SGC-LSTM Chronological,42,45,1221,5,1216,True,recovery,43,0.7377,False,0.0,0.01,0.0,0.0,fixed
-F2: SGC-LSTM Chronological,42,46,712,2,710,True,recovery,44,0.0038,True,0.0,0.0071,0.0,0.0,fixed
-F2: SGC-LSTM Chronological,42,47,846,22,824,False,recovery,45,0.0096,True,0.1481,0.0988,0.0885,0.4545,fixed
-F2: SGC-LSTM Chronological,42,48,471,36,435,False,recovery,46,0.0008,False,0.5045,0.4321,0.3733,0.7778,fixed
-F2: SGC-LSTM Chronological,42,49,476,56,420,False,recovery,47,0.0012,False,0.4961,0.4512,0.4384,0.5714,fixed
-F2: SGC-LSTM Shuffled,42,35,1341,182,1159,False,pre_shock,33,0.1796,False,0.7536,0.5432,0.6625,0.8736,fixed
-F2: SGC-LSTM Shuffled,42,36,1708,33,1675,False,pre_shock,34,0.6899,False,0.48,0.3633,0.4286,0.5455,fixed
-F2: SGC-LSTM Shuffled,42,37,498,40,458,False,pre_shock,35,0.9418,False,0.623,0.8128,0.9048,0.475,fixed
-F2: SGC-LSTM Shuffled,42,38,756,111,645,False,pre_shock,36,0.015,False,0.8108,0.9198,0.7095,0.9459,fixed
-F2: SGC-LSTM Shuffled,42,39,1183,81,1102,False,pre_shock,37,0.8253,False,0.8378,0.8418,0.9254,0.7654,fixed
-F2: SGC-LSTM Shuffled,42,40,1211,112,1099,False,pre_shock,38,0.7965,False,0.7784,0.7936,0.9863,0.6429,fixed
-F2: SGC-LSTM Shuffled,42,41,1132,116,1016,False,pre_shock,39,0.7241,False,0.8711,0.9217,0.8991,0.8448,fixed
-F2: SGC-LSTM Shuffled,42,42,2154,239,1915,False,pre_shock,40,0.2677,False,0.8225,0.8722,0.8883,0.7657,fixed
-F2: SGC-LSTM Shuffled,42,43,1370,24,1346,False,shock,41,0.5881,False,0.0,0.0266,0.0,0.0,fixed
-F2: SGC-LSTM Shuffled,42,44,1591,24,1567,False,recovery,42,0.0328,False,0.0532,0.0346,0.0305,0.2083,fixed
-F2: SGC-LSTM Shuffled,42,45,1221,5,1216,True,recovery,43,0.5184,False,0.0,0.0129,0.0,0.0,fixed
-F2: SGC-LSTM Shuffled,42,46,712,2,710,True,recovery,44,0.0022,True,0.0,0.006,0.0,0.0,fixed
-F2: SGC-LSTM Shuffled,42,47,846,22,824,False,recovery,45,0.0227,True,0.1416,0.075,0.0879,0.3636,fixed
-F2: SGC-LSTM Shuffled,42,48,471,36,435,False,recovery,46,0.307,False,0.0488,0.3648,0.2,0.0278,fixed
-F2: SGC-LSTM Shuffled,42,49,476,56,420,False,recovery,47,0.0097,False,0.6977,0.6542,0.6164,0.8036,fixed
-F4: XGBoost decay λ=0.05,42,35,1341,182,1159,False,pre_shock,34,0.2132,False,0.9443,0.9938,0.9128,0.978,fixed
-F4: XGBoost decay λ=0.05,42,36,1708,33,1675,False,pre_shock,35,0.2504,False,0.9296,1.0,0.8684,1.0,fixed
-F4: XGBoost decay λ=0.05,42,37,498,40,458,False,pre_shock,36,0.0484,False,0.8056,0.9058,0.9062,0.725,fixed
-F4: XGBoost decay λ=0.05,42,38,756,111,645,False,pre_shock,37,0.2115,False,0.9395,0.9654,0.9712,0.9099,fixed
-F4: XGBoost decay λ=0.05,42,39,1183,81,1102,False,pre_shock,38,0.2195,False,0.9693,0.9928,0.9634,0.9753,fixed
-F4: XGBoost decay λ=0.05,42,40,1211,112,1099,False,pre_shock,39,0.1861,False,0.7429,0.8053,0.7959,0.6964,fixed
-F4: XGBoost decay λ=0.05,42,41,1132,116,1016,False,pre_shock,40,0.2432,False,0.8784,0.978,0.8058,0.9655,fixed
-F4: XGBoost decay λ=0.05,42,42,2154,239,1915,False,pre_shock,41,0.2912,False,0.8711,0.9297,0.9289,0.8201,fixed
-F4: XGBoost decay λ=0.05,42,43,1370,24,1346,False,shock,42,0.4487,False,0.1429,0.3123,0.5,0.0833,fixed
-F4: XGBoost decay λ=0.05,42,44,1591,24,1567,False,recovery,43,0.3472,False,0.2424,0.4321,0.4444,0.1667,fixed
-F4: XGBoost decay λ=0.05,42,45,1221,5,1216,True,recovery,44,0.4612,False,0.0,0.1295,0.0,0.0,fixed
-F4: XGBoost decay λ=0.05,42,46,712,2,710,True,recovery,45,0.0897,True,0.5,0.5109,0.5,0.5,fixed
-F4: XGBoost decay λ=0.05,42,47,846,22,824,False,recovery,46,0.033,True,0.4225,0.4498,0.3061,0.6818,fixed
-F4: XGBoost decay λ=0.05,42,48,471,36,435,False,recovery,47,0.2309,False,0.8056,0.8918,0.8056,0.8056,fixed
-F4: XGBoost decay λ=0.05,42,49,476,56,420,False,recovery,48,0.2449,False,0.9434,0.992,1.0,0.8929,fixed
-F4: XGBoost decay λ=0.25,42,35,1341,182,1159,False,pre_shock,34,0.0922,False,0.9278,0.9937,0.8738,0.989,fixed
-F4: XGBoost decay λ=0.25,42,36,1708,33,1675,False,pre_shock,35,0.156,False,0.9565,1.0,0.9167,1.0,fixed
-F4: XGBoost decay λ=0.25,42,37,498,40,458,False,pre_shock,36,0.0237,False,0.7273,0.8451,0.7568,0.7,fixed
-F4: XGBoost decay λ=0.25,42,38,756,111,645,False,pre_shock,37,0.1002,False,0.9032,0.9639,0.9245,0.8829,fixed
-F4: XGBoost decay λ=0.25,42,39,1183,81,1102,False,pre_shock,38,0.1574,False,0.9747,0.9887,1.0,0.9506,fixed
-F4: XGBoost decay λ=0.25,42,40,1211,112,1099,False,pre_shock,39,0.083,False,0.7647,0.8023,0.8478,0.6964,fixed
-F4: XGBoost decay λ=0.25,42,41,1132,116,1016,False,pre_shock,40,0.117,False,0.9106,0.977,0.8615,0.9655,fixed
-F4: XGBoost decay λ=0.25,42,42,2154,239,1915,False,pre_shock,41,0.1464,False,0.8839,0.9339,0.9474,0.8285,fixed
-F4: XGBoost decay λ=0.25,42,43,1370,24,1346,False,shock,42,0.1651,False,0.3333,0.3723,0.5,0.25,fixed
-F4: XGBoost decay λ=0.25,42,44,1591,24,1567,False,recovery,43,0.0808,False,0.549,0.4256,0.5185,0.5833,fixed
-F4: XGBoost decay λ=0.25,42,45,1221,5,1216,True,recovery,44,0.0444,False,0.0,0.1999,0.0,0.0,fixed
-F4: XGBoost decay λ=0.25,42,46,712,2,710,True,recovery,45,0.0089,True,0.4,0.5156,0.3333,0.5,fixed
-F4: XGBoost decay λ=0.25,42,47,846,22,824,False,recovery,46,0.0048,True,0.4444,0.3615,0.32,0.7273,fixed
-F4: XGBoost decay λ=0.25,42,48,471,36,435,False,recovery,47,0.04,False,0.7273,0.8018,0.8,0.6667,fixed
-F4: XGBoost decay λ=0.25,42,49,476,56,420,False,recovery,48,0.0964,False,0.9126,0.9979,1.0,0.8393,fixed
-F4: XGBoost decay λ=0.5,42,35,1341,182,1159,False,pre_shock,34,0.0781,False,0.9319,0.9906,0.89,0.978,fixed
-F4: XGBoost decay λ=0.5,42,36,1708,33,1675,False,pre_shock,35,0.1445,False,0.9143,0.996,0.8649,0.9697,fixed
-F4: XGBoost decay λ=0.5,42,37,498,40,458,False,pre_shock,36,0.0212,False,0.7568,0.8731,0.8235,0.7,fixed
-F4: XGBoost decay λ=0.5,42,38,756,111,645,False,pre_shock,37,0.0865,False,0.9135,0.9678,0.9794,0.8559,fixed
-F4: XGBoost decay λ=0.5,42,39,1183,81,1102,False,pre_shock,38,0.1515,False,0.9682,0.9888,1.0,0.9383,fixed
-F4: XGBoost decay λ=0.5,42,40,1211,112,1099,False,pre_shock,39,0.0724,False,0.7633,0.7925,0.8316,0.7054,fixed
-F4: XGBoost decay λ=0.5,42,41,1132,116,1016,False,pre_shock,40,0.1017,False,0.9098,0.976,0.8672,0.9569,fixed
-F4: XGBoost decay λ=0.5,42,42,2154,239,1915,False,pre_shock,41,0.1104,False,0.88,0.9346,0.9384,0.8285,fixed
-F4: XGBoost decay λ=0.5,42,43,1370,24,1346,False,shock,42,0.1397,False,0.359,0.3303,0.4667,0.2917,fixed
-F4: XGBoost decay λ=0.5,42,44,1591,24,1567,False,recovery,43,0.0371,False,0.5217,0.4346,0.5455,0.5,fixed
-F4: XGBoost decay λ=0.5,42,45,1221,5,1216,True,recovery,44,0.0276,False,0.1667,0.1435,0.1429,0.2,fixed
-F4: XGBoost decay λ=0.5,42,46,712,2,710,True,recovery,45,0.0043,True,0.2857,0.5152,0.2,0.5,fixed
-F4: XGBoost decay λ=0.5,42,47,846,22,824,False,recovery,46,0.0011,True,0.439,0.4687,0.3,0.8182,fixed
-F4: XGBoost decay λ=0.5,42,48,471,36,435,False,recovery,47,0.0309,False,0.75,0.7965,0.8571,0.6667,fixed
-F4: XGBoost decay λ=0.5,42,49,476,56,420,False,recovery,48,0.0801,False,0.8911,0.9951,1.0,0.8036,fixed
-F4: SGC+MLP decay λ=0.05,42,35,1341,182,1159,False,pre_shock,34,0.6573,False,0.8896,0.9118,0.9739,0.8187,fixed
-F4: SGC+MLP decay λ=0.05,42,36,1708,33,1675,False,pre_shock,35,0.5166,False,0.7606,0.7536,0.7105,0.8182,fixed
-F4: SGC+MLP decay λ=0.05,42,37,498,40,458,False,pre_shock,36,0.8699,False,0.6984,0.8316,0.9565,0.55,fixed
-F4: SGC+MLP decay λ=0.05,42,38,756,111,645,False,pre_shock,37,0.6025,False,0.9083,0.959,0.9252,0.8919,fixed
-F4: SGC+MLP decay λ=0.05,42,39,1183,81,1102,False,pre_shock,38,0.8781,False,0.8671,0.9791,1.0,0.7654,fixed
-F4: SGC+MLP decay λ=0.05,42,40,1211,112,1099,False,pre_shock,39,0.3673,False,0.7379,0.7925,0.8085,0.6786,fixed
-F4: SGC+MLP decay λ=0.05,42,41,1132,116,1016,False,pre_shock,40,0.5617,False,0.8898,0.9517,0.845,0.9397,fixed
-F4: SGC+MLP decay λ=0.05,42,42,2154,239,1915,False,pre_shock,41,0.806,False,0.8604,0.8645,0.9495,0.7866,fixed
-F4: SGC+MLP decay λ=0.05,42,43,1370,24,1346,False,shock,42,0.6145,False,0.0426,0.0382,0.0435,0.0417,fixed
-F4: SGC+MLP decay λ=0.05,42,44,1591,24,1567,False,recovery,43,0.7104,False,0.15,0.1476,0.1875,0.125,fixed
-F4: SGC+MLP decay λ=0.05,42,45,1221,5,1216,True,recovery,44,0.8567,False,0.0,0.0179,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.05,42,46,712,2,710,True,recovery,45,0.4466,True,0.0,0.0067,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.05,42,47,846,22,824,False,recovery,46,0.6865,True,0.2222,0.2337,0.2857,0.1818,fixed
-F4: SGC+MLP decay λ=0.05,42,48,471,36,435,False,recovery,47,0.7213,False,0.3333,0.6169,0.6667,0.2222,fixed
-F4: SGC+MLP decay λ=0.05,42,49,476,56,420,False,recovery,48,0.4,False,0.7158,0.8186,0.8718,0.6071,fixed
-F4: SGC+MLP decay λ=0.25,42,35,1341,182,1159,False,pre_shock,34,0.2945,False,0.9039,0.9034,0.8571,0.956,fixed
-F4: SGC+MLP decay λ=0.25,42,36,1708,33,1675,False,pre_shock,35,0.6878,False,0.7429,0.822,0.7027,0.7879,fixed
-F4: SGC+MLP decay λ=0.25,42,37,498,40,458,False,pre_shock,36,0.7192,False,0.6984,0.8392,0.9565,0.55,fixed
-F4: SGC+MLP decay λ=0.25,42,38,756,111,645,False,pre_shock,37,0.8705,False,0.8986,0.9637,0.9688,0.8378,fixed
-F4: SGC+MLP decay λ=0.25,42,39,1183,81,1102,False,pre_shock,38,0.9508,False,0.8767,0.9546,0.9846,0.7901,fixed
-F4: SGC+MLP decay λ=0.25,42,40,1211,112,1099,False,pre_shock,39,0.2419,False,0.7053,0.7702,0.7684,0.6518,fixed
-F4: SGC+MLP decay λ=0.25,42,41,1132,116,1016,False,pre_shock,40,0.738,False,0.9076,0.9305,0.8852,0.931,fixed
-F4: SGC+MLP decay λ=0.25,42,42,2154,239,1915,False,pre_shock,41,0.6421,False,0.8493,0.8402,0.9347,0.7782,fixed
-F4: SGC+MLP decay λ=0.25,42,43,1370,24,1346,False,shock,42,0.7437,False,0.0364,0.081,0.0323,0.0417,fixed
-F4: SGC+MLP decay λ=0.25,42,44,1591,24,1567,False,recovery,43,0.795,False,0.2778,0.2521,0.4167,0.2083,fixed
-F4: SGC+MLP decay λ=0.25,42,45,1221,5,1216,True,recovery,44,0.888,False,0.0,0.0218,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.25,42,46,712,2,710,True,recovery,45,0.1336,True,0.0,0.0043,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.25,42,47,846,22,824,False,recovery,46,0.3788,True,0.1887,0.145,0.1613,0.2273,fixed
-F4: SGC+MLP decay λ=0.25,42,48,471,36,435,False,recovery,47,0.6215,False,0.4082,0.621,0.7692,0.2778,fixed
-F4: SGC+MLP decay λ=0.25,42,49,476,56,420,False,recovery,48,0.339,False,0.6957,0.8496,0.8889,0.5714,fixed
-F4: SGC+MLP decay λ=0.5,42,35,1341,182,1159,False,pre_shock,34,0.4608,False,0.9218,0.9198,0.9048,0.9396,fixed
-F4: SGC+MLP decay λ=0.5,42,36,1708,33,1675,False,pre_shock,35,0.1422,False,0.7397,0.8168,0.675,0.8182,fixed
-F4: SGC+MLP decay λ=0.5,42,37,498,40,458,False,pre_shock,36,0.7868,False,0.5862,0.7964,0.9444,0.425,fixed
-F4: SGC+MLP decay λ=0.5,42,38,756,111,645,False,pre_shock,37,0.6845,False,0.9124,0.9557,0.934,0.8919,fixed
-F4: SGC+MLP decay λ=0.5,42,39,1183,81,1102,False,pre_shock,38,0.9596,False,0.8175,0.9354,1.0,0.6914,fixed
-F4: SGC+MLP decay λ=0.5,42,40,1211,112,1099,False,pre_shock,39,0.2873,False,0.6981,0.6894,0.74,0.6607,fixed
-F4: SGC+MLP decay λ=0.5,42,41,1132,116,1016,False,pre_shock,40,0.7466,False,0.8571,0.9216,0.7941,0.931,fixed
-F4: SGC+MLP decay λ=0.5,42,42,2154,239,1915,False,pre_shock,41,0.6731,False,0.8426,0.8691,0.8962,0.795,fixed
-F4: SGC+MLP decay λ=0.5,42,43,1370,24,1346,False,shock,42,0.7305,False,0.12,0.0892,0.1154,0.125,fixed
-F4: SGC+MLP decay λ=0.5,42,44,1591,24,1567,False,recovery,43,0.6605,False,0.2308,0.1624,0.2143,0.25,fixed
-F4: SGC+MLP decay λ=0.5,42,45,1221,5,1216,True,recovery,44,0.7051,False,0.0,0.0765,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.5,42,46,712,2,710,True,recovery,45,0.3887,True,0.0,0.0042,0.0,0.0,fixed
-F4: SGC+MLP decay λ=0.5,42,47,846,22,824,False,recovery,46,0.2737,True,0.1639,0.1539,0.1282,0.2273,fixed
-F4: SGC+MLP decay λ=0.5,42,48,471,36,435,False,recovery,47,0.5654,False,0.3396,0.5551,0.5294,0.25,fixed
-F4: SGC+MLP decay λ=0.5,42,49,476,56,420,False,recovery,48,0.152,False,0.6452,0.7898,0.8108,0.5357,fixed
-F1: Base XGBoost WF [v2],42,35,1341,182,1159,False,pre_shock,33,0.4451,False,0.9568,0.9932,0.9415,0.9725,fixed
-F1: Base XGBoost WF [v2],42,36,1708,33,1675,False,pre_shock,34,0.9076,False,0.9697,0.9983,0.9697,0.9697,fixed
-F1: Base XGBoost WF [v2],42,37,498,40,458,False,pre_shock,35,0.913,False,0.75,0.9156,1.0,0.6,fixed
-F1: Base XGBoost WF [v2],42,38,756,111,645,False,pre_shock,36,0.0703,False,0.9395,0.9588,0.9712,0.9099,fixed
-F1: Base XGBoost WF [v2],42,39,1183,81,1102,False,pre_shock,37,0.6123,False,0.8844,0.9618,0.9848,0.8025,fixed
-F1: Base XGBoost WF [v2],42,40,1211,112,1099,False,pre_shock,38,0.3863,False,0.7739,0.7936,0.8851,0.6875,fixed
-F1: Base XGBoost WF [v2],42,41,1132,116,1016,False,pre_shock,39,0.4995,False,0.9565,0.9704,0.9649,0.9483,fixed
-F1: Base XGBoost WF [v2],42,42,2154,239,1915,False,pre_shock,40,0.7114,False,0.8767,0.9273,0.9648,0.8033,fixed
-F1: Base XGBoost WF [v2],42,43,1370,24,1346,False,shock,41,0.734,False,0.0,0.1732,0.0,0.0,fixed
-F1: Base XGBoost WF [v2],42,44,1591,24,1567,False,recovery,42,0.0919,False,0.274,0.1872,0.2041,0.4167,fixed
-F1: Base XGBoost WF [v2],42,45,1221,5,1216,True,recovery,43,0.1581,False,0.0,0.048,0.0,0.0,fixed
-F1: Base XGBoost WF [v2],42,46,712,2,710,True,recovery,44,0.0069,True,0.0635,0.5233,0.0328,1.0,fixed
-F1: Base XGBoost WF [v2],42,47,846,22,824,False,recovery,45,0.0066,True,0.2516,0.5067,0.146,0.9091,fixed
-F1: Base XGBoost WF [v2],42,48,471,36,435,False,recovery,46,0.0724,False,0.4364,0.564,0.6316,0.3333,fixed
-F1: Base XGBoost WF [v2],42,49,476,56,420,False,recovery,47,0.268,False,0.7692,0.9845,1.0,0.625,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,35,1341,182,1159,False,pre_shock,33,0.0914,False,0.7289,0.5508,0.6119,0.9011,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,36,1708,33,1675,False,pre_shock,34,0.4845,False,0.6173,0.6951,0.5208,0.7576,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,37,498,40,458,False,pre_shock,35,0.9214,False,0.6441,0.7783,1.0,0.475,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,38,756,111,645,False,pre_shock,36,0.3928,False,0.8829,0.9403,0.8829,0.8829,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,39,1183,81,1102,False,pre_shock,37,0.8807,False,0.831,0.9281,0.9672,0.7284,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,40,1211,112,1099,False,pre_shock,38,0.6285,False,0.7419,0.7701,0.9324,0.6161,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,41,1132,116,1016,False,pre_shock,39,0.5375,False,0.8622,0.9047,0.8899,0.8362,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,42,2154,239,1915,False,pre_shock,40,0.7349,False,0.8381,0.8684,0.8915,0.7908,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,43,1370,24,1346,False,shock,41,0.8656,False,0.0,0.0305,0.0,0.0,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,44,1591,24,1567,False,recovery,42,0.0257,False,0.0374,0.0332,0.0241,0.0833,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,45,1221,5,1216,True,recovery,43,0.8464,False,0.0,0.0157,0.0,0.0,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,46,712,2,710,True,recovery,44,0.0003,True,0.0,0.0055,0.0,0.0,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,47,846,22,824,False,recovery,45,0.0063,True,0.1527,0.0925,0.0917,0.4545,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,48,471,36,435,False,recovery,46,0.005,False,0.4474,0.447,0.425,0.4722,fixed
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,49,476,56,420,False,recovery,47,0.0273,False,0.1667,0.4186,0.375,0.1071,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,35,1341,182,1159,False,pre_shock,33,0.2201,False,0.804,0.8476,0.7407,0.8791,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,36,1708,33,1675,False,pre_shock,34,0.6465,False,0.4494,0.5264,0.3571,0.6061,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,37,498,40,458,False,pre_shock,35,0.8917,False,0.5938,0.7882,0.7917,0.475,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,38,756,111,645,False,pre_shock,36,0.0011,False,0.7509,0.9342,0.6265,0.9369,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,39,1183,81,1102,False,pre_shock,37,0.8477,False,0.7852,0.8983,0.9815,0.6543,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,40,1211,112,1099,False,pre_shock,38,0.5516,False,0.7449,0.7974,0.869,0.6518,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,41,1132,116,1016,False,pre_shock,39,0.4214,False,0.8122,0.8884,0.823,0.8017,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,42,2154,239,1915,False,pre_shock,40,0.5,False,0.7679,0.8118,0.7973,0.7406,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,43,1370,24,1346,False,shock,41,0.6603,False,0.0,0.0276,0.0,0.0,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,44,1591,24,1567,False,recovery,42,0.0009,False,0.0805,0.083,0.0467,0.2917,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,45,1221,5,1216,True,recovery,43,0.0278,False,0.0,0.0118,0.0,0.0,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,46,712,2,710,True,recovery,44,0.001,True,0.015,0.0102,0.0076,0.5,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,47,846,22,824,False,recovery,45,0.0046,True,0.0482,0.0618,0.0328,0.0909,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,48,471,36,435,False,recovery,46,0.0003,False,0.382,0.2933,0.3208,0.4722,fixed
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,49,476,56,420,False,recovery,47,0.0009,False,0.4423,0.4409,0.4792,0.4107,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,35,1341,182,1159,False,pre_shock,33,0.1423,False,0.7532,0.6526,0.7014,0.8132,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,36,1708,33,1675,False,pre_shock,34,0.6721,False,0.506,0.5374,0.42,0.6364,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,37,498,40,458,False,pre_shock,35,0.9533,False,0.4912,0.7234,0.8235,0.35,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,38,756,111,645,False,pre_shock,36,0.0001,False,0.6835,0.9235,0.5268,0.973,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,39,1183,81,1102,False,pre_shock,37,0.9105,False,0.7724,0.8173,0.875,0.6914,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,40,1211,112,1099,False,pre_shock,38,0.7451,False,0.7065,0.7313,0.9028,0.5804,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,41,1132,116,1016,False,pre_shock,39,0.4059,False,0.8632,0.9118,0.8559,0.8707,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,42,2154,239,1915,False,pre_shock,40,0.6349,False,0.7965,0.8672,0.8451,0.7531,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,43,1370,24,1346,False,shock,41,0.8989,False,0.0,0.0274,0.0,0.0,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,44,1591,24,1567,False,recovery,42,0.53,False,0.0526,0.0492,0.0714,0.0417,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,45,1221,5,1216,True,recovery,43,0.2096,False,0.0,0.0147,0.0,0.0,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,46,712,2,710,True,recovery,44,0.0001,True,0.0169,0.0402,0.0086,0.5,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,47,846,22,824,False,recovery,45,0.0041,True,0.0154,0.046,0.0093,0.0455,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,48,471,36,435,False,recovery,46,0.0,False,0.4626,0.3541,0.3063,0.9444,fixed
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,49,476,56,420,False,recovery,47,0.0,False,0.1739,0.2341,0.1463,0.2143,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,35,1341,182,1159,False,pre_shock,34,0.0779,False,0.9446,0.9928,0.9086,0.9835,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,36,1708,33,1675,False,pre_shock,35,0.1416,False,0.8767,0.9914,0.8,0.9697,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,37,498,40,458,False,pre_shock,36,0.0238,False,0.7895,0.9147,0.8333,0.75,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,38,756,111,645,False,pre_shock,37,0.0889,False,0.9231,0.9803,0.9897,0.8649,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,39,1183,81,1102,False,pre_shock,38,0.1509,False,0.9747,0.997,1.0,0.9506,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,40,1211,112,1099,False,pre_shock,39,0.0726,False,0.7817,0.7888,0.9059,0.6875,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,41,1132,116,1016,False,pre_shock,40,0.1062,False,0.9492,0.9731,0.9333,0.9655,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,42,2154,239,1915,False,pre_shock,41,0.1088,False,0.8678,0.9315,0.9163,0.8243,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,43,1370,24,1346,False,shock,42,0.1283,False,0.2632,0.3049,0.3571,0.2083,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,44,1591,24,1567,False,recovery,43,0.044,False,0.4651,0.3543,0.5263,0.4167,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,45,1221,5,1216,True,recovery,44,0.0292,False,0.375,0.1933,0.2727,0.6,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,46,712,2,710,True,recovery,45,0.0061,True,0.2,0.5112,0.125,0.5,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,47,846,22,824,False,recovery,46,0.0032,True,0.3846,0.2631,0.2679,0.6818,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,48,471,36,435,False,recovery,47,0.0388,False,0.7812,0.8436,0.8929,0.6944,fixed
-F5: SGC+XGBoost Synthesis (decay λ=0.25),42,49,476,56,420,False,recovery,48,0.0877,False,0.8687,0.9751,1.0,0.7679,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.7516,False,0.6175,0.5675,0.4844,0.8516,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.7504,False,0.0865,0.0554,0.0514,0.2727,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.8976,False,0.3824,0.4109,0.4643,0.325,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.7035,False,0.62,0.5723,0.4921,0.8378,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.7111,False,0.4061,0.2959,0.2944,0.6543,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.743,False,0.4608,0.4009,0.4762,0.4464,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.7758,False,0.5585,0.4995,0.4966,0.6379,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.8007,False,0.7042,0.703,0.7012,0.7071,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.7851,False,0.0161,0.0151,0.0089,0.0833,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.1027,False,0.0361,0.0559,0.0185,0.875,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.9998,False,0.0,0.0182,0.0,0.0,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.8899,True,0.1538,0.1808,0.0909,0.5,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.998,True,0.0,0.0418,0.0,0.0,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.0861,False,0.3626,0.3334,0.226,0.9167,fixed
+"Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.2269,False,0.2278,0.2115,0.1765,0.3214,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.3192,False,0.776,0.8314,0.7376,0.8187,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.4725,False,0.3509,0.2736,0.4167,0.303,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.919,False,0.5862,0.7658,0.9444,0.425,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.302,False,0.8053,0.8333,0.7913,0.8198,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.6344,False,0.7636,0.8198,0.75,0.7778,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.8083,False,0.5731,0.6191,0.8305,0.4375,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.8921,False,0.7885,0.8493,0.8913,0.7069,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.8884,False,0.7423,0.8068,0.8533,0.6569,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.5547,False,0.0132,0.0168,0.0078,0.0417,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.0196,False,0.041,0.0193,0.0219,0.3333,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.3814,False,0.0,0.0079,0.0,0.0,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.4251,True,0.0909,0.0413,0.05,0.5,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.9817,True,0.0,0.0668,0.0,0.0,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.2347,False,0.3492,0.3654,0.4074,0.3056,fixed
+"Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.0917,False,0.2449,0.3865,0.2857,0.2143,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.9879,False,0.8992,0.9331,0.8919,0.9066,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.9549,False,0.6753,0.6334,0.5909,0.7879,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.9805,False,0.5714,0.7263,0.7826,0.45,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.6078,False,0.9321,0.9601,0.9364,0.9279,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.9068,False,0.8649,0.8711,0.9552,0.7901,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.5571,False,0.6935,0.7131,0.7931,0.6161,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.357,False,0.8034,0.869,0.7966,0.8103,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.466,False,0.8186,0.8677,0.9215,0.7364,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.8391,False,0.0,0.045,0.0,0.0,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.1213,False,0.0484,0.0316,0.03,0.125,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.4973,False,0.0,0.028,0.0,0.0,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.3324,True,0.0,0.0086,0.0,0.0,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.823,True,0.0,0.0606,0.0,0.0,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.0048,False,0.5,0.4224,0.3684,0.7778,fixed
+"Best WF: Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.2631,False,0.4091,0.5594,0.5625,0.3214,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,35,1341,182,1159,False,pre_shock,33,0.7687,False,0.8303,0.7483,0.791,0.8736,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,36,1708,33,1675,False,pre_shock,34,0.8154,False,0.6364,0.5903,0.6364,0.6364,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,37,498,40,458,False,pre_shock,35,0.9619,False,0.5763,0.7754,0.8947,0.425,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,38,756,111,645,False,pre_shock,36,0.0419,False,0.7544,0.8971,0.6235,0.955,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,39,1183,81,1102,False,pre_shock,37,0.8015,False,0.624,0.8509,0.8864,0.4815,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,40,1211,112,1099,False,pre_shock,38,0.5847,False,0.7254,0.7472,0.8642,0.625,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,41,1132,116,1016,False,pre_shock,39,0.5788,False,0.8839,0.9274,0.9167,0.8534,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,42,2154,239,1915,False,pre_shock,40,0.8427,False,0.7965,0.7896,0.8349,0.7615,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,43,1370,24,1346,False,shock,41,0.9033,False,0.0667,0.0535,0.1667,0.0417,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,44,1591,24,1567,False,recovery,42,0.1856,False,0.0548,0.0293,0.0328,0.1667,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,45,1221,5,1216,True,recovery,43,0.6585,False,0.0,0.0208,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,46,712,2,710,True,recovery,44,0.4727,True,0.0,0.0122,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,47,846,22,824,False,recovery,45,0.8556,True,0.0,0.0792,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,48,471,36,435,False,recovery,46,0.1286,False,0.5,0.4764,0.5312,0.4722,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var PCA)",42,49,476,56,420,False,recovery,47,0.0929,False,0.1096,0.3857,0.2353,0.0714,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,35,1341,182,1159,False,pre_shock,33,0.4824,False,0.8127,0.8705,0.7293,0.9176,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,36,1708,33,1675,False,pre_shock,34,0.68,False,0.5588,0.5869,0.5429,0.5758,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,37,498,40,458,False,pre_shock,35,0.7551,False,0.5625,0.7468,0.75,0.45,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,38,756,111,645,False,pre_shock,36,0.0093,False,0.7794,0.9481,0.6584,0.955,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,39,1183,81,1102,False,pre_shock,37,0.8808,False,0.7883,0.9045,0.9643,0.6667,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,40,1211,112,1099,False,pre_shock,38,0.6827,False,0.7513,0.7843,0.8706,0.6607,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,41,1132,116,1016,False,pre_shock,39,0.5624,False,0.8658,0.9196,0.8696,0.8621,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,42,2154,239,1915,False,pre_shock,40,0.581,False,0.8097,0.8595,0.8592,0.7657,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,43,1370,24,1346,False,shock,41,0.8187,False,0.0,0.0215,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,44,1591,24,1567,False,recovery,42,0.3358,False,0.0678,0.0374,0.0571,0.0833,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,45,1221,5,1216,True,recovery,43,0.4774,False,0.0,0.0302,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,46,712,2,710,True,recovery,44,0.3211,True,0.0488,0.0225,0.0256,0.5,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,47,846,22,824,False,recovery,45,0.9556,True,0.0,0.0919,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,48,471,36,435,False,recovery,46,0.0568,False,0.3385,0.3613,0.3793,0.3056,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var PCA)",42,49,476,56,420,False,recovery,47,0.0083,False,0.4231,0.4352,0.4583,0.3929,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.3009,False,0.7529,0.6573,0.6584,0.8791,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.5221,False,0.4894,0.4889,0.377,0.697,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.7517,False,0.623,0.7776,0.9048,0.475,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.0303,False,0.8046,0.9397,0.7,0.9459,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.6982,False,0.8356,0.8999,0.9385,0.7531,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.4724,False,0.7128,0.7569,0.8816,0.5982,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.5522,False,0.8841,0.9281,0.8803,0.8879,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.7101,False,0.8329,0.8771,0.9516,0.7406,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.6744,False,0.0,0.0431,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.0681,False,0.0632,0.0379,0.0361,0.25,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.2436,False,0.0,0.0155,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.567,True,0.0,0.0059,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.8053,True,0.0,0.0841,0.0,0.0,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.0677,False,0.5679,0.5573,0.5111,0.6389,fixed
+"Best WF: Grid: K=1, Dir=F, Topo=late (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.0778,False,0.2963,0.4183,0.48,0.2143,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.1111,False,0.7093,0.568,0.5677,0.9451,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.788,False,0.5625,0.5341,0.5806,0.5455,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.9073,False,0.6349,0.7486,0.8696,0.5,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.6846,False,0.8959,0.8963,0.9,0.8919,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.948,False,0.8333,0.8873,0.9524,0.7407,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.9152,False,0.663,0.7771,0.8696,0.5357,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.7265,False,0.9217,0.9478,0.9901,0.8621,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.9874,False,0.8259,0.8261,0.8852,0.7741,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.7509,False,0.0,0.0316,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.01,False,0.0606,0.0412,0.0338,0.2917,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.2992,False,0.0,0.0271,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.6975,True,0.0,0.0154,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.9194,True,0.0,0.0695,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.054,False,0.46,0.4389,0.3594,0.6389,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=late (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.0131,False,0.5172,0.3481,0.3814,0.8036,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,35,1341,182,1159,False,pre_shock,33,0.5824,False,0.8992,0.948,0.8919,0.9066,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,36,1708,33,1675,False,pre_shock,34,0.8145,False,0.5106,0.5279,0.3934,0.7273,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,37,498,40,458,False,pre_shock,35,0.552,False,0.5614,0.7846,0.9412,0.4,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,38,756,111,645,False,pre_shock,36,0.6969,False,0.9083,0.8916,0.9252,0.8919,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,39,1183,81,1102,False,pre_shock,37,0.6126,False,0.8734,0.9058,0.8961,0.8519,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,40,1211,112,1099,False,pre_shock,38,0.8035,False,0.7396,0.7772,0.8875,0.6339,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,41,1132,116,1016,False,pre_shock,39,0.653,False,0.8889,0.9303,0.9174,0.8621,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,42,2154,239,1915,False,pre_shock,40,0.8793,False,0.802,0.8521,0.9647,0.6862,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,43,1370,24,1346,False,shock,41,0.7847,False,0.0,0.0375,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,44,1591,24,1567,False,recovery,42,0.0716,False,0.0594,0.0438,0.039,0.125,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,45,1221,5,1216,True,recovery,43,0.9903,False,0.0,0.0224,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,46,712,2,710,True,recovery,44,0.4886,True,0.0,0.0081,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,47,846,22,824,False,recovery,45,0.866,True,0.0,0.0589,0.0,0.0,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,48,471,36,435,False,recovery,46,0.0797,False,0.32,0.3264,0.3077,0.3333,fixed
+"Best WF: Grid: K=3, Dir=F, Topo=early (Seed 42, Var Base)",42,49,476,56,420,False,recovery,47,0.0235,False,0.3226,0.406,0.4054,0.2679,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.2782,False,0.8226,0.7753,0.7729,0.8791,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.659,False,0.6176,0.5374,0.6,0.6364,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,37,498,40,458,False,pre_shock,35,0.7034,False,0.6875,0.8446,0.9167,0.55,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,38,756,111,645,False,pre_shock,36,0.8041,False,0.9143,0.9608,0.9697,0.8649,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.5576,False,0.8758,0.9074,0.9306,0.8272,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.0163,False,0.7442,0.7897,0.7767,0.7143,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.169,False,0.8766,0.9309,0.8655,0.8879,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.8673,False,0.8329,0.8703,0.9516,0.7406,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,43,1370,24,1346,False,shock,41,0.8483,False,0.0,0.0417,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,44,1591,24,1567,False,recovery,42,0.0,False,0.0594,0.0695,0.0323,0.375,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,45,1221,5,1216,True,recovery,43,0.031,False,0.0,0.0308,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,46,712,2,710,True,recovery,44,0.1118,True,0.0,0.0032,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,47,846,22,824,False,recovery,45,0.7853,True,0.125,0.1186,0.2,0.0909,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,48,471,36,435,False,recovery,46,0.0,False,0.5238,0.4403,0.4583,0.6111,fixed
+Ablation: Decay λ=0.05 on 1 F late Base,42,49,476,56,420,False,recovery,47,0.0,False,0.4706,0.4707,0.4444,0.5,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.0057,False,0.7384,0.8665,0.5993,0.9615,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.8323,False,0.625,0.4759,0.6452,0.6061,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,37,498,40,458,False,pre_shock,35,0.857,False,0.6462,0.8218,0.84,0.525,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,38,756,111,645,False,pre_shock,36,0.3247,False,0.8815,0.9631,0.93,0.8378,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.4355,False,0.8169,0.8829,0.9508,0.716,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.0798,False,0.732,0.7899,0.8659,0.6339,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.7497,False,0.8987,0.93,0.9189,0.8793,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.932,False,0.8451,0.8935,0.9626,0.7531,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,43,1370,24,1346,False,shock,41,0.6038,False,0.0,0.0657,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,44,1591,24,1567,False,recovery,42,0.0012,False,0.0303,0.0336,0.0185,0.0833,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,45,1221,5,1216,True,recovery,43,0.0882,False,0.0,0.013,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,46,712,2,710,True,recovery,44,0.2341,True,0.0,0.0072,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,47,846,22,824,False,recovery,45,0.841,True,0.0,0.0992,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,48,471,36,435,False,recovery,46,0.0,False,0.5238,0.5068,0.4583,0.6111,fixed
+Ablation: Decay λ=0.25 on 1 F late Base,42,49,476,56,420,False,recovery,47,0.0,False,0.5545,0.5705,0.6222,0.5,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.5061,False,0.8191,0.7787,0.7938,0.8462,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.1591,False,0.5287,0.3824,0.4259,0.697,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,37,498,40,458,False,pre_shock,35,0.1057,False,0.64,0.7985,0.6857,0.6,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,38,756,111,645,False,pre_shock,36,0.0008,False,0.8171,0.9401,0.7192,0.9459,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.7835,False,0.7612,0.8813,0.9623,0.6296,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.6078,False,0.6591,0.7471,0.9062,0.5179,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.3482,False,0.8821,0.9232,0.8938,0.8707,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.9611,False,0.8295,0.8734,0.9231,0.7531,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,43,1370,24,1346,False,shock,41,0.5721,False,0.0833,0.0466,0.0833,0.0833,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,44,1591,24,1567,False,recovery,42,0.615,False,0.15,0.0816,0.1875,0.125,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,45,1221,5,1216,True,recovery,43,0.9971,False,0.0,0.0306,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,46,712,2,710,True,recovery,44,0.1156,True,0.0,0.0036,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,47,846,22,824,False,recovery,45,0.9262,True,0.0,0.1212,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,48,471,36,435,False,recovery,46,0.0,False,0.4615,0.5435,0.4286,0.5,fixed
+Ablation: Decay λ=0.5 on 1 F late Base,42,49,476,56,420,False,recovery,47,0.0,False,0.5984,0.594,0.5352,0.6786,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.7074,False,0.8352,0.8253,0.8352,0.8352,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.5834,False,0.6111,0.4926,0.5641,0.6667,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,37,498,40,458,False,pre_shock,35,0.8515,False,0.6452,0.8398,0.9091,0.5,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,38,756,111,645,False,pre_shock,36,0.0002,False,0.803,0.9459,0.6928,0.955,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.5118,False,0.8553,0.8462,0.9155,0.8025,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.6889,False,0.766,0.7859,0.9474,0.6429,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.4171,False,0.8664,0.9112,0.9307,0.8103,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.2114,False,0.8161,0.8886,0.8792,0.7615,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,43,1370,24,1346,False,shock,41,0.7131,False,0.0,0.0412,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,44,1591,24,1567,False,recovery,42,0.0,False,0.0325,0.0675,0.018,0.1667,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,45,1221,5,1216,True,recovery,43,0.126,False,0.0,0.0145,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,46,712,2,710,True,recovery,44,0.0414,True,0.0,0.0059,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,47,846,22,824,False,recovery,45,0.9586,True,0.0,0.0876,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,48,471,36,435,False,recovery,46,0.0005,False,0.3226,0.3591,0.3846,0.2778,fixed
+Ablation: Decay λ=0.05 on 3 F late Base,42,49,476,56,420,False,recovery,47,0.0081,False,0.3684,0.5673,0.7,0.25,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.7603,False,0.8249,0.8747,0.8488,0.8022,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.3673,False,0.6061,0.6132,0.6061,0.6061,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,37,498,40,458,False,pre_shock,35,0.983,False,0.6452,0.8018,0.9091,0.5,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,38,756,111,645,False,pre_shock,36,0.0078,False,0.8678,0.9559,0.8015,0.9459,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.6847,False,0.8609,0.9035,0.9286,0.8025,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.9533,False,0.6667,0.7425,0.9661,0.5089,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.3708,False,0.8333,0.8938,0.8065,0.8621,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.9666,False,0.7971,0.8693,0.9429,0.6904,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,43,1370,24,1346,False,shock,41,0.6875,False,0.0345,0.0272,0.0294,0.0417,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,44,1591,24,1567,False,recovery,42,0.0293,False,0.0988,0.1358,0.0702,0.1667,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,45,1221,5,1216,True,recovery,43,0.4464,False,0.0,0.0184,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,46,712,2,710,True,recovery,44,0.6851,True,0.0,0.0071,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,47,846,22,824,False,recovery,45,0.319,True,0.0,0.0583,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,48,471,36,435,False,recovery,46,0.0005,False,0.4337,0.4041,0.383,0.5,fixed
+Ablation: Decay λ=0.25 on 3 F late Base,42,49,476,56,420,False,recovery,47,0.0185,False,0.6364,0.7599,0.875,0.5,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,35,1341,182,1159,False,pre_shock,33,0.5627,False,0.7819,0.8547,0.807,0.7582,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,36,1708,33,1675,False,pre_shock,34,0.5918,False,0.5902,0.5324,0.6429,0.5455,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,37,498,40,458,False,pre_shock,35,0.7511,False,0.6111,0.7707,0.6875,0.55,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,38,756,111,645,False,pre_shock,36,0.3133,False,0.8584,0.9123,0.8435,0.8739,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,39,1183,81,1102,False,pre_shock,37,0.8803,False,0.7857,0.8446,0.9322,0.679,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,40,1211,112,1099,False,pre_shock,38,0.4435,False,0.6526,0.689,0.7949,0.5536,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,41,1132,116,1016,False,pre_shock,39,0.4784,False,0.8684,0.9048,0.8839,0.8534,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,42,2154,239,1915,False,pre_shock,40,0.9235,False,0.8295,0.8824,0.9231,0.7531,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,43,1370,24,1346,False,shock,41,0.4205,False,0.0333,0.0348,0.0278,0.0417,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,44,1591,24,1567,False,recovery,42,0.0396,False,0.0808,0.1132,0.0533,0.1667,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,45,1221,5,1216,True,recovery,43,0.7428,False,0.0,0.0094,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,46,712,2,710,True,recovery,44,0.6597,True,0.0,0.0412,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,47,846,22,824,False,recovery,45,0.9279,True,0.0,0.0662,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,48,471,36,435,False,recovery,46,0.0002,False,0.5128,0.4762,0.4762,0.5556,fixed
+Ablation: Decay λ=0.5 on 3 F late Base,42,49,476,56,420,False,recovery,47,0.0009,False,0.7451,0.8044,0.8261,0.6786,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,35,1341,182,1159,False,pre_shock,33,0.8838,False,0.8011,0.827,0.8056,0.7967,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,36,1708,33,1675,False,pre_shock,34,0.5741,False,0.4167,0.2333,0.3175,0.6061,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,37,498,40,458,False,pre_shock,35,0.9898,False,0.623,0.8303,0.9048,0.475,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,38,756,111,645,False,pre_shock,36,0.0002,False,0.8185,0.931,0.7162,0.955,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,39,1183,81,1102,False,pre_shock,37,0.1589,False,0.825,0.8645,0.8354,0.8148,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,40,1211,112,1099,False,pre_shock,38,0.7812,False,0.6893,0.7334,0.9385,0.5446,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,41,1132,116,1016,False,pre_shock,39,0.4124,False,0.8778,0.9352,0.9238,0.8362,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,42,2154,239,1915,False,pre_shock,40,0.6754,False,0.8284,0.8176,0.9141,0.7573,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,43,1370,24,1346,False,shock,41,0.8605,False,0.0,0.0331,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,44,1591,24,1567,False,recovery,42,0.0,False,0.0778,0.0753,0.0449,0.2917,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,45,1221,5,1216,True,recovery,43,0.415,False,0.0,0.0136,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,46,712,2,710,True,recovery,44,0.1497,True,0.0,0.0074,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,47,846,22,824,False,recovery,45,0.8481,True,0.0,0.074,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,48,471,36,435,False,recovery,46,0.0374,False,0.0889,0.3083,0.2222,0.0556,fixed
+Ablation: Decay λ=0.05 on 3 F early Base,42,49,476,56,420,False,recovery,47,0.0001,False,0.486,0.4533,0.5098,0.4643,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,35,1341,182,1159,False,pre_shock,33,0.1794,False,0.8021,0.8685,0.7812,0.8242,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,36,1708,33,1675,False,pre_shock,34,0.1,False,0.5106,0.4701,0.3934,0.7273,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,37,498,40,458,False,pre_shock,35,0.9944,False,0.6102,0.8064,0.9474,0.45,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,38,756,111,645,False,pre_shock,36,0.0638,False,0.8772,0.923,0.8547,0.9009,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,39,1183,81,1102,False,pre_shock,37,0.8544,False,0.8116,0.876,0.9825,0.6914,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,40,1211,112,1099,False,pre_shock,38,0.2256,False,0.7292,0.7566,0.875,0.625,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,41,1132,116,1016,False,pre_shock,39,0.2707,False,0.8545,0.8964,0.9038,0.8103,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,42,2154,239,1915,False,pre_shock,40,0.8577,False,0.8208,0.8721,0.9405,0.728,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,43,1370,24,1346,False,shock,41,0.3153,False,0.0968,0.0329,0.0789,0.125,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,44,1591,24,1567,False,recovery,42,0.0021,False,0.0694,0.0931,0.0417,0.2083,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,45,1221,5,1216,True,recovery,43,0.8633,False,0.0,0.0136,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,46,712,2,710,True,recovery,44,0.2145,True,0.0,0.0089,0.0,0.0,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,47,846,22,824,False,recovery,45,0.7375,True,0.069,0.0777,0.1429,0.0455,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,48,471,36,435,False,recovery,46,0.0,False,0.422,0.4007,0.3151,0.6389,fixed
+Ablation: Decay λ=0.25 on 3 F early Base,42,49,476,56,420,False,recovery,47,0.0,False,0.6822,0.6599,0.6027,0.7857,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,35,1341,182,1159,False,pre_shock,33,0.0644,False,0.782,0.8181,0.6875,0.9066,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,36,1708,33,1675,False,pre_shock,34,0.1934,False,0.5672,0.6692,0.5588,0.5758,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,37,498,40,458,False,pre_shock,35,0.9523,False,0.6349,0.8223,0.8696,0.5,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,38,756,111,645,False,pre_shock,36,0.0284,False,0.8772,0.9213,0.8547,0.9009,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,39,1183,81,1102,False,pre_shock,37,0.2233,False,0.8027,0.8346,0.8939,0.7284,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,40,1211,112,1099,False,pre_shock,38,0.7115,False,0.6778,0.7414,0.8971,0.5446,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,41,1132,116,1016,False,pre_shock,39,0.2829,False,0.8403,0.8769,0.8197,0.8621,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,42,2154,239,1915,False,pre_shock,40,0.7172,False,0.8117,0.8622,0.8744,0.7573,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,43,1370,24,1346,False,shock,41,0.4939,False,0.0256,0.0278,0.0185,0.0417,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,44,1591,24,1567,False,recovery,42,0.0116,False,0.1069,0.0718,0.0654,0.2917,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,45,1221,5,1216,True,recovery,43,1.0,False,0.0,0.0123,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,46,712,2,710,True,recovery,44,0.4504,True,0.0,0.004,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,47,846,22,824,False,recovery,45,0.9175,True,0.0,0.0683,0.0,0.0,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,48,471,36,435,False,recovery,46,0.0,False,0.4715,0.4356,0.3333,0.8056,fixed
+Ablation: Decay λ=0.5 on 3 F early Base,42,49,476,56,420,False,recovery,47,0.0003,False,0.7523,0.7943,0.7736,0.7321,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,35,1341,182,1159,False,pre_shock,33,0.3,False,0.9443,0.9936,0.9128,0.978,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,36,1708,33,1675,False,pre_shock,34,0.9654,False,0.9688,0.9966,1.0,0.9394,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,37,498,40,458,False,pre_shock,35,0.9356,False,0.7879,0.9203,1.0,0.65,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,38,756,111,645,False,pre_shock,36,0.0488,False,0.9439,0.9587,0.9806,0.9099,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,39,1183,81,1102,False,pre_shock,37,0.6086,False,0.898,0.9684,1.0,0.8148,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,40,1211,112,1099,False,pre_shock,38,0.2672,False,0.77,0.7896,0.875,0.6875,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,41,1132,116,1016,False,pre_shock,39,0.6414,False,0.96,0.9696,0.9908,0.931,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,42,2154,239,1915,False,pre_shock,40,0.7291,False,0.8843,0.9286,0.9896,0.7992,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,43,1370,24,1346,False,shock,41,0.5534,False,0.0,0.2487,0.0,0.0,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,44,1591,24,1567,False,recovery,42,0.0433,False,0.303,0.2124,0.2381,0.4167,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,45,1221,5,1216,True,recovery,43,0.0994,False,0.1111,0.0587,0.0769,0.2,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,46,712,2,710,True,recovery,44,0.0679,True,0.4,0.5233,0.3333,0.5,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,47,846,22,824,False,recovery,45,0.1597,True,0.3529,0.5176,0.5,0.2727,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,48,471,36,435,False,recovery,46,0.0385,False,0.4643,0.6128,0.65,0.3611,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,49,476,56,420,False,recovery,47,0.2217,False,0.7273,0.9909,1.0,0.5714,fixed

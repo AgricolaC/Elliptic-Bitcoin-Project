@@ -192,7 +192,7 @@ code(
     "    ('Random Forest', 'F3b: Random Forest (clean)', '#2a9d4a')\n"
     "]\n"
     "labels = [x[0] for x in inst]\n"
-    "vals = [get_scalar(x[1], 'Static_OOT_F1') for x in inst]\n"
+    "vals = [get_scalar(x[1], 'Static_OOT_Pooled_F1') for x in inst]\n"
     "cols = [x[2] for x in inst]\n"
     "fig, ax = plt.subplots(figsize=(10, 4))\n"
     "bars = ax.barh(labels, vals, color=cols)\n"
@@ -246,7 +246,7 @@ md(
 )
 code(
     "df_grid = sweep[sweep['Sweep'].str.startswith('Grid:')]\n"
-    "grid_df = df_grid[['Sweep', 'Variation', 'Static_OOT_F1_mean', 'Static_OOT_PRAUC_mean']].copy().dropna()\n"
+    "grid_df = df_grid[['Sweep', 'Variation', 'Static_OOT_Pooled_F1_mean', 'Static_OOT_Pooled_PRAUC_mean']].copy().dropna()\n"
     "grid_df.columns = ['Configuration', 'Variation', 'Static OOT Illicit-F1', 'PR-AUC']\n"
     "grid_df['Static OOT Illicit-F1'] = grid_df['Static OOT Illicit-F1'].round(3)\n"
     "grid_df['PR-AUC'] = grid_df['PR-AUC'].round(3)\n"
@@ -350,10 +350,10 @@ md(
 )
 code(
     "f4_models_xgb = [\n"
-    "    ('Uniform XGBoost', 'F1: Base XGBoost WF [v2]', '#2c6fbb'),\n"
-    "    ('λ=0.05', 'F4: XGBoost decay λ=0.05', '#2a9d4a'),\n"
-    "    ('λ=0.25', 'F4: XGBoost decay λ=0.25', '#f39c12'),\n"
-    "    ('λ=0.50', 'F4: XGBoost decay λ=0.5', '#c0392b')\n"
+    "    ('Uniform XGBoost', 'Baseline: XGBoost WF (epsilon-fallback)', '#2c6fbb'),\n"
+    "    ('λ=0.05', 'Ablation: Decay λ=0.05 on XGBoost', '#2a9d4a'),\n"
+    "    ('λ=0.25', 'Ablation: Decay λ=0.25 on XGBoost', '#f39c12'),\n"
+    "    ('λ=0.50', 'Ablation: Decay λ=0.5 on XGBoost', '#c0392b')\n"
     "]\n"
     "fig, ax = plt.subplots(figsize=(12, 6))\n"
     "for label, sweep_name, color in f4_models_xgb:\n"
@@ -405,8 +405,8 @@ code(
     "keys = [\n"
     "    'F1: SGC+MLP WF K=2 [Dir=F; Topo=None]', \n"
     "    'F4: SGC+MLP decay λ=0.05', \n"
-    "    'F1: Base XGBoost WF [v2]', \n"
-    "    'F4: XGBoost decay λ=0.05'\n"
+    "    'Baseline: XGBoost WF (epsilon-fallback)', \n"
+    "    'Ablation: Decay λ=0.05 on XGBoost'\n"
     "]\n"
     "pooled_vals = [get_scalar(k, 'WF_Pooled_F1') for k in keys]\n"
     "macro_vals = [get_scalar(k, 'WF_Macro_F1') for k in keys]\n"
