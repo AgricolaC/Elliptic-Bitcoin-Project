@@ -155,50 +155,55 @@ def main():
         from scipy.stats import wasserstein_distance_nd
     except ImportError:
         wasserstein_distance_nd = None
-        print("Warning: scipy.stats.wasserstein_distance_nd not found. Using an alternative if needed.")
-    
+        print("Warning: scipy.stats.wasserstein_distance_nd not available; Wasserstein will be 0.0.")
+
+    # Fit a single global StandardScaler + PCA on reference steps (ts 1–34)
+    # so all per-step Wasserstein comparisons share the same eigenbasis.
+    REF_MAX_TS = 34
+    X_ref_parts = []
+    for t_ref in sorted(t for t in df.ts.unique() if t <= REF_MAX_TS):
+        sub_ref = df[df.ts == t_ref]
+        if len(sub_ref) == 0:
+            continue
+        _, X_ref_t, _, _ = reindex_timestep(sub_ref, df_edge, feature_cols)
+        X_ref_parts.append(X_ref_t)
+    X_ref = np.vstack(X_ref_parts)
+
+    global_scaler = StandardScaler().fit(X_ref)
+    global_pca = PCA(n_components=3, random_state=42).fit(global_scaler.transform(X_ref))
+
+    rng = np.random.default_rng(42)
     drift_rows = []
     prev_X = None
     prev_X_pca = None
-    
+
     for t in sorted(df.ts.unique()):
         sub = df[df.ts == t]
-        if len(sub) == 0: continue
+        if len(sub) == 0:
+            continue
         ei, X, y, txids = reindex_timestep(sub, df_edge, feature_cols)
-        X_np = X
-        
-        pca = PCA(n_components=3)
-        X_pca = pca.fit_transform(X_np)
-        
+        X_np = global_scaler.transform(X)       # standardize with global scaler
+        X_pca = global_pca.transform(X_np)      # project onto fixed eigenbasis
+
         if prev_X is not None:
-            # Subsample to max 250 nodes for memory-safe RBF kernel and fast ND-Wasserstein
             max_nodes = 250
-            
-            idx_prev = np.random.choice(len(prev_X), min(len(prev_X), max_nodes), replace=False)
-            idx_curr = np.random.choice(len(X_np), min(len(X_np), max_nodes), replace=False)
-            
-            pX = prev_X[idx_prev]
-            cX = X_np[idx_curr]
+            idx_prev = rng.choice(len(prev_X), min(len(prev_X), max_nodes), replace=False)
+            idx_curr = rng.choice(len(X_np),   min(len(X_np),   max_nodes), replace=False)
+
+            pX     = prev_X[idx_prev]
+            cX     = X_np[idx_curr]
             pX_pca = prev_X_pca[idx_prev]
             cX_pca = X_pca[idx_curr]
 
-            # MMD with RBF
-            XX = rbf_kernel(pX, pX, gamma=None)
-            YY = rbf_kernel(cX, cX, gamma=None)
-            XY = rbf_kernel(pX, cX, gamma=None)
-            mmd = XX.mean() + YY.mean() - 2 * XY.mean()
-            
-            # ND-Wasserstein on PCA
-            if wasserstein_distance_nd is not None:
-                w_dist = wasserstein_distance_nd(pX_pca, cX_pca)
-            else:
-                w_dist = 0.0
-            
+            gamma = _median_gamma(pX, cX)
+            mmd   = _mmd_unbiased(pX, cX, gamma)
+
+            w_dist = wasserstein_distance_nd(pX_pca, cX_pca) if wasserstein_distance_nd is not None else 0.0
             drift_rows.append({"tau": t, "mmd": mmd, "wasserstein_pca": w_dist})
-            
-        prev_X = X_np
+
+        prev_X     = X_np
         prev_X_pca = X_pca
-        
+
     df_drift = pd.DataFrame(drift_rows)
     df_drift.to_csv(os.path.join(OUTPUT_DIR, "eda_drift.csv"), index=False)
 
