@@ -39,6 +39,7 @@ def _find_best_f1_threshold(y_true: np.ndarray, scores: np.ndarray) -> float:
 
 
 def _calibrate_threshold(y_cal: np.ndarray, s_cal: np.ndarray,
+                         global_illicit_rate: float = None,
                          epsilon: int = 10) -> Tuple[float, bool]:
     """Pick the operating threshold from the calibration step.
 
@@ -55,8 +56,8 @@ def _calibrate_threshold(y_cal: np.ndarray, s_cal: np.ndarray,
     """
     n_pos = int((y_cal == 1).sum())
     if n_pos < epsilon:
-        local_rate = n_pos / max(len(y_cal), 1)
-        q = float(np.quantile(s_cal, 1.0 - local_rate))
+        rate = global_illicit_rate if global_illicit_rate is not None else (n_pos / max(len(y_cal), 1))
+        q = float(np.quantile(s_cal, 1.0 - rate))
         return q, True
     return float(_find_best_f1_threshold(y_cal, s_cal)), False
 
@@ -148,6 +149,28 @@ def fit_head(
                 
             if getattr(cfg, 'sgc_l1_lambda', 0.0) > 0.0:
                 loss += cfg.sgc_l1_lambda * l1_penalty
+            
+            loss.backward()
+            opt.step()
+    return model
+
+
+def _compute_class_weights(ytr: torch.Tensor, device: torch.device) -> torch.Tensor:
+    """
+    Compute inverse-frequency class weights from labeled nodes in ytr.
+
+    Defensive Notes:
+        - Only labeled nodes (y != -1) are used for counting.
+        - Returns uniform weights if no labeled nodes exist.
+    """
+    labeled = ytr[ytr != -1]
+    if labeled.numel() == 0:
+        return torch.ones(2, device=device)
+    counts = torch.bincount(labeled, minlength=2).float()
+    # Guard against a class being absent in this window
+    counts = counts.clamp(min=1.0)
+    return (counts.sum() / (2.0 * counts)).to(device)
+
 
 
 def walk_forward_validation(
