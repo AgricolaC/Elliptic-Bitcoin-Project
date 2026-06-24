@@ -36,8 +36,10 @@ _RESULT_KEYS = (
     "Static_Mem_MB",
     "Static_Val_F1",
     "Static_Val_PRAUC",
-    "Static_OOT_F1",
-    "Static_OOT_PRAUC",
+    "Static_OOT_Pooled_F1",
+    "Static_OOT_Pooled_PRAUC",
+    "Static_OOT_Macro_F1",
+    "Static_OOT_Macro_PRAUC",
     "WF_Time_s",
     "WF_Mem_MB",
     "WF_Pooled_F1",
@@ -73,14 +75,34 @@ def profile_resources():
         metrics["peak_mem"] = peak / (1024 * 1024)
 
 
+
+def _evaluate_static_macro(predict_fn, dm, steps):
+    from evaluation.validation import _aggregate_walk_forward
+    y_true_list, y_pred_list, score_list = [], [], []
+    for t in steps:
+        if t not in dm.graphs: continue
+        g = dm.graphs[t]
+        m = g["labeled_mask"].numpy()
+        if m.sum() == 0: continue
+        y = g["y"].numpy()[m]
+        if len(np.unique(y)) < 2: continue
+        s = predict_fn(g, m)
+        y_pred = (s >= 0.5).astype(int)
+        y_true_list.append(y)
+        y_pred_list.append(y_pred)
+        score_list.append(s)
+    if not y_true_list: return "N/A", "N/A"
+    _, _, macro_f1, macro_prauc, _ = _aggregate_walk_forward(y_true_list, y_pred_list, score_list)
+    return float(macro_f1), float(macro_prauc)
+
 def _make_result(
     seed: int,
     variation: str,
     sweep: str,
     static_time: float | str,
     static_mem: float | str,
-    static_f1: float | str,
-    static_prauc: float | str,
+    static_oot_pooled_f1: float | str,
+    static_oot_pooled_prauc: float | str,
     wf_time: float | str,
     wf_mem: float | str,
     wf_f1: float | str,            # back-compat: old "Walk-Forward Mean" → WF_Macro
@@ -91,6 +113,8 @@ def _make_result(
     val_prauc: float | str = "N/A",
     # ── v2 schema additions (CSV-1) ──────────────────────────────────────────
     threshold_method: str | None = None,
+    static_oot_macro_f1: float | str = "N/A",
+    static_oot_macro_prauc: float | str = "N/A",
     wf_pooled_f1: float | str = "N/A",
     wf_pooled_prauc: float | str = "N/A",
     wf_pre43_pooled_f1: float | str = "N/A",
@@ -121,8 +145,10 @@ def _make_result(
         "Static_Mem_MB":         static_mem,
         "Static_Val_F1":         val_f1,
         "Static_Val_PRAUC":      val_prauc,
-        "Static_OOT_F1":         static_f1,
-        "Static_OOT_PRAUC":      static_prauc,
+        "Static_OOT_Pooled_F1":  static_oot_pooled_f1,
+        "Static_OOT_Pooled_PRAUC": static_oot_pooled_prauc,
+        "Static_OOT_Macro_F1":   static_oot_macro_f1,
+        "Static_OOT_Macro_PRAUC": static_oot_macro_prauc,
         "WF_Time_s":             wf_time,
         "WF_Mem_MB":             wf_mem,
         "WF_Pooled_F1":          wf_pooled_f1,
@@ -207,6 +233,7 @@ def run_single_sweep(
     cls_w     = (counts.sum() / (2.0 * counts)).to(DEVICE)
 
     stat_res, static_f1, static_prauc = {}, 0.0, 0.0
+    static_macro_f1, static_macro_prauc = "N/A", "N/A"
     if not only_wf:
         with profile_resources() as stat_res:
             model = fit_head(Xtr_g, ytr_g, dm.sgc_input_dim, cfg, cls_w, DEVICE)
@@ -218,6 +245,11 @@ def run_single_sweep(
             y_true       = yte_g[m].numpy()
             static_f1    = f1_score(y_true, (scores >= 0.5).astype(int), pos_label=1, zero_division=0)
             static_prauc = average_precision_score(y_true, scores)
+            
+            def predict_fn(g_t, m_t):
+                with torch.no_grad():
+                    return torch.softmax(model(g_t["prop"][m_t].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
+            static_macro_f1, static_macro_prauc = _evaluate_static_macro(predict_fn, dm, cfg.test_steps)
 
     wf_res, wf_f1, wf_prauc, wf_records = {}, 0.0, 0.0, []
     if not only_static:
@@ -244,8 +276,10 @@ def run_single_sweep(
         sweep=name,
         static_time=round(stat_res.get("time", 0.0), 3),
         static_mem=round(stat_res.get("peak_mem", 0.0), 2),
-        static_f1=round(static_f1, 3),
-        static_prauc=round(static_prauc, 3),
+        static_oot_pooled_f1=round(static_f1, 3),
+        static_oot_pooled_prauc=round(static_prauc, 3),
+        static_oot_macro_f1=round(static_macro_f1, 3) if isinstance(static_macro_f1, float) else static_macro_f1,
+        static_oot_macro_prauc=round(static_macro_prauc, 3) if isinstance(static_macro_prauc, float) else static_macro_prauc,
         wf_time=round(wf_res.get("time", 0.0), 3),
         wf_mem=round(wf_res.get("peak_mem", 0.0), 2),
         wf_f1=round(wf_f1, 3),
@@ -310,6 +344,11 @@ def run_static_only_sweep(
         y_true       = yte_g[m].numpy()
         static_f1    = f1_score(y_true, (scores >= 0.5).astype(int), pos_label=1, zero_division=0)
         static_prauc = average_precision_score(y_true, scores)
+        
+        def predict_fn(g_t, m_t):
+            with torch.no_grad():
+                return torch.softmax(model(g_t["prop"][m_t].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
+        static_macro_f1, static_macro_prauc = _evaluate_static_macro(predict_fn, dm, cfg.test_steps)
     
     # Save the static-only model + dm + cfg for potential later analysis
     safe_name = re.sub(r"[^\w\-]", "_", name)
@@ -325,8 +364,10 @@ def run_static_only_sweep(
         sweep=name,
         static_time=round(stat_res.get("time", 0.0), 3),
         static_mem=round(stat_res.get("peak_mem", 0.0), 2),
-        static_f1=round(static_f1, 3),
-        static_prauc=round(static_prauc, 3),
+        static_oot_pooled_f1=round(static_f1, 3),
+        static_oot_pooled_prauc=round(static_prauc, 3),
+        static_oot_macro_f1=round(static_macro_f1, 3) if isinstance(static_macro_f1, float) else static_macro_f1,
+        static_oot_macro_prauc=round(static_macro_prauc, 3) if isinstance(static_macro_prauc, float) else static_macro_prauc,
         wf_time="N/A",
         wf_mem="N/A",
         wf_f1="N/A",
@@ -598,8 +639,8 @@ def main():
                 sweep="Baseline: IsolationForest (166)",
                 static_time=round(stat_iso.get("time", 0.0), 3),
                 static_mem=round(stat_iso.get("peak_mem", 0.0), 2),
-                static_f1=round(static_iso_f1, 3),
-                static_prauc=round(static_iso_prauc, 3),
+                static_oot_pooled_f1=round(static_iso_f1, 3),
+                static_oot_pooled_prauc=round(static_iso_prauc, 3),
                 wf_time=round(wf_iso.get("time", 0.0), 3),
                 wf_mem=round(wf_iso.get("peak_mem", 0.0), 2),
                 wf_f1=round(wf_iso_f1, 3),
@@ -640,8 +681,8 @@ def main():
                 sweep="Baseline: XGBoost (166)",
                 static_time=round(stat_xgb.get("time", 0.0), 3),
                 static_mem=round(stat_xgb.get("peak_mem", 0.0), 2),
-                static_f1=round(static_xgb_f1, 3),
-                static_prauc=round(static_xgb_prauc, 3),
+                static_oot_pooled_f1=round(static_xgb_f1, 3),
+                static_oot_pooled_prauc=round(static_xgb_prauc, 3),
                 wf_time=round(wf_xgb.get("time", 0.0), 3),
                 wf_mem=round(wf_xgb.get("peak_mem", 0.0), 2),
                 wf_f1=round(wf_xgb_f1, 3),
@@ -675,8 +716,8 @@ def main():
                 sweep="Baseline: RandomForest (166)",
                 static_time=round(stat_rf.get("time", 0.0), 3),
                 static_mem=round(stat_rf.get("peak_mem", 0.0), 2),
-                static_f1=round(static_rf_f1, 3),
-                static_prauc=round(static_rf_prauc, 3),
+                static_oot_pooled_f1=round(static_rf_f1, 3),
+                static_oot_pooled_prauc=round(static_rf_prauc, 3),
                 wf_time=round(wf_rf.get("time", 0.0), 3),
                 wf_mem=round(wf_rf.get("peak_mem", 0.0), 2),
                 wf_f1=round(wf_rf_f1, 3),
@@ -729,8 +770,8 @@ def main():
                 sweep="Ablation: XGBoost + Graph Features (500d)",
                 static_time=round(stat_xgb_g.get("time", 0.0), 3),
                 static_mem=round(stat_xgb_g.get("peak_mem", 0.0), 2),
-                static_f1=round(static_xgb_g_f1, 3),
-                static_prauc=round(static_xgb_g_prauc, 3),
+                static_oot_pooled_f1=round(static_xgb_g_f1, 3),
+                static_oot_pooled_prauc=round(static_xgb_g_prauc, 3),
                 wf_time=round(wf_xgb_g.get("time", 0.0), 3),
                 wf_mem=round(wf_xgb_g.get("peak_mem", 0.0), 2),
                 wf_f1=round(wf_xgb_g_f1, 3),
@@ -776,14 +817,14 @@ def main():
             
                 results.append(_make_result(
                     seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Temporal XGBoost (best w, lag=0)",
-                    static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                    static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
                     wf_time=round(wf_temp_0.get("time", 0.0), 3), wf_mem=round(wf_temp_0.get("peak_mem", 0.0), 2),
                     wf_f1=round(wf_temp_xgb_f1_0, 3), wf_prauc=round(wf_temp_xgb_prauc_0, 3),
                     feature_set=f"Raw-166+Temporal (w={best_w})", threshold="0.5"
                 ))
                 results.append(_make_result(
                     seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Temporal XGBoost (best w, lag=2)",
-                    static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                    static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
                     wf_time=round(wf_temp_2.get("time", 0.0), 3), wf_mem=round(wf_temp_2.get("peak_mem", 0.0), 2),
                     wf_f1=round(wf_temp_xgb_f1_2, 3), wf_prauc=round(wf_temp_xgb_prauc_2, 3),
                     feature_set=f"Raw-166+Temporal-Lag2 (w={best_w})", threshold="0.5"
@@ -956,7 +997,7 @@ def main():
             if f1_val == "N/A":
                 f1_val = 0.0
             elif f1_val == "" or pd.isna(f1_val):
-                f1_val = r.get("Static_OOT_F1", 0.0)
+                f1_val = r.get("Static_OOT_Pooled_F1", 0.0)
             if f1_val == "N/A":
                 f1_val = 0.0
             if f1_val == "" or pd.isna(f1_val):
@@ -997,8 +1038,8 @@ def main():
                     sweep=wf_name,
                     static_time="N/A",
                     static_mem="N/A",
-                    static_f1="N/A",
-                    static_prauc="N/A",
+                    static_oot_pooled_f1="N/A",
+                    static_oot_pooled_prauc="N/A",
                     wf_time=round(wf_stat.get("time", 0.0), 3),
                     wf_mem=round(wf_stat.get("peak_mem", 0.0), 2),
                     wf_f1=round(wf_f1, 3),
@@ -1030,7 +1071,7 @@ def main():
             
             ema_res = _make_result(
                 seed=best_cfg.seed, variation="Base", sweep=ema_name,
-                static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
                 wf_time=round(ema_stat.get("time", 0.0), 3), wf_mem=round(ema_stat.get("peak_mem", 0.0), 2),
                 wf_f1=round(ema_f1, 3), wf_prauc=round(ema_prauc, 3),
                 feature_set="Prop+EMA-h", threshold="τ-1 calibrated"
@@ -1049,7 +1090,7 @@ def main():
                 
             lstm_res = _make_result(
                 seed=best_cfg.seed, variation="Base", sweep=lstm_name,
-                static_time="N/A", static_mem="N/A", static_f1="N/A", static_prauc="N/A",
+                static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
                 wf_time=round(lstm_stat.get("time", 0.0), 3), wf_mem=round(lstm_stat.get("peak_mem", 0.0), 2),
                 wf_f1=round(lstm_f1, 3), wf_prauc=round(lstm_prauc, 3),
                 feature_set="Prop+LSTM-h", threshold="τ-1 calibrated"
@@ -1073,7 +1114,7 @@ def main():
     for r in results:
         print(
             f"{r['Sweep']:35s} | "
-            f"Stat [Time:{str(r['Static_Time_s']):>5s}s, Mem:{str(r['Static_Mem_MB']):>5s}MB] F1={str(r['Static_OOT_F1']):<5s} | "
+            f"Stat [Time:{str(r['Static_Time_s']):>5s}s, Mem:{str(r['Static_Mem_MB']):>5s}MB] F1={str(r['Static_OOT_Pooled_F1']):<5s} | "
             f"WF [Time:{str(r['WF_Time_s']):>5s}s, Mem:{str(r['WF_Mem_MB']):>5s}MB] F1={str(r['WF_Macro_F1']):<5s}"
         )
 

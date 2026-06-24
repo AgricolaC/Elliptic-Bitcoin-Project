@@ -53,6 +53,10 @@ def stratified_wf_metrics(records, threshold: float = 0.5):
     rows = []
     for r in sorted(records, key=lambda r: r["tau"]):
         tau, y, s = r["tau"], np.asarray(r["y_true"]), np.asarray(r["scores"])
+        assert len(y) == len(s), \
+            f"tau={tau}: len(y_true)={len(y)} != len(scores)={len(s)} — scores may include unlabeled nodes"
+        assert set(np.unique(y)).issubset({0, 1}), \
+            f"tau={tau}: y_true contains unexpected labels {np.unique(y)} — unlabeled nodes not filtered?"
         yp = r["y_pred"] if "y_pred" in r else (s >= threshold).astype(int)
         n_ill = int((y == 1).sum())
         n_lic = int((y == 0).sum())
@@ -90,7 +94,9 @@ def stratified_wf_metrics(records, threshold: float = 0.5):
     shock_f1, shock_prauc = _agg_pool(shock)
     rec_f1, rec_prauc = _agg_pool(rec)
 
-    valid_f1 = [row["F1"] for row in rows]
+    # Filter NaN consistently for both metrics so macro F1 and PRAUC share
+    # the same effective denominator (same set of τ steps).
+    valid_f1 = [row["F1"] for row in rows if not np.isnan(row["F1"])]
     valid_prauc = [row["PRAUC"] for row in rows if not np.isnan(row["PRAUC"])]
     macro_f1 = round(float(np.mean(valid_f1)), 4) if valid_f1 else float("nan")
     macro_prauc = round(float(np.mean(valid_prauc)), 4) if valid_prauc else float("nan")

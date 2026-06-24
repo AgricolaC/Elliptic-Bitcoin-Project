@@ -28,7 +28,8 @@ from evaluation.temporal_validation import (
     train_lstm_conditioned, train_ema_conditioned,
     _onestep_blocks, _temporal_state,
 )
-from evaluation.validation import _find_best_f1_threshold
+from evaluation.validation import _find_best_f1_threshold, _calibrate_threshold
+from evaluation.temporal_validation import _train_illicit_rate as _compute_gir
 
 # ==========================================
 # AGGREGATION FUNCTIONS
@@ -175,7 +176,7 @@ def plot_grid_performance():
 # ==========================================
 # TEMPORAL WALK-FORWARD
 # ==========================================
-def _per_step(dm, cfg, device, epochs, embed_dim, kind):
+def _per_step(dm, cfg, device, epochs, embed_dim, kind, gir):
     rows = []
     for tau in cfg.test_steps:
         train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
@@ -213,7 +214,7 @@ def _per_step(dm, cfg, device, epochs, embed_dim, kind):
                         h_cal = _temporal_state(embedder, temporal, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold = _find_best_f1_threshold(y_cal, s_cal)
+                    threshold, _ = _calibrate_threshold(y_cal, s_cal, gir)
 
         # Test on tau (one-step-ahead: state excludes tau)
         with torch.no_grad():
@@ -258,19 +259,21 @@ def run_temporal_analysis(epochs=100, embed_dim=32, models="lstm,ema"):
     # LSTM must run on CPU under MPS (parity with sweep.py main())
     lstm_device = torch.device("cpu") if DEVICE.type == "mps" else DEVICE
 
+    gir = _compute_gir(dm, cfg)
+
     wanted = [m.strip() for m in models.split(",") if m.strip()]
 
     if "ema" in wanted:
         print("\n=== SGC-EMA (learned phi, memoryless-ish baseline) ===", flush=True)
         t0 = time.time()
-        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "ema")
+        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "ema", gir)
         print(f"EMA walk-forward done in {time.time() - t0:.1f}s", flush=True)
         _append_rows("SGC-EMA Conditioned (learned phi)", rows)
 
     if "lstm" in wanted:
         print("\n=== SGC-LSTM (learned phi, deep structural) ===", flush=True)
         t0 = time.time()
-        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "lstm")
+        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "lstm", gir)
         print(f"LSTM walk-forward done in {time.time() - t0:.1f}s", flush=True)
         _append_rows("SGC-LSTM Conditioned (learned phi)", rows)
 

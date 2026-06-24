@@ -60,7 +60,9 @@ def reindex_timestep(
 
     X = sub_df[feature_cols].values.astype(np.float32)
     y = sub_df.label.values.astype(np.int64)
-    assert X.shape[0] == n == len(y), "Node/feature/label count mismatch."
+    assert X.shape == (n, len(feature_cols)), \
+        f"Feature matrix shape {X.shape} != ({n}, {len(feature_cols)})"
+    assert len(y) == n, f"Label count {len(y)} != node count {n}"
     return edge_index, X, y, tx_ids
 
 
@@ -112,8 +114,9 @@ class EllipticDataModule:
             - Shape asserts at every injection boundary.
         """
         c = self.cfg
-        ts_min = min(min(c.train_steps), min(c.test_steps))
-        ts_max = max(max(c.train_steps), max(c.test_steps))
+        all_steps = [*c.train_steps, *c.val_steps, *c.test_steps]
+        ts_min = min(all_steps)
+        ts_max = max(all_steps)
 
         # ── Step 1: Build per-timestep raw graphs ──────────────────────────────
         for t in range(ts_min, ts_max + 1):
@@ -217,23 +220,27 @@ class EllipticDataModule:
                 f"expected {expected_dim}"
             )
             self.sgc_input_dim = sample_prop.shape[1]
-        else:
-            # Fallback for test environments where layers is unavailable
-            self.sgc_input_dim = self.feature_dim
 
-        # ── Step 7.5: Post-propagation StandardScaler (P2-B hop rescaling) ─────
-        # Each S^k X hop shrinks variance systematically. Without rescaling,
-        # later hops enter the head at smaller scale and L1/weight-decay
-        # penalties are effectively unequal across hops.
-        # LEAKAGE GUARD: scaler_prop fitted on train_steps only.
-        train_props = np.concatenate(
-            [self.graphs[t]["prop"].numpy() for t in c.train_steps if t in self.graphs],
-            axis=0,
-        )
-        self.scaler_prop.fit(train_props)
-        for t in self.graphs:
-            prop_np = self.scaler_prop.transform(self.graphs[t]["prop"].numpy())
-            self.graphs[t]["prop"] = torch.tensor(prop_np, dtype=torch.float32)
+            # ── Step 7.5: Post-propagation StandardScaler (P2-B hop rescaling) ───
+            # Each S^k X hop shrinks variance systematically. Without rescaling,
+            # later hops enter the head at smaller scale and L1/weight-decay
+            # penalties are effectively unequal across hops.
+            # LEAKAGE GUARD: scaler_prop fitted on train_steps only.
+            # NOTE: kept inside this block — prop keys only exist when sgc_propagate
+            # is available. The fallback path (else below) never creates "prop" keys
+            # so this block must not run there.
+            train_props = np.concatenate(
+                [self.graphs[t]["prop"].numpy() for t in c.train_steps if t in self.graphs],
+                axis=0,
+            )
+            self.scaler_prop.fit(train_props)
+            for t in self.graphs:
+                prop_np = self.scaler_prop.transform(self.graphs[t]["prop"].numpy())
+                self.graphs[t]["prop"] = torch.tensor(prop_np, dtype=torch.float32)
+        else:
+            # Fallback for test environments where layers is unavailable.
+            # No "prop" keys are created here — callers must not access dm.graphs[t]["prop"].
+            self.sgc_input_dim = self.feature_dim
 
         # ── Step 8: PCA Dimensionality Reduction ──────────────────────────────
         if getattr(c, 'use_pca', False) or getattr(c, 'use_ipca', False):

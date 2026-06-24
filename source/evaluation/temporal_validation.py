@@ -67,8 +67,16 @@ def _temporal_state(embedder, temporal, steps, dm, device):
     One-step-ahead: callers pass the history EXCLUDING the step being classified
     (see ``_onestep_blocks``), so the returned state never incorporates the
     scored snapshot's own embedding.
+
+    h_0 reset guarantee: torch.stack() builds a fresh sequence each call;
+    TemporalLSTM and SnapshotEMA both start from a zero initial state. There
+    is no persistent hidden state across calls.
     """
     embeddings = [embedder(dm.graphs[t]["prop"].to(device)) for t in steps if t in dm.graphs]
+    assert len(embeddings) > 0, (
+        f"_temporal_state: no valid steps in {steps} — "
+        f"dm.graphs has {len(dm.graphs)} entries: {sorted(dm.graphs)[:5]}..."
+    )
     hidden_states = temporal(torch.stack(embeddings))
     return hidden_states[-1]
 
@@ -84,6 +92,9 @@ def train_lstm_conditioned(
 ) -> Tuple[SnapshotEmbedder, TemporalLSTM, LSTMConditionedHead]:
     """
     Trains the end-to-end LSTM conditioned model on a sequence of snapshots.
+
+    Returns (embedder, lstm, head) all in train mode. Callers that run inference
+    immediately after must call embedder.eval(); lstm.eval(); head.eval() first.
     """
     embedder = SnapshotEmbedder(dm.sgc_input_dim, embed_dim, cfg).to(device)
     lstm = TemporalLSTM(embed_dim, cfg.lstm_hidden).to(device)
@@ -116,7 +127,10 @@ def train_lstm_conditioned(
     if m0.sum() > 0:
         smoke_x = g0["prop"].to(device)
         smoke_y = g0["y"][m0].to(device)
-        smoke_emb = embedder(smoke_x).unsqueeze(0).unsqueeze(0) # (1, 1, embed_dim)
+        smoke_emb_vec = embedder(smoke_x)
+        assert smoke_emb_vec.shape == (embed_dim,), \
+            f"SMOKE: SnapshotEmbedder output shape {smoke_emb_vec.shape} != ({embed_dim},)"
+        smoke_emb = smoke_emb_vec.unsqueeze(0).unsqueeze(0) # (1, 1, embed_dim)
         smoke_lstm_out, _ = lstm.lstm(smoke_emb)
         smoke_h = smoke_lstm_out.squeeze(0).squeeze(0) # (hidden_dim,)
         smoke_logits = head(smoke_x[m0], smoke_h)
@@ -263,11 +277,12 @@ def train_ema_conditioned(
     cls_w = _compute_class_weights(ytr_all, device)
     loss_fn = build_loss(cfg, cls_w)
     
+    embedder.train()
+    head.train()
+
     for epoch in range(epochs):
         opt.zero_grad()
-        embedder.train()
-        head.train()
-        
+
         embeddings = []
         for t in sorted_train_steps:
             g = dm.graphs[t]
@@ -327,6 +342,7 @@ def walk_forward_ema_conditioned(
         )
 
         embedder.eval()
+        ema.eval()
         head.eval()
 
         threshold = 0.5

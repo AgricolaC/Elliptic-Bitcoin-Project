@@ -81,6 +81,29 @@ def _run(name, collect_fn, feature_set, threshold_method="epsilon-fallback"):
           f"Pooled_PRAUC={agg['WF_Pooled_PRAUC']}", flush=True)
     return agg
 
+def _log_f2_verdict(a_lstm: dict, a_shuf: dict):
+    """Compute F2 verdict, log it to falsification_log.csv, and return (verdict, sub)."""
+    diff = a_lstm["WF_Pooled_PRAUC"] - a_shuf["WF_Pooled_PRAUC"]
+    if abs(diff) <= 0.02:
+        verdict = "PASS"
+        sub = "Shuffled memory matches chronological memory; temporal order is uninformative."
+    else:
+        verdict = "FAIL"
+        sub = f"Sequence matters! Diff={diff:.4f}"
+
+    log_verdict(
+        "F2",
+        "Order-invariance check (shuffled vs chronological LSTM)",
+        "World A (temporal drift detectable via sequence order)",
+        "WF_Pooled_PRAUC_diff",
+        "|LSTM_chron - LSTM_shuf| <= 0.02",
+        round(abs(diff), 4),
+        verdict,
+        Notes=sub,
+    )
+    return verdict, sub
+
+
 def run():
     set_global_seeds(SEED)
     print("Loading raw dataset for F2...", flush=True)
@@ -108,19 +131,8 @@ def run():
                   lambda: collect_temporal_lstm(dm, cfg, lstm_device, gir, cfg.wf_epochs, shuffle_train=True),
                   "SGC K=2 + Shuffled LSTM context")
 
-    # Verdict
-    lstm = a_lstm["WF_Pooled_PRAUC"]
-    shuf = a_shuf["WF_Pooled_PRAUC"]
-    diff = lstm - shuf
-    
-    if abs(diff) <= 0.02:
-        verdict = "PASS"
-        sub = "Shuffled memory matches chronological memory; temporal order is uninformative."
-    else:
-        verdict = "FAIL"
-        sub = f"Sequence matters! Diff={diff:.4f}"
-        
-    print(f"\\n>>> F2 VERDICT: {verdict} — {sub}")
+    verdict, sub = _log_f2_verdict(a_lstm, a_shuf)
+    print(f"\n>>> F2 VERDICT: {verdict} — {sub}")
 
 if __name__ == "__main__":
     run()

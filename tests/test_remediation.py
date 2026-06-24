@@ -371,7 +371,8 @@ class TestSweepResultKeyStandardization:
     REQUIRED_KEYS = {
         "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
         "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
-        "Static_OOT_F1", "Static_OOT_PRAUC", "WF_Time_s", "WF_Mem_MB",
+        "Static_OOT_Pooled_F1", "Static_OOT_Pooled_PRAUC",
+        "Static_OOT_Macro_F1", "Static_OOT_Macro_PRAUC", "WF_Time_s", "WF_Mem_MB",
         "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
         "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC", "WF_Shock_F1", "WF_Shock_PRAUC",
         "WF_Recovery_Pooled_F1", "WF_Recovery_PRAUC", "Selfcond_Bug", "Notes",
@@ -795,6 +796,142 @@ class TestEpsilonFallback:
         assert fired is False
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# BUG-3 — empty val_steps must not crash build_graph.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestEmptyValSteps:
+    """
+    BUG-3 REGRESSION: build_graph.py:117 called min(c.val_steps) unconditionally.
+    Empty val_steps (e.g. range(35, 35)) raised ValueError: min() arg is an empty sequence.
+    Fix must be in build_graph.py — empty val_steps is valid for static OOT eval.
+    """
+
+    def _make_dm_empty_val(self):
+        from config import Config
+        from data.build_graph import EllipticDataModule
+
+        rng = np.random.default_rng(42)
+        rows = []
+        for t in [1, 2, 3]:
+            for i in range(20):
+                row = {"txId": t * 100 + i, "ts": t, "label": rng.choice([0, 1])}
+                for f in range(5):
+                    row[f"f{f}"] = rng.normal()
+                rows.append(row)
+        df = pd.DataFrame(rows)
+        edges = pd.DataFrame({"txId1": [], "txId2": []})
+        feature_cols = [f"f{f}" for f in range(5)]
+        cfg = Config(
+            train_steps=range(1, 2),
+            val_steps=range(2, 2),   # EMPTY — this is the problematic config
+            test_steps=range(2, 4),
+        )
+        return EllipticDataModule(df, edges, feature_cols, cfg)
+
+    def test_setup_does_not_crash_with_empty_val_steps(self):
+        """EllipticDataModule.setup() must not raise when val_steps is empty."""
+        dm = self._make_dm_empty_val()
+        dm.setup()   # Must not raise ValueError
+
+    def test_graphs_built_for_train_and_test_only(self):
+        """With empty val_steps, graphs should be built for train+test steps only."""
+        dm = self._make_dm_empty_val()
+        dm.setup()
+        assert 1 in dm.graphs
+        assert 2 in dm.graphs or 3 in dm.graphs
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BUG-2 — F2 run() must call log_verdict via extracted helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestF2LogsVerdict:
+    """
+    BUG-2 REGRESSION: f2_lstm.run() printed the F2 verdict but never called
+    log_verdict(), so falsification_log.csv had no F2 entry after a sweep.
+    Fix extracts _log_f2_verdict() and tests it with patched LOG_PATH.
+    """
+
+    def test_f2_verdict_calls_log_verdict_on_pass(self, tmp_path):
+        """When |lstm - shuf| <= 0.02, _log_f2_verdict must write PASS to the log."""
+        import csv
+        import evaluation.falsification_log as flog
+        log_file = tmp_path / "falsification_log.csv"
+        with patch.object(flog, "LOG_PATH", str(log_file)):
+            from execution.phases.f2_lstm import _log_f2_verdict
+            verdict, sub = _log_f2_verdict(
+                {"WF_Pooled_PRAUC": 0.75},
+                {"WF_Pooled_PRAUC": 0.74},
+            )
+        assert verdict == "PASS"
+        assert log_file.exists(), "log_verdict must write the CSV file"
+        with open(log_file) as f:
+            rows = list(csv.DictReader(f))
+        assert len(rows) == 1
+        assert rows[0]["Test_ID"] == "F2"
+        assert rows[0]["Verdict"] == "PASS"
+
+    def test_f2_verdict_calls_log_verdict_on_fail(self, tmp_path):
+        """When |lstm - shuf| > 0.02, _log_f2_verdict must write FAIL to the log."""
+        import csv
+        import evaluation.falsification_log as flog
+        log_file = tmp_path / "falsification_log.csv"
+        with patch.object(flog, "LOG_PATH", str(log_file)):
+            from execution.phases.f2_lstm import _log_f2_verdict
+            verdict, sub = _log_f2_verdict(
+                {"WF_Pooled_PRAUC": 0.80},
+                {"WF_Pooled_PRAUC": 0.60},
+            )
+        assert verdict == "FAIL"
+        assert log_file.exists()
+        with open(log_file) as f:
+            rows = list(csv.DictReader(f))
+        assert rows[0]["Test_ID"] == "F2"
+        assert rows[0]["Verdict"] == "FAIL"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BUG-1 — temporal_analysis must use _calibrate_threshold, not _find_best_f1_threshold
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTemporalAnalysisThreshold:
+    """
+    BUG-1 REGRESSION: temporal_analysis._per_step used _find_best_f1_threshold
+    instead of _calibrate_threshold. On the shock calibration step (τ-1=43,
+    0 illicit nodes), _find_best_f1_threshold returns 0.5 (silent fallback),
+    while _calibrate_threshold returns a quantile-based threshold via ε-fallback.
+    The two functions MUST diverge on a zero-positive calibration scenario.
+    """
+
+    def test_calibrate_vs_find_best_diverge_on_zero_positives(self):
+        """On a calib step with 0 positives, the two functions must return different thresholds."""
+        from evaluation.validation import _calibrate_threshold, _find_best_f1_threshold
+
+        rng = np.random.default_rng(99)
+        y_cal = np.zeros(50, dtype=int)  # all-licit: shock step scenario
+        s_cal = rng.uniform(0, 1, size=50).astype(np.float32)
+        gir = 0.10
+
+        t_wrong = _find_best_f1_threshold(y_cal, s_cal)
+        t_correct, fallback_fired = _calibrate_threshold(y_cal, s_cal, gir)
+
+        assert fallback_fired is True, "_calibrate_threshold must fire fallback when n_pos=0"
+        assert t_wrong == 0.5, "_find_best_f1_threshold must return 0.5 on zero positives"
+        assert abs(t_correct - 0.5) > 0.001, (
+            f"_calibrate_threshold returned {t_correct}, same as _find_best_f1_threshold "
+            f"({t_wrong}) — ε-fallback is not diverging from the 0.5 default"
+        )
+
+    def test_temporal_analysis_imports_calibrate_threshold(self):
+        """temporal_analysis must import and use _calibrate_threshold."""
+        import inspect
+        import analysis.temporal_analysis as ta
+        src = inspect.getsource(ta)
+        assert "_calibrate_threshold" in src, \
+            "temporal_analysis.py must import and use _calibrate_threshold"
+
+
 class TestPagerankAudit:
     """P0e — is the PageRank feature actually alive under early injection?"""
 
@@ -917,7 +1054,8 @@ class TestResultSchemaV2:
     NEW_KEYS = {
         "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
         "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
-        "Static_OOT_F1", "Static_OOT_PRAUC", "WF_Time_s", "WF_Mem_MB",
+        "Static_OOT_Pooled_F1", "Static_OOT_Pooled_PRAUC",
+        "Static_OOT_Macro_F1", "Static_OOT_Macro_PRAUC", "WF_Time_s", "WF_Mem_MB",
         "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
         "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC", "WF_Shock_F1", "WF_Shock_PRAUC",
         "WF_Recovery_Pooled_F1", "WF_Recovery_PRAUC", "Selfcond_Bug", "Notes",
@@ -928,13 +1066,13 @@ class TestResultSchemaV2:
         assert set(_RESULT_KEYS) == self.NEW_KEYS, "Canonical _RESULT_KEYS != v2 schema"
         r = _make_result(
             seed=42, variation="Base", sweep="x",
-            static_time=1.0, static_mem=1.0, static_f1=0.8, static_prauc=0.9,
+            static_time=1.0, static_mem=1.0, static_oot_pooled_f1=0.8, static_oot_pooled_prauc=0.9,
             wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
             selfcond_bug="fixed",
         )
         assert set(r.keys()) == self.NEW_KEYS
         assert all(v is not None for v in r.values()), "no result field may be None"
         assert r["Selfcond_Bug"] == "fixed"
-        assert r["Static_OOT_F1"] == 0.8
+        assert r["Static_OOT_Pooled_F1"] == 0.8
         # old WF mean maps to MACRO under the new schema
         assert "WF_Macro_F1" in r and "WF_Pre43_PRAUC" in r

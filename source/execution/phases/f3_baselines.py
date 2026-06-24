@@ -208,7 +208,7 @@ def run():
              f"LR F1={lr_f1:.4f}")
     
     log_verdict("F3", "Instrument check (clean baselines & graph reference)",
-                World_Eliminated="broken-instrument", Readout_Metric="Static_OOT_F1",
+                World_Eliminated="broken-instrument", Readout_Metric="Static_OOT_Pooled_F1",
                 Decision_Rule="XGB>=0.74 & RF>=0.79 & SGC>=0.50 & GCN in [0.5,0.75]",
                 Observed_Value=round(sgc_f1, 4), Verdict=verdict,
                 Sweep_Refs="F3a: XGB, F3b: RF, F3c: SGC+MLP, F3d: GCN, F3e: LR",

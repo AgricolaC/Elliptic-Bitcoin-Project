@@ -36,6 +36,10 @@ def build_snapshot_temporal_features(
     if feature_col_indices is None:
         feature_col_indices = list(range(5))  # Default to first 5 raw features
 
+    assert label_lag >= 0, \
+        f"label_lag={label_lag} is negative; negative values shift s_label beyond target_step " \
+        f"and read future labels into past-lag features."
+
     # Precompute training-set means to fill missing lags (instead of 0-filling)
     # LEAKAGE GUARD: training-set means only use cfg.train_steps
     train_steps = getattr(dm.cfg, "train_steps", [])
@@ -149,7 +153,9 @@ def build_snapshot_temporal_features(
     # Expected total width = 16 * w + 15 * (w - 1) = 31w - 15 (lag_present has no first difference)
     
     if window == 0:
-        return np.array([], dtype=np.float32)
+        result = np.array([], dtype=np.float32)
+        assert result.shape == (0,), f"window=0 result shape {result.shape} != (0,)"
+        return result
 
     lag_matrix = np.stack(lag_features)  # (w, 16)
     

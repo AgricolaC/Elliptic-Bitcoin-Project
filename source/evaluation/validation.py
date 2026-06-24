@@ -89,9 +89,13 @@ def _aggregate_walk_forward(y_true_list: List[np.ndarray], y_pred_list: List[np.
 
 def stack_prop(dm: Any, steps: List[int]) -> Tuple[torch.Tensor, torch.Tensor]:
     """Concatenate ALL nodes' propagated features over `steps`."""
+    expected_dim = dm.sgc_input_dim
     Xs, ys = [], []
     for t in steps:
+        assert t in dm.graphs, f"step {t} not in dm.graphs"
         g = dm.graphs[t]
+        assert g["prop"].shape[1] == expected_dim, \
+            f"step {t} prop width {g['prop'].shape[1]} != sgc_input_dim {expected_dim}"
         Xs.append(g["prop"])
         ys.append(g["y"])
     return torch.cat(Xs), torch.cat(ys)
@@ -216,6 +220,14 @@ def walk_forward_validation(
     y_true_all, y_pred_all, s_pred_all = [], [], []
     total_wf_train_time = 0.0
 
+    # Global illicit rate from static train split — used by the ε-fallback in
+    # _calibrate_threshold when a calibration step has < ε positives (e.g., τ=44,
+    # where calib=43 is the shock step with near-zero illicit prevalence).
+    train_ys = [dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]].numpy()
+                for t in cfg.train_steps if t in dm.graphs]
+    all_train_y = np.concatenate(train_ys) if train_ys else np.array([])
+    global_illicit_rate = float((all_train_y == 1).mean()) if len(all_train_y) else 0.5
+
     for tau in eval_steps:
         start_t = max(min(dm.graphs), tau - window) if window else min(dm.graphs)
         # P1-A: train on [start..tau-2], calibrate threshold on tau-1
@@ -226,15 +238,17 @@ def walk_forward_validation(
         if not train_block:
             continue
 
-        # LEAKAGE GUARD: no test-step data can be in the training window
-        assert max(train_block) < tau - 1, \
-            f"LEAKAGE: train_block max={max(train_block)} >= tau-1={tau-1}"
+        # LEAKAGE GUARD: calib step must not appear in the training window.
+        assert calib_step not in train_block, \
+            f"LEAKAGE: calib_step={calib_step} found in train_block={train_block}"
 
         Xtr_w, ytr_w = stack_prop(dm, train_block)
 
         g     = dm.graphs[tau]
         m     = g["labeled_mask"]
         Xte_w = g["prop"][m]
+        assert Xte_w.shape[1] == dm.sgc_input_dim, \
+            f"Test prop width {Xte_w.shape[1]} != sgc_input_dim {dm.sgc_input_dim}"
         yte_w = g["y"][m].numpy()
 
         if m.sum() == 0:
@@ -254,7 +268,12 @@ def walk_forward_validation(
         
         model.eval()
 
-        # P1-A: Calibrate threshold on held-out step tau-1 (not in-sample)
+        # P1-A: Calibrate threshold on held-out step tau-1 (not in-sample).
+        # Uses _calibrate_threshold (not _find_best_f1_threshold directly) so the
+        # ε-fallback fires consistently across SGC and LSTM/EMA paths when the
+        # calibration step has < ε positives (e.g., tau=44, calib=43=shock).
+        # NOTE: when n_pos >= epsilon, _calibrate_threshold delegates to
+        # _find_best_f1_threshold — so pre-shock F1 is identical across paths.
         threshold = 0.5  # fallback
         if calib_step in dm.graphs:
             g_cal = dm.graphs[calib_step]
@@ -266,10 +285,16 @@ def walk_forward_validation(
                         s_cal = torch.softmax(
                             model(g_cal["prop"][m_cal].to(device)), dim=1
                         )[:, 1].cpu().numpy()
-                    threshold = _find_best_f1_threshold(y_cal, s_cal)
+                    threshold, _ = _calibrate_threshold(y_cal, s_cal, global_illicit_rate)
 
         with torch.no_grad():
-            s = torch.softmax(model(Xte_w.to(device)), dim=1)[:, 1].cpu().numpy()
+            # PRAUC COLUMN GUARD: [:, 1] is the illicit-class probability.
+            # class_map: "1"→1 (illicit/positive), "2"→0 (licit/negative).
+            # average_precision_score expects scores for the positive class.
+            logits_te = model(Xte_w.to(device))
+            assert logits_te.shape[1] == 2, \
+                f"tau={tau}: expected 2-class logits, got shape {logits_te.shape}"
+            s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
 
         y_pred = (s >= threshold).astype(int)
         step_f1 = float(f1_score(yte_w, y_pred, pos_label=1, zero_division=0))
