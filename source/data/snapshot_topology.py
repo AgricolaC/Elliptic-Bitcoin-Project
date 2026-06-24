@@ -56,3 +56,17 @@ def build_snapshot_topology(df: pd.DataFrame, df_edge: pd.DataFrame) -> pd.DataF
             "Regime": _regime(int(tau)),
         })
     return pd.DataFrame(rows).sort_values("Tau").reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    import os
+    from source.config import OUTPUT_DIR
+    from source.data.load_dataset import download_and_load_data
+
+    print("Loading data...")
+    df, df_edge, _, _ = download_and_load_data()
+    print("Building snapshot topology...")
+    topo = build_snapshot_topology(df, df_edge)
+    out_path = os.path.join(OUTPUT_DIR, "snapshot_topology.csv")
+    topo.to_csv(out_path, index=False)
+    print(f"Saved {len(topo)} snapshots to {out_path}")

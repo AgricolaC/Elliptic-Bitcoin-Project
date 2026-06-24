@@ -39,21 +39,24 @@ def _find_best_f1_threshold(y_true: np.ndarray, scores: np.ndarray) -> float:
 
 
 def _calibrate_threshold(y_cal: np.ndarray, s_cal: np.ndarray,
-                         global_illicit_rate: float, epsilon: int = 10) -> Tuple[float, bool]:
+                         epsilon: int = 10) -> Tuple[float, bool]:
     """Pick the operating threshold from the calibration step.
 
     Under prevalence collapse (the τ=43 regime shift) the calibration step can
     have almost no positives, making the supervised F1-threshold pure noise
     (World C). When the calibration step has fewer than ``epsilon`` positives,
-    fall back to an UNSUPERVISED quantile: the ``1 - global_illicit_rate``
-    quantile of the calibration score distribution (i.e. predict the top
-    global-base-rate fraction as illicit).
+    fall back to a LOCAL quantile: the ``1 - local_rate`` quantile of the
+    calibration score distribution, where ``local_rate`` is the observed
+    illicit fraction in the calibration step itself.  This honours the
+    post-break empirical prevalence rather than imposing a pre-break global
+    base-rate onto a structurally different regime.
 
     Returns ``(threshold, fallback_fired)``.
     """
     n_pos = int((y_cal == 1).sum())
     if n_pos < epsilon:
-        q = float(np.quantile(s_cal, 1.0 - global_illicit_rate))
+        local_rate = n_pos / max(len(y_cal), 1)
+        q = float(np.quantile(s_cal, 1.0 - local_rate))
         return q, True
     return float(_find_best_f1_threshold(y_cal, s_cal)), False
 
@@ -145,29 +148,6 @@ def fit_head(
                 
             if getattr(cfg, 'sgc_l1_lambda', 0.0) > 0.0:
                 loss += cfg.sgc_l1_lambda * l1_penalty
-                    
-            loss.backward()
-            opt.step()
-    return model
-
-
-
-
-def _compute_class_weights(ytr: torch.Tensor, device: torch.device) -> torch.Tensor:
-    """
-    Compute inverse-frequency class weights from labeled nodes in ytr.
-
-    Defensive Notes:
-        - Only labeled nodes (y != -1) are used for counting.
-        - Returns uniform weights if no labeled nodes exist.
-    """
-    labeled = ytr[ytr != -1]
-    if labeled.numel() == 0:
-        return torch.ones(2, device=device)
-    counts = torch.bincount(labeled, minlength=2).float()
-    # Guard against a class being absent in this window
-    counts = counts.clamp(min=1.0)
-    return (counts.sum() / (2.0 * counts)).to(device)
 
 
 def walk_forward_validation(
@@ -224,17 +204,10 @@ def walk_forward_validation(
     wf_steps = []
     wf_f1_per_step = []
     wf_prauc_per_step = []
+    wf_metadata = []
     wf_records = []
     y_true_all, y_pred_all, s_pred_all = [], [], []
     total_wf_train_time = 0.0
-
-    # Global illicit rate from static train split — used by the ε-fallback in
-    # _calibrate_threshold when a calibration step has < ε positives (e.g., τ=44,
-    # where calib=43 is the shock step with near-zero illicit prevalence).
-    train_ys = [dm.graphs[t]["y"][dm.graphs[t]["labeled_mask"]].numpy()
-                for t in cfg.train_steps if t in dm.graphs]
-    all_train_y = np.concatenate(train_ys) if train_ys else np.array([])
-    global_illicit_rate = float((all_train_y == 1).mean()) if len(all_train_y) else 0.5
 
     for tau in eval_steps:
         start_t = max(min(dm.graphs), tau - window) if window else min(dm.graphs)
@@ -283,6 +256,7 @@ def walk_forward_validation(
         # NOTE: when n_pos >= epsilon, _calibrate_threshold delegates to
         # _find_best_f1_threshold — so pre-shock F1 is identical across paths.
         threshold = 0.5  # fallback
+        fallback = True
         if calib_step in dm.graphs:
             g_cal = dm.graphs[calib_step]
             m_cal = g_cal["labeled_mask"]
@@ -293,7 +267,7 @@ def walk_forward_validation(
                         s_cal = torch.softmax(
                             model(g_cal["prop"][m_cal].to(device)), dim=1
                         )[:, 1].cpu().numpy()
-                    threshold, _ = _calibrate_threshold(y_cal, s_cal, global_illicit_rate)
+                    threshold, fallback = _calibrate_threshold(y_cal, s_cal)
 
         with torch.no_grad():
             # PRAUC COLUMN GUARD: [:, 1] is the illicit-class probability.
@@ -311,6 +285,11 @@ def walk_forward_validation(
         wf_steps.append(tau)
         wf_f1_per_step.append(step_f1)
         wf_prauc_per_step.append(step_prauc)
+        wf_metadata.append({
+            "Train_Window_Size": len(train_block),
+            "Calib_Threshold": round(float(threshold), 4),
+            "Calib_Fallback": fallback
+        })
 
         y_true_all.append(yte_w)
         s_pred_all.append(s)
@@ -348,19 +327,60 @@ def walk_forward_validation(
         out_file = os.path.join(OUTPUT_DIR, f"walk_forward_drift_{safe_name}.png")
         plt.savefig(out_file)
 
-        # Export timestep data to master CSV
+        # Export timestep data to master CSV (16-column unified schema)
         import pandas as pd
+        from evaluation.wf_metrics import regime_of
+        from sklearn.metrics import precision_score, recall_score
+        
         csv_file = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
-        df_export = pd.DataFrame({
-            "Sweep": [sweep_name] * len(wf_steps),
-            "Timestep (tau)": wf_steps,
-            "F1": wf_f1_per_step,
-            "PR-AUC": wf_prauc_per_step
-        })
+        
+        out_rows = []
+        for i, step_tau in enumerate(wf_steps):
+            step_f1 = wf_f1_per_step[i]
+            step_prauc = wf_prauc_per_step[i]
+            step_y_true = y_true_all[i]
+            step_scores = s_pred_all[i]
+            step_y_pred = y_pred_all[i]
+            meta = wf_metadata[i]
+            
+            n_ill = int((step_y_true == 1).sum())
+            n_lic = int((step_y_true == 0).sum())
+            prec = float(precision_score(step_y_true, step_y_pred, pos_label=1, zero_division=0))
+            rec = float(recall_score(step_y_true, step_y_pred, pos_label=1, zero_division=0))
+            
+            out_rows.append({
+                "Sweep": sweep_name,
+                "Seed": getattr(cfg, "seed", 42),
+                "Tau": step_tau,
+                "N_labeled": n_ill + n_lic,
+                "N_illicit": n_ill,
+                "N_licit": n_lic,
+                "Low_Confidence": n_ill < 10,
+                "Regime": regime_of(step_tau),
+                "Train_Window_Size": meta["Train_Window_Size"],
+                "Calib_Threshold": meta["Calib_Threshold"],
+                "Calib_Fallback": meta["Calib_Fallback"],
+                "F1": round(step_f1, 4),
+                "PRAUC": round(step_prauc, 4),
+                "Precision": round(prec, 4),
+                "Recall": round(rec, 4),
+                "Selfcond_Bug": "fixed"
+            })
+            
+        CSV2_COLS = ["Sweep", "Seed", "Tau", "N_labeled", "N_illicit", "N_licit",
+                     "Low_Confidence", "Regime", "Train_Window_Size", "Calib_Threshold",
+                     "Calib_Fallback", "F1", "PRAUC", "Precision", "Recall", "Selfcond_Bug"]
+        df_new = pd.DataFrame(out_rows, columns=CSV2_COLS)
+        
         if os.path.exists(csv_file):
-            df_export.to_csv(csv_file, mode='a', header=False, index=False)
+            try:
+                df_old = pd.read_csv(csv_file, keep_default_na=False)
+                df_out = pd.concat([df_old, df_new], ignore_index=True)
+            except Exception:
+                df_out = df_new
         else:
-            df_export.to_csv(csv_file, index=False)
+            df_out = df_new
+        df_out.to_csv(csv_file, index=False)
         plt.close()
 
     if not wf_steps:

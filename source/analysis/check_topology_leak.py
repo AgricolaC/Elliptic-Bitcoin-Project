@@ -10,8 +10,8 @@ SOURCE = os.path.dirname(HERE) # Points to 'source' directory
 if SOURCE not in sys.path:
     sys.path.insert(0, SOURCE)
 
-from source.data.load_dataset import download_and_load_data
-from source.data.build_graph import reindex_timestep, topological_features
+from data.load_dataset import download_and_load_data
+from data.build_graph import reindex_timestep, topological_features
 
 def check_leak():
     print("Loading data...")

@@ -50,9 +50,9 @@ def run():
     for idx, row in grid_df.iterrows():
         sweep_name = row['Sweep']
         variation = row['Variation']
-        static_f1 = row['Static_OOT_F1_mean']
+        static_f1 = row['Static_OOT_Macro_F1_mean']
         if pd.isna(static_f1):
-            static_f1 = row.get('Static_OOT_F1', np.nan)
+            static_f1 = row.get('Static_OOT_Macro_F1', np.nan)
             
         # Parse configs
         k_match = re.search(r'K=(\d+)', sweep_name)

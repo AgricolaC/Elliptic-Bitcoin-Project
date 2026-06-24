@@ -40,14 +40,16 @@ def main():
     sgc_df = df_wf[df_wf["Sweep"] == f"Best WF: {champion_name}"]
     xgb_df = df_wf[df_wf["Sweep"] == "Baseline: Temporal XGBoost (lag=0)"]
     
+    ts_col = "Tau" if "Tau" in df_wf.columns else "Timestep (tau)"
+    
     print("SGC Champion F1:")
     for t in [41, 42, 43, 44, 45]:
-        val = sgc_df[sgc_df["Timestep (tau)"] == t]["F1"].values
+        val = sgc_df[sgc_df[ts_col] == t]["F1"].values
         if len(val): print(f"  tau={t}: {val[0]:.3f}")
         
     print("Temporal XGBoost F1:")
     for t in [41, 42, 43, 44, 45]:
-        val = xgb_df[xgb_df["Timestep (tau)"] == t]["F1"].values
+        val = xgb_df[xgb_df[ts_col] == t]["F1"].values
         if len(val): print(f"  tau={t}: {val[0]:.3f}")
         
     # 3. Compute topology metrics over time

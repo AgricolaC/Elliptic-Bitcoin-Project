@@ -29,7 +29,6 @@ from evaluation.temporal_validation import (
     _onestep_blocks, _temporal_state,
 )
 from evaluation.validation import _find_best_f1_threshold, _calibrate_threshold
-from evaluation.temporal_validation import _train_illicit_rate as _compute_gir
 
 # ==========================================
 # AGGREGATION FUNCTIONS
@@ -43,7 +42,10 @@ def aggregate_sweeps():
     df = pd.read_csv(sweep_path, keep_default_na=False)
     # Filter numeric columns for aggregation
     numeric_cols = [
-        "Static_OOT_F1", "Static_OOT_PRAUC",
+        "Static_Val_Pooled_F1", "Static_Val_Pooled_PRAUC",
+        "Static_Val_Macro_F1", "Static_Val_Macro_PRAUC",
+        "Static_OOT_Pooled_F1", "Static_OOT_Pooled_PRAUC",
+        "Static_OOT_Macro_F1", "Static_OOT_Macro_PRAUC",
         "WF_Pooled_F1", "WF_Pooled_PRAUC",
         "WF_Macro_F1", "WF_Macro_PRAUC",
         "WF_Pre43_Pooled_F1", "WF_Pre43_PRAUC",
@@ -148,7 +150,7 @@ def plot_grid_performance():
 
     df[['Arch', 'K', 'Dir', 'Topo']] = df['Sweep'].apply(parse_sweep)
 
-    f1_col = 'Static_OOT_F1_mean' if 'Static_OOT_F1_mean' in df.columns else 'Static_OOT_F1'
+    f1_col = 'Static_OOT_Pooled_F1_mean' if 'Static_OOT_Pooled_F1_mean' in df.columns else 'Static_OOT_Pooled_F1'
 
     plt.figure(figsize=(16, 10))
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
@@ -176,7 +178,7 @@ def plot_grid_performance():
 # ==========================================
 # TEMPORAL WALK-FORWARD
 # ==========================================
-def _per_step(dm, cfg, device, epochs, embed_dim, kind, gir):
+def _per_step(dm, cfg, device, epochs, embed_dim, kind):
     rows = []
     for tau in cfg.test_steps:
         train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
@@ -209,12 +211,11 @@ def _per_step(dm, cfg, device, epochs, embed_dim, kind, gir):
             m_cal = g_cal["labeled_mask"]
             if m_cal.sum() > 0:
                 y_cal = g_cal["y"][m_cal].numpy()
-                if len(np.unique(y_cal)) >= 2:
-                    with torch.no_grad():
-                        h_cal = _temporal_state(embedder, temporal, calib_state, dm, device)
-                        logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
-                        s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold, _ = _calibrate_threshold(y_cal, s_cal, gir)
+                with torch.no_grad():
+                    h_cal = _temporal_state(embedder, temporal, calib_state, dm, device)
+                    logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
+                    s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
+                threshold, _ = _calibrate_threshold(y_cal, s_cal)
 
         # Test on tau (one-step-ahead: state excludes tau)
         with torch.no_grad():
@@ -259,21 +260,19 @@ def run_temporal_analysis(epochs=100, embed_dim=32, models="lstm,ema"):
     # LSTM must run on CPU under MPS (parity with sweep.py main())
     lstm_device = torch.device("cpu") if DEVICE.type == "mps" else DEVICE
 
-    gir = _compute_gir(dm, cfg)
-
     wanted = [m.strip() for m in models.split(",") if m.strip()]
 
     if "ema" in wanted:
         print("\n=== SGC-EMA (learned phi, memoryless-ish baseline) ===", flush=True)
         t0 = time.time()
-        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "ema", gir)
+        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "ema")
         print(f"EMA walk-forward done in {time.time() - t0:.1f}s", flush=True)
         _append_rows("SGC-EMA Conditioned (learned phi)", rows)
 
     if "lstm" in wanted:
         print("\n=== SGC-LSTM (learned phi, deep structural) ===", flush=True)
         t0 = time.time()
-        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "lstm", gir)
+        rows = _per_step(dm, cfg, lstm_device, epochs, embed_dim, "lstm")
         print(f"LSTM walk-forward done in {time.time() - t0:.1f}s", flush=True)
         _append_rows("SGC-LSTM Conditioned (learned phi)", rows)
 

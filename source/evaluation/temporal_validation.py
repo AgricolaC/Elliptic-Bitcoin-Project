@@ -195,7 +195,6 @@ def walk_forward_lstm_conditioned(
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of LSTM conditioned head."""
     y_true_all, y_pred_all, s_pred_all = [], [], []
-    global_illicit_rate = _train_illicit_rate(dm, cfg)
 
     for tau in cfg.test_steps:
         train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
@@ -228,8 +227,7 @@ def walk_forward_lstm_conditioned(
                         h_cal = _temporal_state(embedder, lstm, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold, _fallback_fired = _calibrate_threshold(
-                        y_cal, s_cal, global_illicit_rate)
+                    threshold, _fallback_fired = _calibrate_threshold(y_cal, s_cal)
 
         # Test on tau (one-step-ahead: state excludes tau — see _onestep_blocks)
         with torch.no_grad():
@@ -324,7 +322,6 @@ def walk_forward_ema_conditioned(
 ) -> Tuple[float, float]:
     """Walk-forward evaluation of EMA conditioned head."""
     y_true_all, y_pred_all, s_pred_all = [], [], []
-    global_illicit_rate = _train_illicit_rate(dm, cfg)
 
     for tau in cfg.test_steps:
         train_block, calib_step, calib_state, infer_state = _onestep_blocks(dm.graphs, tau)
@@ -357,8 +354,7 @@ def walk_forward_ema_conditioned(
                         h_cal = _temporal_state(embedder, ema, calib_state, dm, device)
                         logits_cal = head(g_cal["prop"][m_cal].to(device), h_cal)
                         s_cal = torch.softmax(logits_cal, dim=1)[:, 1].cpu().numpy()
-                    threshold, _fallback_fired = _calibrate_threshold(
-                        y_cal, s_cal, global_illicit_rate)
+                    threshold, _fallback_fired = _calibrate_threshold(y_cal, s_cal)
 
         # Test on tau (one-step-ahead: state excludes tau — see _onestep_blocks)
         with torch.no_grad():
