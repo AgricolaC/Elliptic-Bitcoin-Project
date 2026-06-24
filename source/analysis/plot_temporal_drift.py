@@ -119,7 +119,7 @@ def main():
             sweep_df = pd.read_csv(csv_results_path)
             xgb_row = sweep_df[sweep_df["Sweep"] == "Baseline: XGBoost (166)"]
             if len(xgb_row) > 0:
-                sweep_f1 = float(xgb_row["Walk-Forward Mean F1"].values[0])
+                sweep_f1 = float(xgb_row["WF_Macro_F1"].values[0])
                 assert abs(pool_f1 - sweep_f1) < 0.01, f"Reconciliation failed: pooled F1 {pool_f1:.3f} != sweep F1 {sweep_f1:.3f}"
                 print("Reconciliation gate passed: plot pooled F1 matches canonical sweep_results.csv F1.")
             else:

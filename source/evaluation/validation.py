@@ -129,15 +129,23 @@ def fit_head(
     model.train()
     n_epochs = epochs if epochs > 0 else cfg.sgc_epochs
     for _ in range(n_epochs):
+        model.train()
         opt.zero_grad()
         if mask.sum() > 0:
             loss = loss_fn(model(Xtr)[mask], ytr[mask])
             
-            # W9 FIX: ElasticNet L1 penalty on the first layer weights
-            if getattr(cfg, 'sgc_l1_lambda', 0.0) > 0.0:
-                l1_penalty = model.net[0].weight.abs().sum()
-                loss = loss + cfg.sgc_l1_lambda * l1_penalty
+            # L1 on first layer for feature selection
+            first_layer = model.net[0]
+            if hasattr(first_layer, 'weight'):
+                l1_penalty = first_layer.weight.abs().sum()
+            elif hasattr(first_layer, 'lin'):
+                l1_penalty = first_layer.lin.weight.abs().sum()
+            else:
+                l1_penalty = 0.0
                 
+            if getattr(cfg, 'sgc_l1_lambda', 0.0) > 0.0:
+                loss += cfg.sgc_l1_lambda * l1_penalty
+                    
             loss.backward()
             opt.step()
     return model
@@ -309,7 +317,7 @@ def walk_forward_validation(
         y_pred_all.append(y_pred)
         
         if return_records:
-            wf_records.append((tau, step_f1, step_prauc, yte_w, s))
+            wf_records.append((tau, step_f1, step_prauc, yte_w, s, y_pred))
 
     if wf_steps:
         plt.figure(figsize=(12, 5), facecolor="white")

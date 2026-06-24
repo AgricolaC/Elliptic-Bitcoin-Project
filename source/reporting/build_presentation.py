@@ -39,7 +39,8 @@ code(
 )
 # ---------------------------------------------------------------- Slide 1: Title
 md( 
-    "# Temporal Graph Modeling for Illicit Transaction Detection\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** All specific results-based claims and narrative conclusions in this presentation are currently suspended until the evaluation pipeline completes regenerating the results.\\n\\n"
+    "# Temporal Graph Modeling for Illicit Transaction Detection\\n"
 )
 md(
     "## 1. Elliptic Bitcoin Dataset & Walk-Forward Concept Drift\n\n"
@@ -179,9 +180,9 @@ md(
 # ---------------------------------------------------------------- Slide 6: Baselines
 md(
     "## 2. Weber Baselines & Establishing the Target\n"
-    "Before building new architectures, we establish the static baselines provided by Weber et al.\n"
-    "Logistic Regression provides a linear floor. GCN provides a deep graph reference. Random Forest and XGBoost perform very strongly in the static evaluation.\n\n"
-    "**Why XGBoost?** While Random Forest scores slightly higher (0.80 vs 0.78), XGBoost offers vastly superior computational speed with highly comparable performance. Therefore, we select **XGBoost** as our primary baseline to beat moving forward."
+    "Before building new architectures, we establish the static baselines provided by Weber et al.\\n"
+    "Logistic Regression provides a linear floor. GCN provides a deep graph reference. Random Forest and XGBoost perform very strongly in the static evaluation.\\n\\n"
+    "**Why XGBoost?** > [!WARNING] **[PENDING PIPELINE RE-RUN]** Selection rationale is currently suspended pending updated baseline evaluations."
 )
 code(
     "inst = [\n"
@@ -215,9 +216,9 @@ md(
     "To prevent feature values from exploding during recursive multiplication, our pipeline computes the **Symmetric Normalized Adjacency Matrix** (derived from the renormalization trick on the graph Laplacian). We add self-loops ($\\tilde{\\mathbf{A}} = \\mathbf{A} + \\mathbf{I}$) to ensure nodes retain their own features, and then normalize by the degree matrix $\\tilde{\\mathbf{D}}$:\n\n"
     "$$ \\tilde{\\mathbf{S}} = \\tilde{\\mathbf{D}}^{-1/2} \\tilde{\\mathbf{A}} \\tilde{\\mathbf{D}}^{-1/2} $$\n\n"
     "### 3. Customization: Multi-Scale SGC + MLP Head\n"
-    "Because illicit transactions are highly **heterophilic** (criminals intentionally transact with licit exchanges, breaking standard GNN homophily assumptions), looking *only* at the final $K$-th hop is dangerous. Inspired by the *Adaptive SGC (ASGC)* framework for heterophily, we explicitly concatenate every intermediate hop into a massive tensor, and pass it through an MLP:\n\n"
+    "Because illicit transactions are highly **heterophilic** (criminals intentionally transact with licit exchanges, breaking standard GNN homophily assumptions), looking *only* at the final $K$-th hop is dangerous. Inspired by **Scalable Inception Graph Neural Networks (SIGN)**, we explicitly compute and preserve the localized graph topology at every intermediate scale. We concatenate every intermediate hop into a massive multi-scale tensor, and pass it through an MLP:\n\n"
     "$$ \\mathbf{Z} = [\\mathbf{X}, \\tilde{\\mathbf{S}}\\mathbf{X}, \\tilde{\\mathbf{S}}^2\\mathbf{X}, \\dots, \\tilde{\\mathbf{S}}^K\\mathbf{X}] \\mathbf{W}_{MLP} $$\n\n"
-    "**Does the MLP defeat the purpose of SGC?** No! The computational bottleneck of GCNs is applying non-linearities *during* the graph propagation. By deferring the MLP to the very end, we retain the blazing-fast, pre-computable matrix multiplications of SGC. The MLP then acts as a highly non-linear analogue to ASGC's polynomial filters—dynamically learning how to combine the $K$-hop representations to decipher complex heterophilic laundering topologies."
+    "**Does the MLP defeat the purpose of SGC?** No! The computational bottleneck of GCNs is applying non-linearities *during* the graph propagation. By deferring the MLP to the very end, we retain the blazing-fast, pre-computable matrix multiplications of SGC. The MLP then acts as a highly non-linear combiner—dynamically learning how to weight local (0-hop), intermediate (1-hop), and global ($K$-hop) contexts simultaneously to decipher complex laundering networks, identical to the inception modules in SIGN."
 )
 
 # ---------------------------------------------------------------- Slide 8: Grid Framework
@@ -240,11 +241,8 @@ md(
 md(
     "## 5. Grid Analysis Table\n"
     "The table below shows the top 15 highest-performing architectures sorted by Static OOT Illicit-F1 on the Test Set.\n\n"
-    "### Initial Observations:\n"
-    "1. **Deep Undirected Propagation Appears Dominant:** The highest scoring model on this static test slice is the massive $K=5$ Undirected SGC model (Illicit-F1=0.477), outperforming all shallow geometries.\n"
-    "2. **The $K=3$ Directional Sweet Spot:** The highest performing *directed* model sits at $K=3$. At this depth, strict downstream message passing successfully regularizes against the oversmoothing that plagues undirected graphs.\n"
-    "3. **PCA is Necessary for Deep Graphs:** The vast majority of the top-15 configurations utilize PCA compression. Without it, deep propagation models struggle to converge due to collinear noise.\n\n"
-    "At first glance, a deep $K=5$ geometry seems to be the optimal architecture. However, as we will explore next, this static snapshot paints a deceptive picture."
+    "### Initial Observations:\\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** Static grid observations (e.g., K-depth dominance, directionality, and PCA necessity) are suspended pending re-evaluation of the grid metrics."
 )
 code(
     "df_grid = sweep[sweep['Sweep'].str.startswith('Grid:')]\n"
@@ -261,12 +259,8 @@ md(
     "## 6. The Pre-Shock Illusion: An Empirical Manifold Hypothesis\n"
     "By passing the raw features through $K$ steps of SGC propagation ($K=1 \\rightarrow 5$), we mix the neighborhood contexts. "
     "We mathematically calculated the TwoNN intrinsic dimensionality across our entire Grid Search immediately prior to the shock ($\\tau=42$) to test the core manifold hypothesis: **Do configurations that successfully compress the topological manifold (lower intrinsic dimension) lead to higher predictive accuracy (Static OOT Illicit-F1)?**\n\n"
-    "In the static, pre-shock regime, the answer appears to be a resounding yes:\n"
-    "**1. Directionality:** Directed graphs successfully compress the manifold more than undirected (Mean ID 7.07 vs 7.28) and show a strong negative correlation between ID and Illicit-F1 ($r = -0.687$).\n"
-    "**2. PCA Compression:** PCA clears collinear noise, dropping the average dimension from 7.73 to 6.76. This allows the graph convolution to work effectively, driving the negative correlation from $r = -0.156$ to $r = -0.531$.\n"
-    "**3. Topology Injection:** Injecting raw features with no structural augmentations provides the cleanest manifold correlation ($r = -0.765$).\n"
-    "**4. Propagation Depth ($K$):** At shallow depths ($K=1, 2$), the dimension remains high (ID ~7.6). At $K=3$, the manifold seems perfectly tuned (ID drops to 7.19, correlation hits $r = -0.806$).\n\n"
-    "⚠️ **The Trap:** While the static grid suggests deep ($K=5$) and highly-compressed geometries are the 'winners', this relies on the assumption that the underlying manifold is stationary. As we will see in the Walk-Forward Validation, over-optimizing for the pre-shock manifold leads to a significant decline when the regime shifts at $\\tau=43$."
+    "In the static, pre-shock regime, the answer appears to be a resounding yes:\\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** Intrinsic dimensionality correlations and configuration specific findings are suspended."
 )
 code(
     "id_df = pd.read_csv(os.path.join(RESULTS, 'eda_grid_intrinsic_dim.csv'))\n"
@@ -293,18 +287,8 @@ code(
 
 # ---------------------------------------------------------------- Slide 12: K Reversal
 md(
-    "## 7. Walk-Forward Validation & The K-Depth Reversal\n"
-    "When evaluated strictly on Static OOT, the massive $K=5$ Undirected model appears to be the champion. However, when subjected to rigorous **Walk-Forward Validation**, $K=5$ collapses and $K=2$ becomes the true resilient champion. But notice something striking: **The overall Illicit-F1 score jumps significantly in Walk-Forward for the base models.** Why?\n\n"
-    "### 1. Temporal Proximity (Continuous Retraining vs. Stale Weights)\n"
-    "- **Static OOT:** The model trains exclusively on $\\tau \\in [1, 26]$. When it attempts to predict the dark market shutdown at $\\tau=43$, it applies a 16-timestep-old understanding to a new reality.\n"
-    "- **Walk-Forward:** The model continuously adapts. When predicting $\\tau=44$, it trains on $\\tau \\in [1, 43]$, never suffering the massive temporal lag that blindsides the static model.\n\n"
-    "### 2. The Trap of \"Pooled\" vs \"Macro\" Illicit-F1\n"
-    "- **Pooled Illicit-F1:** Aggregates all predictions across the test set into one array. This dangerously masks temporal volatility, as dense pre-shock timesteps easily overpower the sparse shock timestep ($\\tau=43$).\n"
-    "- **Macro-Averaged Illicit-F1:** Computes the Illicit-F1 strictly per timestep, then averages them. This forces the model to perform equally well across all timesteps, heavily penalizing collapse during the concept drift.\n\n"
-    "### 3. The K-Depth Reversal ($K=5$ vs $K=2$)\n"
-    "- In Static OOT, **$K=5$** won because it built a massive global map of the pre-shock manifold.\n"
-    "- In Walk-Forward, that $K=5$ global map degrades at the $\\tau=43$ shock, as reflected by its steep drop in Macro-F1.\n"
-    "- **$K=2$** becomes the champion because it models *local* 1-in-2-out peeling chains, which are structurally resilient to macroeconomic shocks."
+    "## 7. Walk-Forward Validation & The K-Depth Reversal\\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** The Walk-Forward performance analysis (including pooled vs macro differences and specific K-depth reversals) is suspended until walk-forward evaluations are re-run."
 )
 code(
     "labels = ['K=2 (Base SGC)', 'K=5 (Deep SGC)']\n"
@@ -341,23 +325,8 @@ md(
     "During our Static Grid Search, configurations utilizing PCA (retaining 99% variance) frequently emerged as top performers. However, when deployed in a Walk-Forward (out-of-time) evaluation, these \"frozen\" PCA configurations experienced significant performance drops after the major Dark Market shutdown shock at $\\tau=43$.\n\n"
     "**Our Hypothesis:** The frozen PCA projection matrix learned on timesteps 1-26 became \"stale\". The topological structure of the network was shifting over time (manifold drift). If we replaced standard PCA with an **Incremental PCA (IPCA)** that dynamically re-fit the projection matrix at every timestep $t-1$, the classifier could gracefully track the shifting manifold.\n\n"
     "To rigorously test this, we implemented a diagnostic metric: **Axis Rotation Cosine Similarity**. At every timestep $\\tau$, we computed the mean absolute cosine similarity between the principal components of $\\tau$ and $\\tau-1$ to measure how much the manifold was geometrically rotating.\n\n"
-    "### 2. Experimental Results\n\n"
-    "We evaluated the IPCA approach on three distinct \"Winner\" graph configurations. The results did not support our hypothesis.\n\n"
-    "### Test A: The Baseline ($K=1$, Isotropic)\n"
-    "*Configuration: `K=1, Dir=False, Topo=early, PCA=True`*\n"
-    "* **Observation:** The cosine similarity fluctuated wildly, dropping to `0.25` at $\\tau=37$ (indicating a massive 75° geometric rotation of the variance axes). \n"
-    "* **Shock Behavior:** At the $\\tau=43$ shock, the axes continued to churn. The MLP, trained on the projection of $\\tau-1$, received test features projected onto misaligned axes.\n"
-    "* **Result:** The Recovery PRAUC collapsed to **`0.0914`**.\n\n"
-    "### Test B: The Oversmoothed Graph ($K=5$, Isotropic)\n"
-    "*Configuration: `K=5, Dir=False, Topo=None, PCA=True`*\n"
-    "* **Observation:** We hypothesized that higher dimensions might be more stable. The opposite was true. Because $K=5$ applies a massive low-pass filter over the graph, local topological shocks rippled globally.\n"
-    "* **Shock Behavior:** At $\\tau=36$, the cosine similarity plummeted to **`0.1417`** (an 82° orthogonal rotation). The entire global covariance matrix was completely shredded and rebuilt.\n"
-    "* **Result:** The Recovery PRAUC worsened to **`0.0845`**.\n\n"
-    "### Test C: The Directional Graph ($K=3$, Anisotropic)\n"
-    "*Configuration: `K=3, Dir=True, Topo=None, PCA=True`*\n"
-    "* **Observation:** Directional message passing creates highly specific \"highways\" of variance (separating incoming and outgoing illicit flows). \n"
-    "* **Shock Behavior:** When the Dark Market shut down, these specific directional typologies vanished entirely. The cosine similarity hit a low **`0.1074`** (almost perfectly orthogonal 90° rotation). The $\\tau-1$ projection matrix projected the new $\\tau$ features directly into the null space.\n"
-    "* **Result:** The Recovery PRAUC collapsed to **`0.0584`** (near-random performance).\n\n"
+    "### 2. Experimental Results\\n\\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** Specific metrics, rotational cosine similarities, and PRAUC collapses in the IPCA autopsy tests are suspended pending verification.\\n\\n"
     "### 3. Conclusion\n\n"
     "**The manifold does not \"drift\"—it breaks.** \n\n"
     "Dimensionality reduction acts as a powerful regularizer during periods of stability, but it rigidly binds the neural network to a linear covariance matrix. In an adversarial, non-stationary environment like the Elliptic dataset, regime shifts fundamentally alter the topological distribution of the graph. When a shock occurs, the principal axes rotate orthogonally. \n\n"
@@ -365,48 +334,9 @@ md(
 )
 
 
-# ---------------------------------------------------------------- Slide 12: LSTM Math
+# ---------------------------------------------------------------- Slide 12: Decay Motivation
 md(
-    "## 9. Testing the Sequence Model (LSTM)\n"
-    "To capture macroeconomic temporal structure across the disconnected snapshots, we implemented an LSTM to propagate hidden states forward through time. The exact sequence architecture operates in three stages:\n\n"
-    "**1. Snapshot Attention Pooling:** First, we compress the entire topological graph at timestep $t$ into a single fixed-size embedding $x_t$. Instead of naive mean pooling, we use an **Attention-Based Pooler** to heavily weight anomalous (potentially illicit) node signatures when summarizing the graph.\n\n"
-    "**2. Temporal LSTM:** We feed the chronological sequence of snapshot embeddings $[x_1, x_2, \\dots, x_t]$ through the LSTM to calculate the updated global hidden state $h_t$:\n"
-    "$$ h_t, c_t = \\text{LSTM}(x_t, (h_{t-1}, c_{t-1})) $$\n\n"
-    "**3. The Conditioned Head:** Finally, the updated macroeconomic hidden state $h_t$ is broadcast back to every node in the graph and explicitly concatenated to their local topological SGC features. The final MLP classifier learns to condition its predictions by analyzing both the local node structure and the global temporal trajectory simultaneously."
-)
-
-# ---------------------------------------------------------------- Slide 13: LSTM Perf
-md(
-    "## 10. LSTM vs Static SGC+MLP Performance\n"
-    "Does propagating this recurrent hidden state improve performance over the static graph model? Evaluating under strict walk-forward validation, we find that the SGC-LSTM actually underperforms the memoryless SGC+MLP across both Pooled and Macro metrics. The sequence memory fails to beat the static baseline."
-)
-code(
-    "order = ['SGC+MLP (Static)', 'SGC-LSTM']\n"
-    "keys = ['F1: SGC+MLP WF K=2 [Dir=F; Topo=None]', 'F2: SGC-LSTM Chronological']\n"
-    "pooled_f1 = [get_scalar(k, 'WF_Pooled_F1') for k in keys]\n"
-    "macro_f1 = [get_scalar(k, 'WF_Macro_F1') for k in keys]\n"
-    "\n"
-    "x = np.arange(len(order))\n"
-    "width = 0.35\n"
-    "fig, ax = plt.subplots(figsize=(8, 5))\n"
-    "bars1 = ax.bar(x - width/2, pooled_f1, width, label='WF Pooled Illicit-F1', color='#2c6fbb')\n"
-    "bars2 = ax.bar(x + width/2, macro_f1, width, label='WF Macro Illicit-F1', color='#2a9d4a')\n"
-    "\n"
-    "for bars in [bars1, bars2]:\n"
-    "    for b in bars:\n"
-    "        v = b.get_height()\n"
-    "        ax.text(b.get_x() + b.get_width()/2, v + 0.01, f'{v:.3f}', ha='center', fontsize=9)\n"
-    "\n"
-    "ax.set_ylabel('Score'); ax.set_ylim(0, 1.0)\n"
-    "ax.set_title('Memory vs Memoryless: Walk-Forward Illicit-F1')\n"
-    "ax.set_xticks(x); ax.set_xticklabels(order)\n"
-    "ax.legend()\n"
-    "plt.show()"
-)
-
-# ---------------------------------------------------------------- Slide 14: Decay Motivation
-md(
-    "## 11. Exponential Decay: Improving the Baseline XGBoost\n"
+    "## 9. Exponential Decay: Improving the Baseline XGBoost\n"
     "If global recurrence fails, how do we handle temporal concept drift? By targeting the loss function directly.\n\n"
     "Standard walk-forward validation treats all historical training data with uniform weight. This is detrimental under rapid concept drift (like the Dark Market shutdown). We introduce an Exponential Decay Sample Weight:\n\n"
     "$$ W = \\lambda e^{-\\lambda \\Delta t} $$\n\n"
@@ -415,7 +345,7 @@ md(
 
 # ---------------------------------------------------------------- Slide 15: Per-Timestep Decay (XGBoost)
 md(
-    "## 12. Per-Timestep Tracking: XGBoost Decay Recovery\n"
+    "## 10. Per-Timestep Tracking: XGBoost Decay Recovery\n"
     "Let's observe how adjusting the decay rate $\\lambda$ forces XGBoost to adapt across the $\\tau=43$ shock. While all models suffer a collapse immediately at the shock, the aggressive decay models recover predictive power far more effectively than the uniform baseline."
 )
 code(
@@ -441,7 +371,7 @@ code(
 
 # ---------------------------------------------------------------- Slide 16: Per-Timestep Decay (SGC+MLP)
 md(
-    "## 13. Per-Timestep Tracking: SGC+MLP Decay Recovery\n"
+    "## 11. Per-Timestep Tracking: SGC+MLP Decay Recovery\n"
     "The identical exponential decay mechanism is applied to the graph topology. By forcing the SGC model to aggressively forget stale pre-shock edges, the graph convolution recovers its structural integrity significantly faster than the baseline walk-forward model."
 )
 code(
@@ -467,8 +397,8 @@ code(
 
 # ---------------------------------------------------------------- Slide 17: Ultimate Finding
 md(
-    "## 14. Our Strongest Finding: Exponential Decay Dominates\n"
-    "When we aggregate both the Pooled Illicit-F1 and Macro Illicit-F1 scores, the effect of Exponential Decay is substantial. A gentle decay ($\\lambda=0.05$) boosts the performance metrics across the board. The tabular XGBoost approach with decay emerges as a highly effective architecture for handling regime shifts."
+    "## 12. Our Strongest Finding: Exponential Decay Dominates\\n"
+    "> [!WARNING] **[PENDING PIPELINE RE-RUN]** The conclusion regarding the ultimate performance of exponential decay (e.g. XGBoost decay vs SGC decay) is suspended pending final metric generation."
 )
 code(
     "order = ['Base SGC', 'SGC λ=0.05', 'Base XGB', 'XGB λ=0.05']\n"
@@ -497,7 +427,7 @@ code(
 
 # ---------------------------------------------------------------- Slide 18: Future Work
 md(
-    "## 15. Future Work & Discussion\n"
+    "## 13. Future Work & Discussion\n"
     "Our findings license several crucial avenues for future research:\n\n"
     "1. **Scalable Topological Features (Laplacian Centrality):**\n"
     "   - **The Idea:** Replace/augment raw in_degree and out_degree with Laplacian Centrality $C_L(v_i)$ to capture richer structural flow patterns (e.g., laundering peeling chains).\n"
@@ -506,7 +436,7 @@ md(
     "     $$C_L(v_i) = d_i^2 + d_i + 2 \\sum_{j \\in N(i)} d_j$$\n"
     "   - **The Efficiency:** Can be parallelized across all 200k nodes in milliseconds via a single sparse matrix multiplication ($O(|E|)$ complexity).\n"
     "2. **Synthetic Oversampling (SMOTE on Manifold):** We observed a severe 2% class imbalance. Given that SGC compresses the graph onto a smooth topological manifold, applying synthetic sampling (like SMOTE) directly in the SGC embedding space could radically improve minority class recall.\n"
-    "3. **Per-Node Temporal Attention:** Our LSTM evaluated a *global* graph broadcast vector. Future architectures should explore per-node evolutionary weights (e.g., EvolveGCN) or Temporal Graph Attention Networks (TGAT) to track the explicit history of long-standing illicit addresses.\n"
+    "3. **Per-Node Temporal Attention:** Future architectures should explore per-node evolutionary weights (e.g., EvolveGCN) or Temporal Graph Attention Networks (TGAT) to track the explicit history of long-standing illicit addresses.\n"
     "4. **Dynamic Topology Construction:** Instead of relying purely on strict 2-week snapshots, constructing a continuous-time dynamic graph representation could prevent the boundary-cutoff issues inherent in discrete temporal modeling."
 )
 

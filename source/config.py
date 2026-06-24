@@ -61,6 +61,7 @@ class Config:
     mlp_dropout: float = 0.3
     use_layernorm: bool = False
     use_residual: bool = False
+    activation: str = 'relu'
     
     # Feature Selection & Dim. Reduction
     use_pca: bool = False
