@@ -44,9 +44,12 @@ class TestMMDUnbiased:
         X = rng.standard_normal((60, 5))
         gamma = _median_gamma(X, X)
         mmd2 = _mmd_unbiased(X, X, gamma)
-        # For n=60, O(1/n) ≈ 0.017; a threshold of 0.1 is generous but verifies
-        # the result is near zero (not inflated by unzeroed XX/YY diagonals).
-        assert abs(mmd2) < 0.1, f"Expected O(1/n) ≈ 0 for identical arrays, got {mmd2}"
+        # The correctly-fixed unbiased estimator zeros XX/YY diagonals but NOT XY,
+        # so for identical arrays (pX == cX) the result is slightly negative:
+        # XX_unbiased ≈ YY_unbiased ≈ off_diag_mean, XY_mean = full_mean > off_diag_mean
+        # ⇒ mmd2 ≈ -2*(1 - off_diag_mean)/n < 0. The broken version (no diagonal
+        # zeroing) returns ~+0.020. Asserting < 1e-9 catches the broken case.
+        assert mmd2 < 1e-9, f"Expected negative/zero for identical arrays (diagonal zeroed in XX/YY but not XY), got {mmd2}"
 
     def test_biased_would_be_inflated(self):
         """Confirm the old biased formula gives > 0 for identical arrays (diagonal = 1.0)."""
@@ -69,6 +72,12 @@ class TestMMDUnbiased:
         assert np.diag(XX2).mean() == pytest.approx(1.0), "RBF diagonal should be 1.0"
         # Bias ≈ 2*(1 - off_diag_mean)/n > 0, so biased should exceed unbiased
         assert mmd_biased > mmd_unbiased - 1e-6  # biased >= unbiased (with tiny tolerance)
+        # For two different same-distribution samples, biased should exceed unbiased
+        # by approximately 2*(1 - off_diag_mean)/n (positive bias from diagonal)
+        assert mmd_biased - mmd_unbiased > 1e-4, (
+            f"Biased estimator should exceed unbiased by O(1/n) due to diagonal, "
+            f"got biased={mmd_biased:.6f}, unbiased={mmd_unbiased:.6f}"
+        )
 
     def test_shifted_distributions_positive(self):
         rng = np.random.default_rng(7)

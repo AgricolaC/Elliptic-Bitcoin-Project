@@ -75,19 +75,18 @@ def main():
         if len(sub) == 0: continue
         ei, X, y, txids = reindex_timestep(sub, df_edge, feature_cols)
         
-        print(f"  Fitting PCA for tau={t}...")
-        pca = PCA(n_components=2)
-        X_pca = pca.fit_transform(X)
-        
-        print(f"  Fitting TSNE for tau={t}...")
-        tsne = TSNE(n_components=2, perplexity=30, random_state=42)
-        X_tsne = tsne.fit_transform(X)
-        
-        # Keep only labeled nodes
+        # Keep only labeled nodes to avoid O(N^2) TSNE on 40k unlabeled nodes
         mask = y != -1
         y_lab = y[mask]
-        X_pca_lab = X_pca[mask]
-        X_tsne_lab = X_tsne[mask]
+        X_lab = X[mask]
+        
+        print(f"  Fitting PCA for tau={t}...")
+        pca = PCA(n_components=2)
+        X_pca_lab = pca.fit_transform(X_lab)
+        
+        print(f"  Fitting TSNE for tau={t}...")
+        tsne = TSNE(n_components=2, perplexity=30, random_state=42, init='pca', n_jobs=-1)
+        X_tsne_lab = tsne.fit_transform(X_lab)
         
         for label, cpca, ctsne in zip(y_lab, X_pca_lab, X_tsne_lab):
             pca_rows.append({"tau": t, "label": label, "pca1": cpca[0], "pca2": cpca[1]})
@@ -150,7 +149,6 @@ def main():
     
     # 5. Manifold Drift Diagnostics (Panel F)
     print("Computing Manifold Drift (MMD & ND-Wasserstein)...")
-    from sklearn.metrics.pairwise import rbf_kernel
     try:
         from scipy.stats import wasserstein_distance_nd
     except ImportError:
