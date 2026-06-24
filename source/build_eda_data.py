@@ -7,11 +7,31 @@ import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
+from scipy.spatial.distance import pdist as _scipy_pdist
 import networkx as nx
 
 from config import OUTPUT_DIR
 from data.load_dataset import download_and_load_data
 from data.build_graph import reindex_timestep
+
+
+def _median_gamma(pX: np.ndarray, cX: np.ndarray) -> float:
+    dists = _scipy_pdist(np.vstack([pX, cX]))
+    sigma = np.median(dists)
+    return 1.0 / (2.0 * sigma ** 2) if sigma > 0 else 1.0
+
+
+def _mmd_unbiased(pX: np.ndarray, cX: np.ndarray, gamma: float) -> float:
+    from sklearn.metrics.pairwise import rbf_kernel
+    XX = rbf_kernel(pX, pX, gamma=gamma)
+    YY = rbf_kernel(cX, cX, gamma=gamma)
+    XY = rbf_kernel(pX, cX, gamma=gamma)
+    n, m = len(pX), len(cX)
+    np.fill_diagonal(XX, 0.0)
+    np.fill_diagonal(YY, 0.0)
+    return XX.sum() / (n * (n - 1)) + YY.sum() / (m * (m - 1)) - 2 * XY.mean()
+
 
 def compute_pagerank(edge_index, n):
     G = nx.DiGraph()
