@@ -10,6 +10,7 @@ This project explores why traditional GNNs and linear dimensionality reduction t
 
 ### Key Contributions
 - **Phased Walk-Forward Pipeline:** A strict out-of-time evaluation framework that completely prevents temporal data leakage.
+- **Unified Threshold Calibration:** An EPV-grounded $\epsilon$-fallback mechanism that dynamically switches between supervised F1 optimization and a local-rate quantile to survive the extreme class-imbalance of the regime shift.
 - **Manifold Drift Diagnostics:** An implementation of Incremental PCA to mathematically prove the geometric breakdown of feature variance during regime shifts.
 - **Topological Invariants & Directionality:** Support for both undirectional/directional message passing and topological feature injection (e.g., PageRank).
 - **Automated Reporting Suite:** A pipeline that compiles execution metrics directly into a master Jupyter Notebook presentation.
@@ -82,7 +83,7 @@ python source/execution/run_pipeline.py --phase f4
 Run all four commands to execute the complete phased pipeline.
 
 ### Phase Details
-* **Phase F1 (Walk-Forward):** Executes selected configurations from the static grid search through a strict, one-step-ahead Walk-Forward temporal validation. Includes the Incremental PCA tracking to diagnose manifold shifts. The checked-in winner list currently contains the directional K=3 PCA configuration; the base XGBoost and K=2 SGC calls remain available but commented out.
+* **Phase F1 (Walk-Forward):** Executes selected configurations from the static grid search through a strict, one-step-ahead Walk-Forward temporal validation. Includes the Incremental PCA tracking to diagnose manifold shifts. > [!WARNING] The checked-in winner list is currently **[PENDING PIPELINE RE-RUN]**.
 * **Phase F2 (LSTM):** Evaluates Temporal Graph Networks by injecting historical node embeddings into an LSTM backbone.
 * **Phase F3 (Baselines):** Computes Reference Baselines including raw XGBoost, Multi-Layer Perceptron (MLP), and foundational 2-layer Graph Convolutional Networks (GCN).
 * **Phase F4 (Exponential Decay):** Applies exponential temporal decay to historical training samples to mitigate the impact of stale pre-shock graph structures. The checked-in runner currently executes the SGC decay grid; XGBoost decay is temporarily disabled to avoid duplicating existing CSV rows.

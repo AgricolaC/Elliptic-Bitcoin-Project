@@ -269,3 +269,63 @@ Baseline: XGBoost WF (epsilon-fallback),42,46,712,2,710,True,recovery,44,0.0679,
 Baseline: XGBoost WF (epsilon-fallback),42,47,846,22,824,False,recovery,45,0.1597,True,0.3529,0.5176,0.5,0.2727,fixed
 Baseline: XGBoost WF (epsilon-fallback),42,48,471,36,435,False,recovery,46,0.0385,False,0.4643,0.6128,0.65,0.3611,fixed
 Baseline: XGBoost WF (epsilon-fallback),42,49,476,56,420,False,recovery,47,0.2217,False,0.7273,0.9909,1.0,0.5714,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,35,1341,182,1159,False,pre_shock,33,0.3,False,0.9443,0.9936,0.9128,0.978,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,36,1708,33,1675,False,pre_shock,34,0.9654,False,0.9688,0.9966,1.0,0.9394,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,37,498,40,458,False,pre_shock,35,0.9356,False,0.7879,0.9203,1.0,0.65,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,38,756,111,645,False,pre_shock,36,0.0488,False,0.9439,0.9587,0.9806,0.9099,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,39,1183,81,1102,False,pre_shock,37,0.6086,False,0.898,0.9684,1.0,0.8148,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,40,1211,112,1099,False,pre_shock,38,0.2672,False,0.77,0.7896,0.875,0.6875,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,41,1132,116,1016,False,pre_shock,39,0.6414,False,0.96,0.9696,0.9908,0.931,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,42,2154,239,1915,False,pre_shock,40,0.7291,False,0.8843,0.9286,0.9896,0.7992,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,43,1370,24,1346,False,shock,41,0.5534,False,0.0,0.2487,0.0,0.0,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,44,1591,24,1567,False,recovery,42,0.0433,False,0.303,0.2124,0.2381,0.4167,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,45,1221,5,1216,True,recovery,43,0.0994,False,0.1111,0.0587,0.0769,0.2,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,46,712,2,710,True,recovery,44,0.0679,True,0.4,0.5233,0.3333,0.5,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,47,846,22,824,False,recovery,45,0.1597,True,0.3529,0.5176,0.5,0.2727,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,48,471,36,435,False,recovery,46,0.0385,False,0.4643,0.6128,0.65,0.3611,fixed
+Baseline: XGBoost WF (epsilon-fallback),42,49,476,56,420,False,recovery,47,0.2217,False,0.7273,0.9909,1.0,0.5714,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,35,1341,182,1159,False,pre_shock,33,0.8128,False,0.9752,0.9939,0.9779,0.9725,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,36,1708,33,1675,False,pre_shock,34,0.9024,False,0.9706,0.9983,0.9429,1.0,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,37,498,40,458,False,pre_shock,35,0.9518,False,0.75,0.9062,1.0,0.6,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,38,756,111,645,False,pre_shock,36,0.0263,False,0.9266,0.9588,0.9439,0.9099,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,39,1183,81,1102,False,pre_shock,37,0.5353,False,0.9412,0.9681,1.0,0.8889,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,40,1211,112,1099,False,pre_shock,38,0.2523,False,0.78,0.7926,0.8864,0.6964,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,41,1132,116,1016,False,pre_shock,39,0.5499,False,0.9643,0.9719,1.0,0.931,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,42,2154,239,1915,False,pre_shock,40,0.8587,False,0.8863,0.9294,0.9948,0.7992,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,43,1370,24,1346,False,shock,41,0.5086,False,0.0,0.164,0.0,0.0,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,44,1591,24,1567,False,recovery,42,0.1295,False,0.3111,0.2196,0.3333,0.2917,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,45,1221,5,1216,True,recovery,43,0.03,False,0.0556,0.0691,0.0323,0.2,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,46,712,2,710,True,recovery,44,0.0967,True,0.6667,0.5099,1.0,0.5,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,47,846,22,824,False,recovery,45,0.0226,True,0.5263,0.5336,0.4286,0.6818,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,48,471,36,435,False,recovery,46,0.0469,False,0.2449,0.5484,0.4615,0.1667,fixed
+Ablation: Decay λ=0.05 on XGBoost,42,49,476,56,420,False,recovery,47,0.0812,False,0.9434,0.9856,1.0,0.8929,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,35,1341,182,1159,False,pre_shock,33,0.9027,False,0.9695,0.994,0.9777,0.9615,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,36,1708,33,1675,False,pre_shock,34,0.9615,False,0.9538,0.9982,0.9688,0.9394,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,37,498,40,458,False,pre_shock,35,0.5835,False,0.806,0.8948,1.0,0.675,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,38,756,111,645,False,pre_shock,36,0.9064,False,0.8065,0.9465,1.0,0.6757,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,39,1183,81,1102,False,pre_shock,37,0.1442,False,0.8828,0.9684,1.0,0.7901,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,40,1211,112,1099,False,pre_shock,38,0.165,False,0.7795,0.7934,0.9157,0.6786,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,41,1132,116,1016,False,pre_shock,39,0.3696,False,0.9604,0.9715,0.982,0.9397,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,42,2154,239,1915,False,pre_shock,40,0.8638,False,0.8811,0.9236,0.9947,0.7908,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,43,1370,24,1346,False,shock,41,0.2213,False,0.1538,0.3056,1.0,0.0833,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,44,1591,24,1567,False,recovery,42,0.1631,False,0.2222,0.3199,0.3333,0.1667,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,45,1221,5,1216,True,recovery,43,0.0708,False,0.1333,0.0932,0.1,0.2,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,46,712,2,710,True,recovery,44,0.0636,True,0.5,0.5152,0.5,0.5,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,47,846,22,824,False,recovery,45,0.0114,True,0.3556,0.4422,0.3478,0.3636,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,48,471,36,435,False,recovery,46,0.0135,False,0.5614,0.6541,0.7619,0.4444,fixed
+Ablation: Decay λ=0.25 on XGBoost,42,49,476,56,420,False,recovery,47,0.0441,False,0.6824,0.9756,1.0,0.5179,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,35,1341,182,1159,False,pre_shock,33,0.3229,False,0.9648,0.9915,0.9519,0.978,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,36,1708,33,1675,False,pre_shock,34,0.9722,False,0.9231,0.9828,0.9375,0.9091,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,37,498,40,458,False,pre_shock,35,0.9481,False,0.7692,0.8738,1.0,0.625,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,38,756,111,645,False,pre_shock,36,0.4056,False,0.7826,0.9475,0.9863,0.6486,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,39,1183,81,1102,False,pre_shock,37,0.0162,False,0.9091,0.9622,0.9589,0.8642,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,40,1211,112,1099,False,pre_shock,38,0.0479,False,0.7415,0.7976,0.8172,0.6786,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,41,1132,116,1016,False,pre_shock,39,0.408,False,0.9604,0.967,0.982,0.9397,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,42,2154,239,1915,False,pre_shock,40,0.4468,False,0.8889,0.9256,0.9703,0.8201,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,43,1370,24,1346,False,shock,41,0.2662,False,0.1538,0.3185,1.0,0.0833,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,44,1591,24,1567,False,recovery,42,0.0547,False,0.4,0.2485,0.5,0.3333,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,45,1221,5,1216,True,recovery,43,0.0122,False,0.16,0.1328,0.1,0.4,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,46,712,2,710,True,recovery,44,0.0544,True,0.5,0.5096,0.5,0.5,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,47,846,22,824,False,recovery,45,0.0056,True,0.439,0.4708,0.4737,0.4091,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,48,471,36,435,False,recovery,46,0.0013,False,0.7397,0.6591,0.7297,0.75,fixed
+Ablation: Decay λ=0.5 on XGBoost,42,49,476,56,420,False,recovery,47,0.008,False,0.7826,0.9912,1.0,0.6429,fixed

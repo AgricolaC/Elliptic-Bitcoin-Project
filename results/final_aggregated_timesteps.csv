@@ -1,196 +1,286 @@
 Sweep,Tau,F1_mean,F1_std,PRAUC_mean,PRAUC_std,PRAUC
-F1: Base XGBoost WF [v2],35,0.9568,0.0,0.9932,0.0,0.9932
-F1: Base XGBoost WF [v2],36,0.9697,0.0,0.9983,0.0,0.9983
-F1: Base XGBoost WF [v2],37,0.75,0.0,0.9156,0.0,0.9156
-F1: Base XGBoost WF [v2],38,0.9395,0.0,0.9588,0.0,0.9588
-F1: Base XGBoost WF [v2],39,0.8844,0.0,0.9618,0.0,0.9618
-F1: Base XGBoost WF [v2],40,0.7739,0.0,0.7936,0.0,0.7936
-F1: Base XGBoost WF [v2],41,0.9565,0.0,0.9704,0.0,0.9704
-F1: Base XGBoost WF [v2],42,0.8767,0.0,0.9273,0.0,0.9273
-F1: Base XGBoost WF [v2],43,0.0,0.0,0.1732,0.0,0.1732
-F1: Base XGBoost WF [v2],44,0.274,0.0,0.1872,0.0,0.1872
-F1: Base XGBoost WF [v2],45,0.0,0.0,0.048,0.0,0.048
-F1: Base XGBoost WF [v2],46,0.0635,0.0,0.5233,0.0,0.5233
-F1: Base XGBoost WF [v2],47,0.2516,0.0,0.5067,0.0,0.5067
-F1: Base XGBoost WF [v2],48,0.4364,0.0,0.564,0.0,0.564
-F1: Base XGBoost WF [v2],49,0.7692,0.0,0.9845,0.0,0.9845
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],35,0.7289,,0.5508,,0.5508
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],36,0.6173,,0.6951,,0.6951
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],37,0.6441,,0.7783,,0.7783
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],38,0.8829,,0.9403,,0.9403
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],39,0.831,,0.9281,,0.9281
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],40,0.7419,,0.7701,,0.7701
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],41,0.8622,,0.9047,,0.9047
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],42,0.8381,,0.8684,,0.8684
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],43,0.0,,0.0305,,0.0305
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],44,0.0374,,0.0332,,0.0332
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],45,0.0,,0.0157,,0.0157
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],46,0.0,,0.0055,,0.0055
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],47,0.1527,,0.0925,,0.0925
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],48,0.4474,,0.447,,0.447
-F1: SGC+MLP WF K=1 [Dir=F; Topo=early; PCA],49,0.1667,,0.4186,,0.4186
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],35,0.9176,,0.94,,0.94
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],36,0.5195,,0.6305,,0.6305
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],37,0.6333,,0.8022,,0.8022
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],38,0.9014,,0.9593,,0.9593
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],39,0.8462,,0.905,,0.905
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],40,0.7594,,0.7894,,0.7894
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],41,0.9058,,0.9431,,0.9431
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],42,0.8178,,0.8248,,0.8248
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],43,0.0,,0.0363,,0.0363
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],44,0.0645,,0.0308,,0.0308
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],45,0.0,,0.014,,0.014
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],46,0.0,,0.0102,,0.0102
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],47,0.0926,,0.0722,,0.0722
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],48,0.495,,0.3543,,0.3543
-F1: SGC+MLP WF K=2 [Dir=F; Topo=None],49,0.4667,,0.4616,,0.4616
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],35,0.7532,,0.6526,,0.6526
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],36,0.506,,0.5374,,0.5374
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],37,0.4912,,0.7234,,0.7234
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],38,0.6835,,0.9235,,0.9235
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],39,0.7724,,0.8173,,0.8173
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],40,0.7065,,0.7313,,0.7313
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],41,0.8632,,0.9118,,0.9118
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],42,0.7965,,0.8672,,0.8672
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],43,0.0,,0.0274,,0.0274
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],44,0.0526,,0.0492,,0.0492
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],45,0.0,,0.0147,,0.0147
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],46,0.0169,,0.0402,,0.0402
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],47,0.0154,,0.046,,0.046
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],48,0.4626,,0.3541,,0.3541
-F1: SGC+MLP WF K=3 [Dir=T; Topo=None; PCA],49,0.1739,,0.2341,,0.2341
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],35,0.804,,0.8476,,0.8476
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],36,0.4494,,0.5264,,0.5264
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],37,0.5938,,0.7882,,0.7882
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],38,0.7509,,0.9342,,0.9342
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],39,0.7852,,0.8983,,0.8983
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],40,0.7449,,0.7974,,0.7974
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],41,0.8122,,0.8884,,0.8884
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],42,0.7679,,0.8118,,0.8118
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],43,0.0,,0.0276,,0.0276
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],44,0.0805,,0.083,,0.083
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],45,0.0,,0.0118,,0.0118
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],46,0.015,,0.0102,,0.0102
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],47,0.0482,,0.0618,,0.0618
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],48,0.382,,0.2933,,0.2933
-F1: SGC+MLP WF K=5 [Dir=F; Topo=None; PCA],49,0.4423,,0.4409,,0.4409
-F2: SGC-LSTM Chronological,35,0.7819,,0.6523,,0.6523
-F2: SGC-LSTM Chronological,36,0.5128,,0.31,,0.31
-F2: SGC-LSTM Chronological,37,0.5806,,0.7906,,0.7906
-F2: SGC-LSTM Chronological,38,0.8868,,0.9499,,0.9499
-F2: SGC-LSTM Chronological,39,0.8056,,0.852,,0.852
-F2: SGC-LSTM Chronological,40,0.7423,,0.7903,,0.7903
-F2: SGC-LSTM Chronological,41,0.8634,,0.8965,,0.8965
-F2: SGC-LSTM Chronological,42,0.8235,,0.8701,,0.8701
-F2: SGC-LSTM Chronological,43,0.0,,0.0237,,0.0237
-F2: SGC-LSTM Chronological,44,0.0727,,0.0353,,0.0353
-F2: SGC-LSTM Chronological,45,0.0,,0.01,,0.01
-F2: SGC-LSTM Chronological,46,0.0,,0.0071,,0.0071
-F2: SGC-LSTM Chronological,47,0.1481,,0.0988,,0.0988
-F2: SGC-LSTM Chronological,48,0.5045,,0.4321,,0.4321
-F2: SGC-LSTM Chronological,49,0.4961,,0.4512,,0.4512
-F2: SGC-LSTM Shuffled,35,0.7536,,0.5432,,0.5432
-F2: SGC-LSTM Shuffled,36,0.48,,0.3633,,0.3633
-F2: SGC-LSTM Shuffled,37,0.623,,0.8128,,0.8128
-F2: SGC-LSTM Shuffled,38,0.8108,,0.9198,,0.9198
-F2: SGC-LSTM Shuffled,39,0.8378,,0.8418,,0.8418
-F2: SGC-LSTM Shuffled,40,0.7784,,0.7936,,0.7936
-F2: SGC-LSTM Shuffled,41,0.8711,,0.9217,,0.9217
-F2: SGC-LSTM Shuffled,42,0.8225,,0.8722,,0.8722
-F2: SGC-LSTM Shuffled,43,0.0,,0.0266,,0.0266
-F2: SGC-LSTM Shuffled,44,0.0532,,0.0346,,0.0346
-F2: SGC-LSTM Shuffled,45,0.0,,0.0129,,0.0129
-F2: SGC-LSTM Shuffled,46,0.0,,0.006,,0.006
-F2: SGC-LSTM Shuffled,47,0.1416,,0.075,,0.075
-F2: SGC-LSTM Shuffled,48,0.0488,,0.3648,,0.3648
-F2: SGC-LSTM Shuffled,49,0.6977,,0.6542,,0.6542
-F4: SGC+MLP decay λ=0.05,35,0.8896,,0.9118,,0.9118
-F4: SGC+MLP decay λ=0.05,36,0.7606,,0.7536,,0.7536
-F4: SGC+MLP decay λ=0.05,37,0.6984,,0.8316,,0.8316
-F4: SGC+MLP decay λ=0.05,38,0.9083,,0.959,,0.959
-F4: SGC+MLP decay λ=0.05,39,0.8671,,0.9791,,0.9791
-F4: SGC+MLP decay λ=0.05,40,0.7379,,0.7925,,0.7925
-F4: SGC+MLP decay λ=0.05,41,0.8898,,0.9517,,0.9517
-F4: SGC+MLP decay λ=0.05,42,0.8604,,0.8645,,0.8645
-F4: SGC+MLP decay λ=0.05,43,0.0426,,0.0382,,0.0382
-F4: SGC+MLP decay λ=0.05,44,0.15,,0.1476,,0.1476
-F4: SGC+MLP decay λ=0.05,45,0.0,,0.0179,,0.0179
-F4: SGC+MLP decay λ=0.05,46,0.0,,0.0067,,0.0067
-F4: SGC+MLP decay λ=0.05,47,0.2222,,0.2337,,0.2337
-F4: SGC+MLP decay λ=0.05,48,0.3333,,0.6169,,0.6169
-F4: SGC+MLP decay λ=0.05,49,0.7158,,0.8186,,0.8186
-F4: SGC+MLP decay λ=0.25,35,0.9039,,0.9034,,0.9034
-F4: SGC+MLP decay λ=0.25,36,0.7429,,0.822,,0.822
-F4: SGC+MLP decay λ=0.25,37,0.6984,,0.8392,,0.8392
-F4: SGC+MLP decay λ=0.25,38,0.8986,,0.9637,,0.9637
-F4: SGC+MLP decay λ=0.25,39,0.8767,,0.9546,,0.9546
-F4: SGC+MLP decay λ=0.25,40,0.7053,,0.7702,,0.7702
-F4: SGC+MLP decay λ=0.25,41,0.9076,,0.9305,,0.9305
-F4: SGC+MLP decay λ=0.25,42,0.8493,,0.8402,,0.8402
-F4: SGC+MLP decay λ=0.25,43,0.0364,,0.081,,0.081
-F4: SGC+MLP decay λ=0.25,44,0.2778,,0.2521,,0.2521
-F4: SGC+MLP decay λ=0.25,45,0.0,,0.0218,,0.0218
-F4: SGC+MLP decay λ=0.25,46,0.0,,0.0043,,0.0043
-F4: SGC+MLP decay λ=0.25,47,0.1887,,0.145,,0.145
-F4: SGC+MLP decay λ=0.25,48,0.4082,,0.621,,0.621
-F4: SGC+MLP decay λ=0.25,49,0.6957,,0.8496,,0.8496
-F4: SGC+MLP decay λ=0.5,35,0.9218,,0.9198,,0.9198
-F4: SGC+MLP decay λ=0.5,36,0.7397,,0.8168,,0.8168
-F4: SGC+MLP decay λ=0.5,37,0.5862,,0.7964,,0.7964
-F4: SGC+MLP decay λ=0.5,38,0.9124,,0.9557,,0.9557
-F4: SGC+MLP decay λ=0.5,39,0.8175,,0.9354,,0.9354
-F4: SGC+MLP decay λ=0.5,40,0.6981,,0.6894,,0.6894
-F4: SGC+MLP decay λ=0.5,41,0.8571,,0.9216,,0.9216
-F4: SGC+MLP decay λ=0.5,42,0.8426,,0.8691,,0.8691
-F4: SGC+MLP decay λ=0.5,43,0.12,,0.0892,,0.0892
-F4: SGC+MLP decay λ=0.5,44,0.2308,,0.1624,,0.1624
-F4: SGC+MLP decay λ=0.5,45,0.0,,0.0765,,0.0765
-F4: SGC+MLP decay λ=0.5,46,0.0,,0.0042,,0.0042
-F4: SGC+MLP decay λ=0.5,47,0.1639,,0.1539,,0.1539
-F4: SGC+MLP decay λ=0.5,48,0.3396,,0.5551,,0.5551
-F4: SGC+MLP decay λ=0.5,49,0.6452,,0.7898,,0.7898
-F4: XGBoost decay λ=0.05,35,0.9443,,0.9938,,0.9938
-F4: XGBoost decay λ=0.05,36,0.9296,,1.0,,1.0
-F4: XGBoost decay λ=0.05,37,0.8056,,0.9058,,0.9058
-F4: XGBoost decay λ=0.05,38,0.9395,,0.9654,,0.9654
-F4: XGBoost decay λ=0.05,39,0.9693,,0.9928,,0.9928
-F4: XGBoost decay λ=0.05,40,0.7429,,0.8053,,0.8053
-F4: XGBoost decay λ=0.05,41,0.8784,,0.978,,0.978
-F4: XGBoost decay λ=0.05,42,0.8711,,0.9297,,0.9297
-F4: XGBoost decay λ=0.05,43,0.1429,,0.3123,,0.3123
-F4: XGBoost decay λ=0.05,44,0.2424,,0.4321,,0.4321
-F4: XGBoost decay λ=0.05,45,0.0,,0.1295,,0.1295
-F4: XGBoost decay λ=0.05,46,0.5,,0.5109,,0.5109
-F4: XGBoost decay λ=0.05,47,0.4225,,0.4498,,0.4498
-F4: XGBoost decay λ=0.05,48,0.8056,,0.8918,,0.8918
-F4: XGBoost decay λ=0.05,49,0.9434,,0.992,,0.992
-F4: XGBoost decay λ=0.25,35,0.9278,,0.9937,,0.9937
-F4: XGBoost decay λ=0.25,36,0.9565,,1.0,,1.0
-F4: XGBoost decay λ=0.25,37,0.7273,,0.8451,,0.8451
-F4: XGBoost decay λ=0.25,38,0.9032,,0.9639,,0.9639
-F4: XGBoost decay λ=0.25,39,0.9747,,0.9887,,0.9887
-F4: XGBoost decay λ=0.25,40,0.7647,,0.8023,,0.8023
-F4: XGBoost decay λ=0.25,41,0.9106,,0.977,,0.977
-F4: XGBoost decay λ=0.25,42,0.8839,,0.9339,,0.9339
-F4: XGBoost decay λ=0.25,43,0.3333,,0.3723,,0.3723
-F4: XGBoost decay λ=0.25,44,0.549,,0.4256,,0.4256
-F4: XGBoost decay λ=0.25,45,0.0,,0.1999,,0.1999
-F4: XGBoost decay λ=0.25,46,0.4,,0.5156,,0.5156
-F4: XGBoost decay λ=0.25,47,0.4444,,0.3615,,0.3615
-F4: XGBoost decay λ=0.25,48,0.7273,,0.8018,,0.8018
-F4: XGBoost decay λ=0.25,49,0.9126,,0.9979,,0.9979
-F4: XGBoost decay λ=0.5,35,0.9319,,0.9906,,0.9906
-F4: XGBoost decay λ=0.5,36,0.9143,,0.996,,0.996
-F4: XGBoost decay λ=0.5,37,0.7568,,0.8731,,0.8731
-F4: XGBoost decay λ=0.5,38,0.9135,,0.9678,,0.9678
-F4: XGBoost decay λ=0.5,39,0.9682,,0.9888,,0.9888
-F4: XGBoost decay λ=0.5,40,0.7633,,0.7925,,0.7925
-F4: XGBoost decay λ=0.5,41,0.9098,,0.976,,0.976
-F4: XGBoost decay λ=0.5,42,0.88,,0.9346,,0.9346
-F4: XGBoost decay λ=0.5,43,0.359,,0.3303,,0.3303
-F4: XGBoost decay λ=0.5,44,0.5217,,0.4346,,0.4346
-F4: XGBoost decay λ=0.5,45,0.1667,,0.1435,,0.1435
-F4: XGBoost decay λ=0.5,46,0.2857,,0.5152,,0.5152
-F4: XGBoost decay λ=0.5,47,0.439,,0.4687,,0.4687
-F4: XGBoost decay λ=0.5,48,0.75,,0.7965,,0.7965
-F4: XGBoost decay λ=0.5,49,0.8911,,0.9951,,0.9951
+Ablation: Decay λ=0.05 on 1 F late Base,35,0.8226,,0.7753,,0.7753
+Ablation: Decay λ=0.05 on 1 F late Base,36,0.6176,,0.5374,,0.5374
+Ablation: Decay λ=0.05 on 1 F late Base,37,0.6875,,0.8446,,0.8446
+Ablation: Decay λ=0.05 on 1 F late Base,38,0.9143,,0.9608,,0.9608
+Ablation: Decay λ=0.05 on 1 F late Base,39,0.8758,,0.9074,,0.9074
+Ablation: Decay λ=0.05 on 1 F late Base,40,0.7442,,0.7897,,0.7897
+Ablation: Decay λ=0.05 on 1 F late Base,41,0.8766,,0.9309,,0.9309
+Ablation: Decay λ=0.05 on 1 F late Base,42,0.8329,,0.8703,,0.8703
+Ablation: Decay λ=0.05 on 1 F late Base,43,0.0,,0.0417,,0.0417
+Ablation: Decay λ=0.05 on 1 F late Base,44,0.0594,,0.0695,,0.0695
+Ablation: Decay λ=0.05 on 1 F late Base,45,0.0,,0.0308,,0.0308
+Ablation: Decay λ=0.05 on 1 F late Base,46,0.0,,0.0032,,0.0032
+Ablation: Decay λ=0.05 on 1 F late Base,47,0.125,,0.1186,,0.1186
+Ablation: Decay λ=0.05 on 1 F late Base,48,0.5238,,0.4403,,0.4403
+Ablation: Decay λ=0.05 on 1 F late Base,49,0.4706,,0.4707,,0.4707
+Ablation: Decay λ=0.05 on 3 F early Base,35,0.8011,,0.827,,0.827
+Ablation: Decay λ=0.05 on 3 F early Base,36,0.4167,,0.2333,,0.2333
+Ablation: Decay λ=0.05 on 3 F early Base,37,0.623,,0.8303,,0.8303
+Ablation: Decay λ=0.05 on 3 F early Base,38,0.8185,,0.931,,0.931
+Ablation: Decay λ=0.05 on 3 F early Base,39,0.825,,0.8645,,0.8645
+Ablation: Decay λ=0.05 on 3 F early Base,40,0.6893,,0.7334,,0.7334
+Ablation: Decay λ=0.05 on 3 F early Base,41,0.8778,,0.9352,,0.9352
+Ablation: Decay λ=0.05 on 3 F early Base,42,0.8284,,0.8176,,0.8176
+Ablation: Decay λ=0.05 on 3 F early Base,43,0.0,,0.0331,,0.0331
+Ablation: Decay λ=0.05 on 3 F early Base,44,0.0778,,0.0753,,0.0753
+Ablation: Decay λ=0.05 on 3 F early Base,45,0.0,,0.0136,,0.0136
+Ablation: Decay λ=0.05 on 3 F early Base,46,0.0,,0.0074,,0.0074
+Ablation: Decay λ=0.05 on 3 F early Base,47,0.0,,0.074,,0.074
+Ablation: Decay λ=0.05 on 3 F early Base,48,0.0889,,0.3083,,0.3083
+Ablation: Decay λ=0.05 on 3 F early Base,49,0.486,,0.4533,,0.4533
+Ablation: Decay λ=0.05 on 3 F late Base,35,0.8352,,0.8253,,0.8253
+Ablation: Decay λ=0.05 on 3 F late Base,36,0.6111,,0.4926,,0.4926
+Ablation: Decay λ=0.05 on 3 F late Base,37,0.6452,,0.8398,,0.8398
+Ablation: Decay λ=0.05 on 3 F late Base,38,0.803,,0.9459,,0.9459
+Ablation: Decay λ=0.05 on 3 F late Base,39,0.8553,,0.8462,,0.8462
+Ablation: Decay λ=0.05 on 3 F late Base,40,0.766,,0.7859,,0.7859
+Ablation: Decay λ=0.05 on 3 F late Base,41,0.8664,,0.9112,,0.9112
+Ablation: Decay λ=0.05 on 3 F late Base,42,0.8161,,0.8886,,0.8886
+Ablation: Decay λ=0.05 on 3 F late Base,43,0.0,,0.0412,,0.0412
+Ablation: Decay λ=0.05 on 3 F late Base,44,0.0325,,0.0675,,0.0675
+Ablation: Decay λ=0.05 on 3 F late Base,45,0.0,,0.0145,,0.0145
+Ablation: Decay λ=0.05 on 3 F late Base,46,0.0,,0.0059,,0.0059
+Ablation: Decay λ=0.05 on 3 F late Base,47,0.0,,0.0876,,0.0876
+Ablation: Decay λ=0.05 on 3 F late Base,48,0.3226,,0.3591,,0.3591
+Ablation: Decay λ=0.05 on 3 F late Base,49,0.3684,,0.5673,,0.5673
+Ablation: Decay λ=0.05 on XGBoost,35,0.9752,,0.9939,,0.9939
+Ablation: Decay λ=0.05 on XGBoost,36,0.9706,,0.9983,,0.9983
+Ablation: Decay λ=0.05 on XGBoost,37,0.75,,0.9062,,0.9062
+Ablation: Decay λ=0.05 on XGBoost,38,0.9266,,0.9588,,0.9588
+Ablation: Decay λ=0.05 on XGBoost,39,0.9412,,0.9681,,0.9681
+Ablation: Decay λ=0.05 on XGBoost,40,0.78,,0.7926,,0.7926
+Ablation: Decay λ=0.05 on XGBoost,41,0.9643,,0.9719,,0.9719
+Ablation: Decay λ=0.05 on XGBoost,42,0.8863,,0.9294,,0.9294
+Ablation: Decay λ=0.05 on XGBoost,43,0.0,,0.164,,0.164
+Ablation: Decay λ=0.05 on XGBoost,44,0.3111,,0.2196,,0.2196
+Ablation: Decay λ=0.05 on XGBoost,45,0.0556,,0.0691,,0.0691
+Ablation: Decay λ=0.05 on XGBoost,46,0.6667,,0.5099,,0.5099
+Ablation: Decay λ=0.05 on XGBoost,47,0.5263,,0.5336,,0.5336
+Ablation: Decay λ=0.05 on XGBoost,48,0.2449,,0.5484,,0.5484
+Ablation: Decay λ=0.05 on XGBoost,49,0.9434,,0.9856,,0.9856
+Ablation: Decay λ=0.25 on 1 F late Base,35,0.7384,,0.8665,,0.8665
+Ablation: Decay λ=0.25 on 1 F late Base,36,0.625,,0.4759,,0.4759
+Ablation: Decay λ=0.25 on 1 F late Base,37,0.6462,,0.8218,,0.8218
+Ablation: Decay λ=0.25 on 1 F late Base,38,0.8815,,0.9631,,0.9631
+Ablation: Decay λ=0.25 on 1 F late Base,39,0.8169,,0.8829,,0.8829
+Ablation: Decay λ=0.25 on 1 F late Base,40,0.732,,0.7899,,0.7899
+Ablation: Decay λ=0.25 on 1 F late Base,41,0.8987,,0.93,,0.93
+Ablation: Decay λ=0.25 on 1 F late Base,42,0.8451,,0.8935,,0.8935
+Ablation: Decay λ=0.25 on 1 F late Base,43,0.0,,0.0657,,0.0657
+Ablation: Decay λ=0.25 on 1 F late Base,44,0.0303,,0.0336,,0.0336
+Ablation: Decay λ=0.25 on 1 F late Base,45,0.0,,0.013,,0.013
+Ablation: Decay λ=0.25 on 1 F late Base,46,0.0,,0.0072,,0.0072
+Ablation: Decay λ=0.25 on 1 F late Base,47,0.0,,0.0992,,0.0992
+Ablation: Decay λ=0.25 on 1 F late Base,48,0.5238,,0.5068,,0.5068
+Ablation: Decay λ=0.25 on 1 F late Base,49,0.5545,,0.5705,,0.5705
+Ablation: Decay λ=0.25 on 3 F early Base,35,0.8021,,0.8685,,0.8685
+Ablation: Decay λ=0.25 on 3 F early Base,36,0.5106,,0.4701,,0.4701
+Ablation: Decay λ=0.25 on 3 F early Base,37,0.6102,,0.8064,,0.8064
+Ablation: Decay λ=0.25 on 3 F early Base,38,0.8772,,0.923,,0.923
+Ablation: Decay λ=0.25 on 3 F early Base,39,0.8116,,0.876,,0.876
+Ablation: Decay λ=0.25 on 3 F early Base,40,0.7292,,0.7566,,0.7566
+Ablation: Decay λ=0.25 on 3 F early Base,41,0.8545,,0.8964,,0.8964
+Ablation: Decay λ=0.25 on 3 F early Base,42,0.8208,,0.8721,,0.8721
+Ablation: Decay λ=0.25 on 3 F early Base,43,0.0968,,0.0329,,0.0329
+Ablation: Decay λ=0.25 on 3 F early Base,44,0.0694,,0.0931,,0.0931
+Ablation: Decay λ=0.25 on 3 F early Base,45,0.0,,0.0136,,0.0136
+Ablation: Decay λ=0.25 on 3 F early Base,46,0.0,,0.0089,,0.0089
+Ablation: Decay λ=0.25 on 3 F early Base,47,0.069,,0.0777,,0.0777
+Ablation: Decay λ=0.25 on 3 F early Base,48,0.422,,0.4007,,0.4007
+Ablation: Decay λ=0.25 on 3 F early Base,49,0.6822,,0.6599,,0.6599
+Ablation: Decay λ=0.25 on 3 F late Base,35,0.8249,,0.8747,,0.8747
+Ablation: Decay λ=0.25 on 3 F late Base,36,0.6061,,0.6132,,0.6132
+Ablation: Decay λ=0.25 on 3 F late Base,37,0.6452,,0.8018,,0.8018
+Ablation: Decay λ=0.25 on 3 F late Base,38,0.8678,,0.9559,,0.9559
+Ablation: Decay λ=0.25 on 3 F late Base,39,0.8609,,0.9035,,0.9035
+Ablation: Decay λ=0.25 on 3 F late Base,40,0.6667,,0.7425,,0.7425
+Ablation: Decay λ=0.25 on 3 F late Base,41,0.8333,,0.8938,,0.8938
+Ablation: Decay λ=0.25 on 3 F late Base,42,0.7971,,0.8693,,0.8693
+Ablation: Decay λ=0.25 on 3 F late Base,43,0.0345,,0.0272,,0.0272
+Ablation: Decay λ=0.25 on 3 F late Base,44,0.0988,,0.1358,,0.1358
+Ablation: Decay λ=0.25 on 3 F late Base,45,0.0,,0.0184,,0.0184
+Ablation: Decay λ=0.25 on 3 F late Base,46,0.0,,0.0071,,0.0071
+Ablation: Decay λ=0.25 on 3 F late Base,47,0.0,,0.0583,,0.0583
+Ablation: Decay λ=0.25 on 3 F late Base,48,0.4337,,0.4041,,0.4041
+Ablation: Decay λ=0.25 on 3 F late Base,49,0.6364,,0.7599,,0.7599
+Ablation: Decay λ=0.25 on XGBoost,35,0.9695,,0.994,,0.994
+Ablation: Decay λ=0.25 on XGBoost,36,0.9538,,0.9982,,0.9982
+Ablation: Decay λ=0.25 on XGBoost,37,0.806,,0.8948,,0.8948
+Ablation: Decay λ=0.25 on XGBoost,38,0.8065,,0.9465,,0.9465
+Ablation: Decay λ=0.25 on XGBoost,39,0.8828,,0.9684,,0.9684
+Ablation: Decay λ=0.25 on XGBoost,40,0.7795,,0.7934,,0.7934
+Ablation: Decay λ=0.25 on XGBoost,41,0.9604,,0.9715,,0.9715
+Ablation: Decay λ=0.25 on XGBoost,42,0.8811,,0.9236,,0.9236
+Ablation: Decay λ=0.25 on XGBoost,43,0.1538,,0.3056,,0.3056
+Ablation: Decay λ=0.25 on XGBoost,44,0.2222,,0.3199,,0.3199
+Ablation: Decay λ=0.25 on XGBoost,45,0.1333,,0.0932,,0.0932
+Ablation: Decay λ=0.25 on XGBoost,46,0.5,,0.5152,,0.5152
+Ablation: Decay λ=0.25 on XGBoost,47,0.3556,,0.4422,,0.4422
+Ablation: Decay λ=0.25 on XGBoost,48,0.5614,,0.6541,,0.6541
+Ablation: Decay λ=0.25 on XGBoost,49,0.6824,,0.9756,,0.9756
+Ablation: Decay λ=0.5 on 1 F late Base,35,0.8191,,0.7787,,0.7787
+Ablation: Decay λ=0.5 on 1 F late Base,36,0.5287,,0.3824,,0.3824
+Ablation: Decay λ=0.5 on 1 F late Base,37,0.64,,0.7985,,0.7985
+Ablation: Decay λ=0.5 on 1 F late Base,38,0.8171,,0.9401,,0.9401
+Ablation: Decay λ=0.5 on 1 F late Base,39,0.7612,,0.8813,,0.8813
+Ablation: Decay λ=0.5 on 1 F late Base,40,0.6591,,0.7471,,0.7471
+Ablation: Decay λ=0.5 on 1 F late Base,41,0.8821,,0.9232,,0.9232
+Ablation: Decay λ=0.5 on 1 F late Base,42,0.8295,,0.8734,,0.8734
+Ablation: Decay λ=0.5 on 1 F late Base,43,0.0833,,0.0466,,0.0466
+Ablation: Decay λ=0.5 on 1 F late Base,44,0.15,,0.0816,,0.0816
+Ablation: Decay λ=0.5 on 1 F late Base,45,0.0,,0.0306,,0.0306
+Ablation: Decay λ=0.5 on 1 F late Base,46,0.0,,0.0036,,0.0036
+Ablation: Decay λ=0.5 on 1 F late Base,47,0.0,,0.1212,,0.1212
+Ablation: Decay λ=0.5 on 1 F late Base,48,0.4615,,0.5435,,0.5435
+Ablation: Decay λ=0.5 on 1 F late Base,49,0.5984,,0.594,,0.594
+Ablation: Decay λ=0.5 on 3 F early Base,35,0.782,,0.8181,,0.8181
+Ablation: Decay λ=0.5 on 3 F early Base,36,0.5672,,0.6692,,0.6692
+Ablation: Decay λ=0.5 on 3 F early Base,37,0.6349,,0.8223,,0.8223
+Ablation: Decay λ=0.5 on 3 F early Base,38,0.8772,,0.9213,,0.9213
+Ablation: Decay λ=0.5 on 3 F early Base,39,0.8027,,0.8346,,0.8346
+Ablation: Decay λ=0.5 on 3 F early Base,40,0.6778,,0.7414,,0.7414
+Ablation: Decay λ=0.5 on 3 F early Base,41,0.8403,,0.8769,,0.8769
+Ablation: Decay λ=0.5 on 3 F early Base,42,0.8117,,0.8622,,0.8622
+Ablation: Decay λ=0.5 on 3 F early Base,43,0.0256,,0.0278,,0.0278
+Ablation: Decay λ=0.5 on 3 F early Base,44,0.1069,,0.0718,,0.0718
+Ablation: Decay λ=0.5 on 3 F early Base,45,0.0,,0.0123,,0.0123
+Ablation: Decay λ=0.5 on 3 F early Base,46,0.0,,0.004,,0.004
+Ablation: Decay λ=0.5 on 3 F early Base,47,0.0,,0.0683,,0.0683
+Ablation: Decay λ=0.5 on 3 F early Base,48,0.4715,,0.4356,,0.4356
+Ablation: Decay λ=0.5 on 3 F early Base,49,0.7523,,0.7943,,0.7943
+Ablation: Decay λ=0.5 on 3 F late Base,35,0.7819,,0.8547,,0.8547
+Ablation: Decay λ=0.5 on 3 F late Base,36,0.5902,,0.5324,,0.5324
+Ablation: Decay λ=0.5 on 3 F late Base,37,0.6111,,0.7707,,0.7707
+Ablation: Decay λ=0.5 on 3 F late Base,38,0.8584,,0.9123,,0.9123
+Ablation: Decay λ=0.5 on 3 F late Base,39,0.7857,,0.8446,,0.8446
+Ablation: Decay λ=0.5 on 3 F late Base,40,0.6526,,0.689,,0.689
+Ablation: Decay λ=0.5 on 3 F late Base,41,0.8684,,0.9048,,0.9048
+Ablation: Decay λ=0.5 on 3 F late Base,42,0.8295,,0.8824,,0.8824
+Ablation: Decay λ=0.5 on 3 F late Base,43,0.0333,,0.0348,,0.0348
+Ablation: Decay λ=0.5 on 3 F late Base,44,0.0808,,0.1132,,0.1132
+Ablation: Decay λ=0.5 on 3 F late Base,45,0.0,,0.0094,,0.0094
+Ablation: Decay λ=0.5 on 3 F late Base,46,0.0,,0.0412,,0.0412
+Ablation: Decay λ=0.5 on 3 F late Base,47,0.0,,0.0662,,0.0662
+Ablation: Decay λ=0.5 on 3 F late Base,48,0.5128,,0.4762,,0.4762
+Ablation: Decay λ=0.5 on 3 F late Base,49,0.7451,,0.8044,,0.8044
+Ablation: Decay λ=0.5 on XGBoost,35,0.9648,,0.9915,,0.9915
+Ablation: Decay λ=0.5 on XGBoost,36,0.9231,,0.9828,,0.9828
+Ablation: Decay λ=0.5 on XGBoost,37,0.7692,,0.8738,,0.8738
+Ablation: Decay λ=0.5 on XGBoost,38,0.7826,,0.9475,,0.9475
+Ablation: Decay λ=0.5 on XGBoost,39,0.9091,,0.9622,,0.9622
+Ablation: Decay λ=0.5 on XGBoost,40,0.7415,,0.7976,,0.7976
+Ablation: Decay λ=0.5 on XGBoost,41,0.9604,,0.967,,0.967
+Ablation: Decay λ=0.5 on XGBoost,42,0.8889,,0.9256,,0.9256
+Ablation: Decay λ=0.5 on XGBoost,43,0.1538,,0.3185,,0.3185
+Ablation: Decay λ=0.5 on XGBoost,44,0.4,,0.2485,,0.2485
+Ablation: Decay λ=0.5 on XGBoost,45,0.16,,0.1328,,0.1328
+Ablation: Decay λ=0.5 on XGBoost,46,0.5,,0.5096,,0.5096
+Ablation: Decay λ=0.5 on XGBoost,47,0.439,,0.4708,,0.4708
+Ablation: Decay λ=0.5 on XGBoost,48,0.7397,,0.6591,,0.6591
+Ablation: Decay λ=0.5 on XGBoost,49,0.7826,,0.9912,,0.9912
+Baseline: XGBoost WF (epsilon-fallback),35,0.9443,0.0,0.9936,0.0,0.9936
+Baseline: XGBoost WF (epsilon-fallback),36,0.9688,0.0,0.9966,0.0,0.9966
+Baseline: XGBoost WF (epsilon-fallback),37,0.7879,0.0,0.9203,0.0,0.9203
+Baseline: XGBoost WF (epsilon-fallback),38,0.9439,0.0,0.9587,0.0,0.9587
+Baseline: XGBoost WF (epsilon-fallback),39,0.898,0.0,0.9684,0.0,0.9684
+Baseline: XGBoost WF (epsilon-fallback),40,0.77,0.0,0.7896,0.0,0.7896
+Baseline: XGBoost WF (epsilon-fallback),41,0.96,0.0,0.9696,0.0,0.9696
+Baseline: XGBoost WF (epsilon-fallback),42,0.8843,0.0,0.9286,0.0,0.9286
+Baseline: XGBoost WF (epsilon-fallback),43,0.0,0.0,0.2487,0.0,0.2487
+Baseline: XGBoost WF (epsilon-fallback),44,0.303,0.0,0.2124,0.0,0.2124
+Baseline: XGBoost WF (epsilon-fallback),45,0.1111,0.0,0.0587,0.0,0.0587
+Baseline: XGBoost WF (epsilon-fallback),46,0.4,0.0,0.5233,0.0,0.5233
+Baseline: XGBoost WF (epsilon-fallback),47,0.3529,0.0,0.5176,0.0,0.5176
+Baseline: XGBoost WF (epsilon-fallback),48,0.4643,0.0,0.6128,0.0,0.6128
+Baseline: XGBoost WF (epsilon-fallback),49,0.7273,0.0,0.9909,0.0,0.9909
+"Best WF: Grid: K=1, Dir=F, Topo=late",35,0.7916000000000001,0.054730064863838836,0.7028,0.0643467170879758,0.7028
+"Best WF: Grid: K=1, Dir=F, Topo=late",36,0.5629,0.10394469683442244,0.5396000000000001,0.07170062761231599,0.5396000000000001
+"Best WF: Grid: K=1, Dir=F, Topo=late",37,0.59965,0.03302188668141174,0.7765,0.0015556349186103902,0.7765
+"Best WF: Grid: K=1, Dir=F, Topo=late",38,0.7795,0.0354967604155647,0.9184,0.030122748878546903,0.9184
+"Best WF: Grid: K=1, Dir=F, Topo=late",39,0.7298,0.14962379489907346,0.8754,0.0346482322781409,0.8754
+"Best WF: Grid: K=1, Dir=F, Topo=late",40,0.7191000000000001,0.008909545442950577,0.75205,0.00685893577750954,0.75205
+"Best WF: Grid: K=1, Dir=F, Topo=late",41,0.884,0.00014142135623729392,0.9277500000000001,0.000494974746830568,0.9277500000000001
+"Best WF: Grid: K=1, Dir=F, Topo=late",42,0.8147,0.025738686835190323,0.83335,0.061871843353822883,0.83335
+"Best WF: Grid: K=1, Dir=F, Topo=late",43,0.03335,0.04716402230514272,0.048299999999999996,0.007353910524340091,0.048299999999999996
+"Best WF: Grid: K=1, Dir=F, Topo=late",44,0.059000000000000004,0.005939696961967003,0.033600000000000005,0.006081118318204309,0.033600000000000005
+"Best WF: Grid: K=1, Dir=F, Topo=late",45,0.0,0.0,0.01815,0.0037476659402887014,0.01815
+"Best WF: Grid: K=1, Dir=F, Topo=late",46,0.0,0.0,0.00905,0.00445477272147525,0.00905
+"Best WF: Grid: K=1, Dir=F, Topo=late",47,0.0,0.0,0.08165,0.003464823227814074,0.08165
+"Best WF: Grid: K=1, Dir=F, Topo=late",48,0.5339499999999999,0.04801255044256659,0.51685,0.057204938597991695,0.51685
+"Best WF: Grid: K=1, Dir=F, Topo=late",49,0.20295000000000002,0.13201683604752842,0.402,0.023051681066681443,0.402
+"Best WF: Grid: K=2, Dir=F, Topo=None",35,0.8992,,0.9331,,0.9331
+"Best WF: Grid: K=2, Dir=F, Topo=None",36,0.6753,,0.6334,,0.6334
+"Best WF: Grid: K=2, Dir=F, Topo=None",37,0.5714,,0.7263,,0.7263
+"Best WF: Grid: K=2, Dir=F, Topo=None",38,0.9321,,0.9601,,0.9601
+"Best WF: Grid: K=2, Dir=F, Topo=None",39,0.8649,,0.8711,,0.8711
+"Best WF: Grid: K=2, Dir=F, Topo=None",40,0.6935,,0.7131,,0.7131
+"Best WF: Grid: K=2, Dir=F, Topo=None",41,0.8034,,0.869,,0.869
+"Best WF: Grid: K=2, Dir=F, Topo=None",42,0.8186,,0.8677,,0.8677
+"Best WF: Grid: K=2, Dir=F, Topo=None",43,0.0,,0.045,,0.045
+"Best WF: Grid: K=2, Dir=F, Topo=None",44,0.0484,,0.0316,,0.0316
+"Best WF: Grid: K=2, Dir=F, Topo=None",45,0.0,,0.028,,0.028
+"Best WF: Grid: K=2, Dir=F, Topo=None",46,0.0,,0.0086,,0.0086
+"Best WF: Grid: K=2, Dir=F, Topo=None",47,0.0,,0.0606,,0.0606
+"Best WF: Grid: K=2, Dir=F, Topo=None",48,0.5,,0.4224,,0.4224
+"Best WF: Grid: K=2, Dir=F, Topo=None",49,0.4091,,0.5594,,0.5594
+"Best WF: Grid: K=3, Dir=F, Topo=early",35,0.8992,,0.948,,0.948
+"Best WF: Grid: K=3, Dir=F, Topo=early",36,0.5106,,0.5279,,0.5279
+"Best WF: Grid: K=3, Dir=F, Topo=early",37,0.5614,,0.7846,,0.7846
+"Best WF: Grid: K=3, Dir=F, Topo=early",38,0.9083,,0.8916,,0.8916
+"Best WF: Grid: K=3, Dir=F, Topo=early",39,0.8734,,0.9058,,0.9058
+"Best WF: Grid: K=3, Dir=F, Topo=early",40,0.7396,,0.7772,,0.7772
+"Best WF: Grid: K=3, Dir=F, Topo=early",41,0.8889,,0.9303,,0.9303
+"Best WF: Grid: K=3, Dir=F, Topo=early",42,0.802,,0.8521,,0.8521
+"Best WF: Grid: K=3, Dir=F, Topo=early",43,0.0,,0.0375,,0.0375
+"Best WF: Grid: K=3, Dir=F, Topo=early",44,0.0594,,0.0438,,0.0438
+"Best WF: Grid: K=3, Dir=F, Topo=early",45,0.0,,0.0224,,0.0224
+"Best WF: Grid: K=3, Dir=F, Topo=early",46,0.0,,0.0081,,0.0081
+"Best WF: Grid: K=3, Dir=F, Topo=early",47,0.0,,0.0589,,0.0589
+"Best WF: Grid: K=3, Dir=F, Topo=early",48,0.32,,0.3264,,0.3264
+"Best WF: Grid: K=3, Dir=F, Topo=early",49,0.3226,,0.406,,0.406
+"Best WF: Grid: K=3, Dir=F, Topo=late",35,0.761,0.07311484117468897,0.71925,0.21389980130893066,0.71925
+"Best WF: Grid: K=3, Dir=F, Topo=late",36,0.56065,0.0026162950903902515,0.5605,0.03733523804664968,0.5605
+"Best WF: Grid: K=3, Dir=F, Topo=late",37,0.5987,0.051194530957906055,0.7477,0.0012727922061358025,0.7477
+"Best WF: Grid: K=3, Dir=F, Topo=late",38,0.83765,0.08237794000823283,0.9222,0.03662813126546321,0.9222
+"Best WF: Grid: K=3, Dir=F, Topo=late",39,0.8108,0.031819805153394706,0.8958999999999999,0.012162236636408573,0.8958999999999999
+"Best WF: Grid: K=3, Dir=F, Topo=late",40,0.70715,0.06243752877877206,0.7807,0.005091168824543092,0.7807
+"Best WF: Grid: K=3, Dir=F, Topo=late",41,0.89375,0.03952726906832793,0.9337,0.019940411229460643,0.9337
+"Best WF: Grid: K=3, Dir=F, Topo=late",42,0.8178,0.011455129855222065,0.8428,0.023617366491630758,0.8428
+"Best WF: Grid: K=3, Dir=F, Topo=late",43,0.0,0.0,0.02655,0.007141778489984134,0.02655
+"Best WF: Grid: K=3, Dir=F, Topo=late",44,0.06420000000000001,0.005091168824543146,0.0393,0.002687005768508879,0.0393
+"Best WF: Grid: K=3, Dir=F, Topo=late",45,0.0,0.0,0.028650000000000002,0.0021920310216783,0.028650000000000002
+"Best WF: Grid: K=3, Dir=F, Topo=late",46,0.0244,0.034506810921903525,0.01895,0.005020458146424488,0.01895
+"Best WF: Grid: K=3, Dir=F, Topo=late",47,0.0,0.0,0.0807,0.01583919189857865,0.0807
+"Best WF: Grid: K=3, Dir=F, Topo=late",48,0.39925,0.08591347391416554,0.4001,0.054871486220076086,0.4001
+"Best WF: Grid: K=3, Dir=F, Topo=late",49,0.47014999999999996,0.06653874810965416,0.39165,0.06158900064134826,0.39165
+Best WF: Sweep 1: SGC (baseline),35,0.6175,,0.5675,,0.5675
+Best WF: Sweep 1: SGC (baseline),36,0.0865,,0.0554,,0.0554
+Best WF: Sweep 1: SGC (baseline),37,0.3824,,0.4109,,0.4109
+Best WF: Sweep 1: SGC (baseline),38,0.62,,0.5723,,0.5723
+Best WF: Sweep 1: SGC (baseline),39,0.4061,,0.2959,,0.2959
+Best WF: Sweep 1: SGC (baseline),40,0.4608,,0.4009,,0.4009
+Best WF: Sweep 1: SGC (baseline),41,0.5585,,0.4995,,0.4995
+Best WF: Sweep 1: SGC (baseline),42,0.7042,,0.703,,0.703
+Best WF: Sweep 1: SGC (baseline),43,0.0161,,0.0151,,0.0151
+Best WF: Sweep 1: SGC (baseline),44,0.0361,,0.0559,,0.0559
+Best WF: Sweep 1: SGC (baseline),45,0.0,,0.0182,,0.0182
+Best WF: Sweep 1: SGC (baseline),46,0.1538,,0.1808,,0.1808
+Best WF: Sweep 1: SGC (baseline),47,0.0,,0.0418,,0.0418
+Best WF: Sweep 1: SGC (baseline),48,0.3626,,0.3334,,0.3334
+Best WF: Sweep 1: SGC (baseline),49,0.2278,,0.2115,,0.2115
+Best WF: Sweep 2: + MLP Head,35,0.776,,0.8314,,0.8314
+Best WF: Sweep 2: + MLP Head,36,0.3509,,0.2736,,0.2736
+Best WF: Sweep 2: + MLP Head,37,0.5862,,0.7658,,0.7658
+Best WF: Sweep 2: + MLP Head,38,0.8053,,0.8333,,0.8333
+Best WF: Sweep 2: + MLP Head,39,0.7636,,0.8198,,0.8198
+Best WF: Sweep 2: + MLP Head,40,0.5731,,0.6191,,0.6191
+Best WF: Sweep 2: + MLP Head,41,0.7885,,0.8493,,0.8493
+Best WF: Sweep 2: + MLP Head,42,0.7423,,0.8068,,0.8068
+Best WF: Sweep 2: + MLP Head,43,0.0132,,0.0168,,0.0168
+Best WF: Sweep 2: + MLP Head,44,0.041,,0.0193,,0.0193
+Best WF: Sweep 2: + MLP Head,45,0.0,,0.0079,,0.0079
+Best WF: Sweep 2: + MLP Head,46,0.0909,,0.0413,,0.0413
+Best WF: Sweep 2: + MLP Head,47,0.0,,0.0668,,0.0668
+Best WF: Sweep 2: + MLP Head,48,0.3492,,0.3654,,0.3654
+Best WF: Sweep 2: + MLP Head,49,0.2449,,0.3865,,0.3865
