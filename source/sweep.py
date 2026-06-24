@@ -34,8 +34,10 @@ _RESULT_KEYS = (
     "Threshold_Method",
     "Static_Time_s",
     "Static_Mem_MB",
-    "Static_Val_F1",
-    "Static_Val_PRAUC",
+    "Static_Val_Pooled_F1",
+    "Static_Val_Pooled_PRAUC",
+    "Static_Val_Macro_F1",
+    "Static_Val_Macro_PRAUC",
     "Static_OOT_Pooled_F1",
     "Static_OOT_Pooled_PRAUC",
     "Static_OOT_Macro_F1",
@@ -109,10 +111,12 @@ def _make_result(
     wf_prauc: float | str,
     feature_set: str = "N/A",
     threshold: str = "0.5",        # back-compat alias for threshold_method
-    val_f1: float | str = "N/A",
-    val_prauc: float | str = "N/A",
+    static_val_pooled_f1: float | str = "N/A",
+    static_val_pooled_prauc: float | str = "N/A",
     # ── v2 schema additions (CSV-1) ──────────────────────────────────────────
     threshold_method: str | None = None,
+    static_val_macro_f1: float | str = "N/A",
+    static_val_macro_prauc: float | str = "N/A",
     static_oot_macro_f1: float | str = "N/A",
     static_oot_macro_prauc: float | str = "N/A",
     wf_pooled_f1: float | str = "N/A",
@@ -143,8 +147,10 @@ def _make_result(
         "Threshold_Method":      threshold_method if threshold_method is not None else threshold,
         "Static_Time_s":         static_time,
         "Static_Mem_MB":         static_mem,
-        "Static_Val_F1":         val_f1,
-        "Static_Val_PRAUC":      val_prauc,
+        "Static_Val_Pooled_F1":  static_val_pooled_f1,
+        "Static_Val_Pooled_PRAUC": static_val_pooled_prauc,
+        "Static_Val_Macro_F1":   static_val_macro_f1,
+        "Static_Val_Macro_PRAUC": static_val_macro_prauc,
         "Static_OOT_Pooled_F1":  static_oot_pooled_f1,
         "Static_OOT_Pooled_PRAUC": static_oot_pooled_prauc,
         "Static_OOT_Macro_F1":   static_oot_macro_f1,
@@ -349,6 +355,11 @@ def run_static_only_sweep(
             with torch.no_grad():
                 return torch.softmax(model(g_t["prop"][m_t].to(DEVICE)), dim=1)[:, 1].cpu().numpy()
         static_macro_f1, static_macro_prauc = _evaluate_static_macro(predict_fn, dm, cfg.test_steps)
+        
+        if len(cfg.val_steps) > 0:
+            val_macro_f1, val_macro_prauc = _evaluate_static_macro(predict_fn, dm, cfg.val_steps)
+        else:
+            val_macro_f1, val_macro_prauc = "N/A", "N/A"
     
     # Save the static-only model + dm + cfg for potential later analysis
     safe_name = re.sub(r"[^\w\-]", "_", name)
@@ -374,8 +385,10 @@ def run_static_only_sweep(
         wf_prauc="N/A",
         feature_set=feature_set,
         threshold=threshold,
-        val_f1=round(val_f1, 3),
-        val_prauc=round(val_prauc, 3),
+        static_val_pooled_f1=round(val_f1, 3),
+        static_val_pooled_prauc=round(val_prauc, 3),
+        static_val_macro_f1=round(val_macro_f1, 3) if isinstance(val_macro_f1, float) else val_macro_f1,
+        static_val_macro_prauc=round(val_macro_prauc, 3) if isinstance(val_macro_prauc, float) else val_macro_prauc,
     )
 
 
@@ -936,7 +949,7 @@ def main():
                 all_configs_run[sweep_key] = cfg
                 if res and not args.only_wf:
                     # P0-C: Select on val F1, NOT test OOT F1
-                    f1_val = res.get("Static_Val_F1", 0.0)
+                    f1_val = res.get("Static_Val_Pooled_F1", 0.0)
                     if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_grid_f1:
                         best_grid_f1 = f1_val
                         best_grid_key = sweep_key
@@ -993,7 +1006,7 @@ def main():
         if isinstance(r.get("Sweep"), str) and ("Sweep " in r["Sweep"] or "Grid: " in r["Sweep"] or "MLP-" in r["Sweep"]):
             if r["Sweep"].startswith("Best WF") or r["Sweep"].startswith("F1:") or r["Sweep"].startswith("EMA") or r["Sweep"].startswith("LSTM"):
                 continue
-            f1_val = r.get("Static_Val_F1", "")
+            f1_val = r.get("Static_Val_Pooled_F1", "")
             if f1_val == "N/A":
                 f1_val = 0.0
             elif f1_val == "" or pd.isna(f1_val):

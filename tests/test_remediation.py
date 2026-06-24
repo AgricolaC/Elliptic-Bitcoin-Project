@@ -370,7 +370,8 @@ class TestSweepResultKeyStandardization:
 
     REQUIRED_KEYS = {
         "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
-        "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
+        "Static_Time_s", "Static_Mem_MB", "Static_Val_Pooled_F1", "Static_Val_Pooled_PRAUC",
+        "Static_Val_Macro_F1", "Static_Val_Macro_PRAUC",
         "Static_OOT_Pooled_F1", "Static_OOT_Pooled_PRAUC",
         "Static_OOT_Macro_F1", "Static_OOT_Macro_PRAUC", "WF_Time_s", "WF_Mem_MB",
         "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
@@ -1053,7 +1054,8 @@ class TestResultSchemaV2:
 
     NEW_KEYS = {
         "Seed", "Variation", "Sweep", "Feature_Set", "Threshold_Method",
-        "Static_Time_s", "Static_Mem_MB", "Static_Val_F1", "Static_Val_PRAUC",
+        "Static_Time_s", "Static_Mem_MB", "Static_Val_Pooled_F1", "Static_Val_Pooled_PRAUC",
+        "Static_Val_Macro_F1", "Static_Val_Macro_PRAUC",
         "Static_OOT_Pooled_F1", "Static_OOT_Pooled_PRAUC",
         "Static_OOT_Macro_F1", "Static_OOT_Macro_PRAUC", "WF_Time_s", "WF_Mem_MB",
         "WF_Pooled_F1", "WF_Pooled_PRAUC", "WF_Macro_F1", "WF_Macro_PRAUC",
@@ -1066,7 +1068,8 @@ class TestResultSchemaV2:
         assert set(_RESULT_KEYS) == self.NEW_KEYS, "Canonical _RESULT_KEYS != v2 schema"
         r = _make_result(
             seed=42, variation="Base", sweep="x",
-            static_time=1.0, static_mem=1.0, static_oot_pooled_f1=0.8, static_oot_pooled_prauc=0.9,
+            static_time=1.0, static_mem=1.0, static_val_pooled_f1=0.8, static_val_pooled_prauc=0.9,
+            static_oot_pooled_f1=0.8, static_oot_pooled_prauc=0.9,
             wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
             selfcond_bug="fixed",
         )
