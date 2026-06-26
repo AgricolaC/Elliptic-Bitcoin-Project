@@ -14,6 +14,36 @@ Ablation: Decay λ=0.05 on 1 F late Base,46,0.0,,0.0032,,0.0032
 Ablation: Decay λ=0.05 on 1 F late Base,47,0.125,,0.1186,,0.1186
 Ablation: Decay λ=0.05 on 1 F late Base,48,0.5238,,0.4403,,0.4403
 Ablation: Decay λ=0.05 on 1 F late Base,49,0.4706,,0.4707,,0.4707
+Ablation: Decay λ=0.05 on 2 T early Base,35,0.7171,,0.6678,,0.6678
+Ablation: Decay λ=0.05 on 2 T early Base,36,0.5301,,0.3791,,0.3791
+Ablation: Decay λ=0.05 on 2 T early Base,37,0.6102,,0.7856,,0.7856
+Ablation: Decay λ=0.05 on 2 T early Base,38,0.781,,0.9413,,0.9413
+Ablation: Decay λ=0.05 on 2 T early Base,39,0.8025,,0.8317,,0.8317
+Ablation: Decay λ=0.05 on 2 T early Base,40,0.7047,,0.7729,,0.7729
+Ablation: Decay λ=0.05 on 2 T early Base,41,0.8981,,0.9256,,0.9256
+Ablation: Decay λ=0.05 on 2 T early Base,42,0.8273,,0.8912,,0.8912
+Ablation: Decay λ=0.05 on 2 T early Base,43,0.0,,0.0426,,0.0426
+Ablation: Decay λ=0.05 on 2 T early Base,44,0.0779,,0.0754,,0.0754
+Ablation: Decay λ=0.05 on 2 T early Base,45,0.0,,0.0145,,0.0145
+Ablation: Decay λ=0.05 on 2 T early Base,46,0.3333,,0.5043,,0.5043
+Ablation: Decay λ=0.05 on 2 T early Base,47,0.0,,0.0782,,0.0782
+Ablation: Decay λ=0.05 on 2 T early Base,48,0.6,,0.4263,,0.4263
+Ablation: Decay λ=0.05 on 2 T early Base,49,0.25,,0.4026,,0.4026
+Ablation: Decay λ=0.05 on 2 T late Base,35,0.7608,,0.794,,0.794
+Ablation: Decay λ=0.05 on 2 T late Base,36,0.5063,,0.3326,,0.3326
+Ablation: Decay λ=0.05 on 2 T late Base,37,0.6333,,0.8071,,0.8071
+Ablation: Decay λ=0.05 on 2 T late Base,38,0.8245,,0.9017,,0.9017
+Ablation: Decay λ=0.05 on 2 T late Base,39,0.8194,,0.7986,,0.7986
+Ablation: Decay λ=0.05 on 2 T late Base,40,0.7143,,0.7385,,0.7385
+Ablation: Decay λ=0.05 on 2 T late Base,41,0.8789,,0.9248,,0.9248
+Ablation: Decay λ=0.05 on 2 T late Base,42,0.8175,,0.8816,,0.8816
+Ablation: Decay λ=0.05 on 2 T late Base,43,0.0,,0.0349,,0.0349
+Ablation: Decay λ=0.05 on 2 T late Base,44,0.0952,,0.0686,,0.0686
+Ablation: Decay λ=0.05 on 2 T late Base,45,0.0,,0.1096,,0.1096
+Ablation: Decay λ=0.05 on 2 T late Base,46,0.0,,0.0135,,0.0135
+Ablation: Decay λ=0.05 on 2 T late Base,47,0.0,,0.0801,,0.0801
+Ablation: Decay λ=0.05 on 2 T late Base,48,0.3662,,0.4131,,0.4131
+Ablation: Decay λ=0.05 on 2 T late Base,49,0.3291,,0.4873,,0.4873
 Ablation: Decay λ=0.05 on 3 F early Base,35,0.8011,,0.827,,0.827
 Ablation: Decay λ=0.05 on 3 F early Base,36,0.4167,,0.2333,,0.2333
 Ablation: Decay λ=0.05 on 3 F early Base,37,0.623,,0.8303,,0.8303
@@ -44,6 +74,66 @@ Ablation: Decay λ=0.05 on 3 F late Base,46,0.0,,0.0059,,0.0059
 Ablation: Decay λ=0.05 on 3 F late Base,47,0.0,,0.0876,,0.0876
 Ablation: Decay λ=0.05 on 3 F late Base,48,0.3226,,0.3591,,0.3591
 Ablation: Decay λ=0.05 on 3 F late Base,49,0.3684,,0.5673,,0.5673
+Ablation: Decay λ=0.05 on 3 F late PCA,35,0.8633,,0.8826,,0.8826
+Ablation: Decay λ=0.05 on 3 F late PCA,36,0.6154,,0.568,,0.568
+Ablation: Decay λ=0.05 on 3 F late PCA,37,0.5846,,0.7895,,0.7895
+Ablation: Decay λ=0.05 on 3 F late PCA,38,0.794,,0.965,,0.965
+Ablation: Decay λ=0.05 on 3 F late PCA,39,0.8428,,0.8562,,0.8562
+Ablation: Decay λ=0.05 on 3 F late PCA,40,0.72,,0.7035,,0.7035
+Ablation: Decay λ=0.05 on 3 F late PCA,41,0.7692,,0.8695,,0.8695
+Ablation: Decay λ=0.05 on 3 F late PCA,42,0.7842,,0.8469,,0.8469
+Ablation: Decay λ=0.05 on 3 F late PCA,43,0.0,,0.0311,,0.0311
+Ablation: Decay λ=0.05 on 3 F late PCA,44,0.0513,,0.021,,0.021
+Ablation: Decay λ=0.05 on 3 F late PCA,45,0.0,,0.0124,,0.0124
+Ablation: Decay λ=0.05 on 3 F late PCA,46,0.0,,0.0033,,0.0033
+Ablation: Decay λ=0.05 on 3 F late PCA,47,0.0,,0.0633,,0.0633
+Ablation: Decay λ=0.05 on 3 F late PCA,48,0.3725,,0.3136,,0.3136
+Ablation: Decay λ=0.05 on 3 F late PCA,49,0.5253,,0.5571,,0.5571
+Ablation: Decay λ=0.05 on 3 T None PCA,35,0.7819,,0.8233,,0.8233
+Ablation: Decay λ=0.05 on 3 T None PCA,36,0.4091,,0.3948,,0.3948
+Ablation: Decay λ=0.05 on 3 T None PCA,37,0.5714,,0.7191,,0.7191
+Ablation: Decay λ=0.05 on 3 T None PCA,38,0.8263,,0.9082,,0.9082
+Ablation: Decay λ=0.05 on 3 T None PCA,39,0.64,,0.783,,0.783
+Ablation: Decay λ=0.05 on 3 T None PCA,40,0.6829,,0.6957,,0.6957
+Ablation: Decay λ=0.05 on 3 T None PCA,41,0.7876,,0.855,,0.855
+Ablation: Decay λ=0.05 on 3 T None PCA,42,0.7933,,0.8545,,0.8545
+Ablation: Decay λ=0.05 on 3 T None PCA,43,0.0667,,0.0577,,0.0577
+Ablation: Decay λ=0.05 on 3 T None PCA,44,0.1,,0.0802,,0.0802
+Ablation: Decay λ=0.05 on 3 T None PCA,45,0.0,,0.0085,,0.0085
+Ablation: Decay λ=0.05 on 3 T None PCA,46,0.25,,0.5086,,0.5086
+Ablation: Decay λ=0.05 on 3 T None PCA,47,0.08,,0.0648,,0.0648
+Ablation: Decay λ=0.05 on 3 T None PCA,48,0.512,,0.6056,,0.6056
+Ablation: Decay λ=0.05 on 3 T None PCA,49,0.4673,,0.4973,,0.4973
+Ablation: Decay λ=0.05 on 3 T early PCA,35,0.802,,0.8942,,0.8942
+Ablation: Decay λ=0.05 on 3 T early PCA,36,0.4464,,0.3744,,0.3744
+Ablation: Decay λ=0.05 on 3 T early PCA,37,0.5902,,0.7268,,0.7268
+Ablation: Decay λ=0.05 on 3 T early PCA,38,0.7119,,0.9109,,0.9109
+Ablation: Decay λ=0.05 on 3 T early PCA,39,0.6341,,0.8076,,0.8076
+Ablation: Decay λ=0.05 on 3 T early PCA,40,0.5804,,0.645,,0.645
+Ablation: Decay λ=0.05 on 3 T early PCA,41,0.7863,,0.8519,,0.8519
+Ablation: Decay λ=0.05 on 3 T early PCA,42,0.8038,,0.8489,,0.8489
+Ablation: Decay λ=0.05 on 3 T early PCA,43,0.0,,0.0308,,0.0308
+Ablation: Decay λ=0.05 on 3 T early PCA,44,0.0,,0.0537,,0.0537
+Ablation: Decay λ=0.05 on 3 T early PCA,45,0.0,,0.0135,,0.0135
+Ablation: Decay λ=0.05 on 3 T early PCA,46,0.0,,0.0044,,0.0044
+Ablation: Decay λ=0.05 on 3 T early PCA,47,0.0,,0.0589,,0.0589
+Ablation: Decay λ=0.05 on 3 T early PCA,48,0.5405,,0.4678,,0.4678
+Ablation: Decay λ=0.05 on 3 T early PCA,49,0.5227,,0.6262,,0.6262
+Ablation: Decay λ=0.05 on 3 T late PCA,35,0.7989,,0.8391,,0.8391
+Ablation: Decay λ=0.05 on 3 T late PCA,36,0.4651,,0.3581,,0.3581
+Ablation: Decay λ=0.05 on 3 T late PCA,37,0.5806,,0.7025,,0.7025
+Ablation: Decay λ=0.05 on 3 T late PCA,38,0.8078,,0.8974,,0.8974
+Ablation: Decay λ=0.05 on 3 T late PCA,39,0.4727,,0.7217,,0.7217
+Ablation: Decay λ=0.05 on 3 T late PCA,40,0.6321,,0.6947,,0.6947
+Ablation: Decay λ=0.05 on 3 T late PCA,41,0.6899,,0.8344,,0.8344
+Ablation: Decay λ=0.05 on 3 T late PCA,42,0.8241,,0.8631,,0.8631
+Ablation: Decay λ=0.05 on 3 T late PCA,43,0.2143,,0.177,,0.177
+Ablation: Decay λ=0.05 on 3 T late PCA,44,0.0789,,0.0457,,0.0457
+Ablation: Decay λ=0.05 on 3 T late PCA,45,0.0,,0.0129,,0.0129
+Ablation: Decay λ=0.05 on 3 T late PCA,46,0.2,,0.0686,,0.0686
+Ablation: Decay λ=0.05 on 3 T late PCA,47,0.0,,0.0554,,0.0554
+Ablation: Decay λ=0.05 on 3 T late PCA,48,0.5405,,0.5473,,0.5473
+Ablation: Decay λ=0.05 on 3 T late PCA,49,0.241,,0.2682,,0.2682
 Ablation: Decay λ=0.05 on XGBoost,35,0.9752,,0.9939,,0.9939
 Ablation: Decay λ=0.05 on XGBoost,36,0.9706,,0.9983,,0.9983
 Ablation: Decay λ=0.05 on XGBoost,37,0.75,,0.9062,,0.9062
@@ -74,6 +164,36 @@ Ablation: Decay λ=0.25 on 1 F late Base,46,0.0,,0.0072,,0.0072
 Ablation: Decay λ=0.25 on 1 F late Base,47,0.0,,0.0992,,0.0992
 Ablation: Decay λ=0.25 on 1 F late Base,48,0.5238,,0.5068,,0.5068
 Ablation: Decay λ=0.25 on 1 F late Base,49,0.5545,,0.5705,,0.5705
+Ablation: Decay λ=0.25 on 2 T early Base,35,0.7969,,0.9104,,0.9104
+Ablation: Decay λ=0.25 on 2 T early Base,36,0.6197,,0.6463,,0.6463
+Ablation: Decay λ=0.25 on 2 T early Base,37,0.5455,,0.8124,,0.8124
+Ablation: Decay λ=0.25 on 2 T early Base,38,0.8031,,0.9403,,0.9403
+Ablation: Decay λ=0.25 on 2 T early Base,39,0.8028,,0.8249,,0.8249
+Ablation: Decay λ=0.25 on 2 T early Base,40,0.7363,,0.7638,,0.7638
+Ablation: Decay λ=0.25 on 2 T early Base,41,0.8796,,0.9095,,0.9095
+Ablation: Decay λ=0.25 on 2 T early Base,42,0.8134,,0.8858,,0.8858
+Ablation: Decay λ=0.25 on 2 T early Base,43,0.08,,0.0469,,0.0469
+Ablation: Decay λ=0.25 on 2 T early Base,44,0.087,,0.0588,,0.0588
+Ablation: Decay λ=0.25 on 2 T early Base,45,0.0,,0.0268,,0.0268
+Ablation: Decay λ=0.25 on 2 T early Base,46,0.2857,,0.5039,,0.5039
+Ablation: Decay λ=0.25 on 2 T early Base,47,0.0,,0.0672,,0.0672
+Ablation: Decay λ=0.25 on 2 T early Base,48,0.5794,,0.5803,,0.5803
+Ablation: Decay λ=0.25 on 2 T early Base,49,0.7133,,0.8177,,0.8177
+Ablation: Decay λ=0.25 on 2 T late Base,35,0.8051,,0.8865,,0.8865
+Ablation: Decay λ=0.25 on 2 T late Base,36,0.5783,,0.6042,,0.6042
+Ablation: Decay λ=0.25 on 2 T late Base,37,0.6102,,0.7813,,0.7813
+Ablation: Decay λ=0.25 on 2 T late Base,38,0.8137,,0.9342,,0.9342
+Ablation: Decay λ=0.25 on 2 T late Base,39,0.8182,,0.8156,,0.8156
+Ablation: Decay λ=0.25 on 2 T late Base,40,0.715,,0.7596,,0.7596
+Ablation: Decay λ=0.25 on 2 T late Base,41,0.8596,,0.8946,,0.8946
+Ablation: Decay λ=0.25 on 2 T late Base,42,0.8369,,0.8811,,0.8811
+Ablation: Decay λ=0.25 on 2 T late Base,43,0.1176,,0.0827,,0.0827
+Ablation: Decay λ=0.25 on 2 T late Base,44,0.0377,,0.0436,,0.0436
+Ablation: Decay λ=0.25 on 2 T late Base,45,0.0,,0.0171,,0.0171
+Ablation: Decay λ=0.25 on 2 T late Base,46,0.4,,0.5045,,0.5045
+Ablation: Decay λ=0.25 on 2 T late Base,47,0.0714,,0.1222,,0.1222
+Ablation: Decay λ=0.25 on 2 T late Base,48,0.5203,,0.5966,,0.5966
+Ablation: Decay λ=0.25 on 2 T late Base,49,0.7255,,0.8508,,0.8508
 Ablation: Decay λ=0.25 on 3 F early Base,35,0.8021,,0.8685,,0.8685
 Ablation: Decay λ=0.25 on 3 F early Base,36,0.5106,,0.4701,,0.4701
 Ablation: Decay λ=0.25 on 3 F early Base,37,0.6102,,0.8064,,0.8064
@@ -104,6 +224,66 @@ Ablation: Decay λ=0.25 on 3 F late Base,46,0.0,,0.0071,,0.0071
 Ablation: Decay λ=0.25 on 3 F late Base,47,0.0,,0.0583,,0.0583
 Ablation: Decay λ=0.25 on 3 F late Base,48,0.4337,,0.4041,,0.4041
 Ablation: Decay λ=0.25 on 3 F late Base,49,0.6364,,0.7599,,0.7599
+Ablation: Decay λ=0.25 on 3 F late PCA,35,0.7916,,0.9068,,0.9068
+Ablation: Decay λ=0.25 on 3 F late PCA,36,0.4578,,0.5539,,0.5539
+Ablation: Decay λ=0.25 on 3 F late PCA,37,0.5333,,0.7661,,0.7661
+Ablation: Decay λ=0.25 on 3 F late PCA,38,0.7895,,0.9473,,0.9473
+Ablation: Decay λ=0.25 on 3 F late PCA,39,0.7273,,0.7797,,0.7797
+Ablation: Decay λ=0.25 on 3 F late PCA,40,0.6458,,0.6841,,0.6841
+Ablation: Decay λ=0.25 on 3 F late PCA,41,0.8167,,0.8978,,0.8978
+Ablation: Decay λ=0.25 on 3 F late PCA,42,0.7898,,0.8369,,0.8369
+Ablation: Decay λ=0.25 on 3 F late PCA,43,0.0,,0.0381,,0.0381
+Ablation: Decay λ=0.25 on 3 F late PCA,44,0.0,,0.0542,,0.0542
+Ablation: Decay λ=0.25 on 3 F late PCA,45,0.0,,0.0334,,0.0334
+Ablation: Decay λ=0.25 on 3 F late PCA,46,0.0,,0.0048,,0.0048
+Ablation: Decay λ=0.25 on 3 F late PCA,47,0.0,,0.1553,,0.1553
+Ablation: Decay λ=0.25 on 3 F late PCA,48,0.4696,,0.402,,0.402
+Ablation: Decay λ=0.25 on 3 F late PCA,49,0.6383,,0.7118,,0.7118
+Ablation: Decay λ=0.25 on 3 T None PCA,35,0.8078,,0.8859,,0.8859
+Ablation: Decay λ=0.25 on 3 T None PCA,36,0.5361,,0.5281,,0.5281
+Ablation: Decay λ=0.25 on 3 T None PCA,37,0.5,,0.6772,,0.6772
+Ablation: Decay λ=0.25 on 3 T None PCA,38,0.6835,,0.9106,,0.9106
+Ablation: Decay λ=0.25 on 3 T None PCA,39,0.4865,,0.7642,,0.7642
+Ablation: Decay λ=0.25 on 3 T None PCA,40,0.6333,,0.6892,,0.6892
+Ablation: Decay λ=0.25 on 3 T None PCA,41,0.7812,,0.8845,,0.8845
+Ablation: Decay λ=0.25 on 3 T None PCA,42,0.7859,,0.8461,,0.8461
+Ablation: Decay λ=0.25 on 3 T None PCA,43,0.0455,,0.0539,,0.0539
+Ablation: Decay λ=0.25 on 3 T None PCA,44,0.0588,,0.0661,,0.0661
+Ablation: Decay λ=0.25 on 3 T None PCA,45,0.0,,0.0104,,0.0104
+Ablation: Decay λ=0.25 on 3 T None PCA,46,0.0,,0.0068,,0.0068
+Ablation: Decay λ=0.25 on 3 T None PCA,47,0.0,,0.0429,,0.0429
+Ablation: Decay λ=0.25 on 3 T None PCA,48,0.4727,,0.434,,0.434
+Ablation: Decay λ=0.25 on 3 T None PCA,49,0.5934,,0.7452,,0.7452
+Ablation: Decay λ=0.25 on 3 T early PCA,35,0.8329,,0.8986,,0.8986
+Ablation: Decay λ=0.25 on 3 T early PCA,36,0.5,,0.437,,0.437
+Ablation: Decay λ=0.25 on 3 T early PCA,37,0.5,,0.6437,,0.6437
+Ablation: Decay λ=0.25 on 3 T early PCA,38,0.8214,,0.865,,0.865
+Ablation: Decay λ=0.25 on 3 T early PCA,39,0.7714,,0.7764,,0.7764
+Ablation: Decay λ=0.25 on 3 T early PCA,40,0.6533,,0.6955,,0.6955
+Ablation: Decay λ=0.25 on 3 T early PCA,41,0.7489,,0.7799,,0.7799
+Ablation: Decay λ=0.25 on 3 T early PCA,42,0.8009,,0.8391,,0.8391
+Ablation: Decay λ=0.25 on 3 T early PCA,43,0.069,,0.0538,,0.0538
+Ablation: Decay λ=0.25 on 3 T early PCA,44,0.0426,,0.0256,,0.0256
+Ablation: Decay λ=0.25 on 3 T early PCA,45,0.0,,0.0103,,0.0103
+Ablation: Decay λ=0.25 on 3 T early PCA,46,0.0,,0.0047,,0.0047
+Ablation: Decay λ=0.25 on 3 T early PCA,47,0.0,,0.0506,,0.0506
+Ablation: Decay λ=0.25 on 3 T early PCA,48,0.5263,,0.5715,,0.5715
+Ablation: Decay λ=0.25 on 3 T early PCA,49,0.7241,,0.7917,,0.7917
+Ablation: Decay λ=0.25 on 3 T late PCA,35,0.8429,,0.9152,,0.9152
+Ablation: Decay λ=0.25 on 3 T late PCA,36,0.384,,0.3811,,0.3811
+Ablation: Decay λ=0.25 on 3 T late PCA,37,0.5806,,0.6663,,0.6663
+Ablation: Decay λ=0.25 on 3 T late PCA,38,0.8125,,0.8795,,0.8795
+Ablation: Decay λ=0.25 on 3 T late PCA,39,0.7875,,0.7685,,0.7685
+Ablation: Decay λ=0.25 on 3 T late PCA,40,0.6796,,0.7041,,0.7041
+Ablation: Decay λ=0.25 on 3 T late PCA,41,0.7239,,0.8481,,0.8481
+Ablation: Decay λ=0.25 on 3 T late PCA,42,0.7964,,0.846,,0.846
+Ablation: Decay λ=0.25 on 3 T late PCA,43,0.0,,0.0289,,0.0289
+Ablation: Decay λ=0.25 on 3 T late PCA,44,0.069,,0.0426,,0.0426
+Ablation: Decay λ=0.25 on 3 T late PCA,45,0.0,,0.0405,,0.0405
+Ablation: Decay λ=0.25 on 3 T late PCA,46,0.1538,,0.0608,,0.0608
+Ablation: Decay λ=0.25 on 3 T late PCA,47,0.0,,0.0548,,0.0548
+Ablation: Decay λ=0.25 on 3 T late PCA,48,0.32,,0.4493,,0.4493
+Ablation: Decay λ=0.25 on 3 T late PCA,49,0.4818,,0.5222,,0.5222
 Ablation: Decay λ=0.25 on XGBoost,35,0.9695,,0.994,,0.994
 Ablation: Decay λ=0.25 on XGBoost,36,0.9538,,0.9982,,0.9982
 Ablation: Decay λ=0.25 on XGBoost,37,0.806,,0.8948,,0.8948
@@ -134,6 +314,36 @@ Ablation: Decay λ=0.5 on 1 F late Base,46,0.0,,0.0036,,0.0036
 Ablation: Decay λ=0.5 on 1 F late Base,47,0.0,,0.1212,,0.1212
 Ablation: Decay λ=0.5 on 1 F late Base,48,0.4615,,0.5435,,0.5435
 Ablation: Decay λ=0.5 on 1 F late Base,49,0.5984,,0.594,,0.594
+Ablation: Decay λ=0.5 on 2 T early Base,35,0.816,,0.9014,,0.9014
+Ablation: Decay λ=0.5 on 2 T early Base,36,0.5588,,0.5801,,0.5801
+Ablation: Decay λ=0.5 on 2 T early Base,37,0.5714,,0.7932,,0.7932
+Ablation: Decay λ=0.5 on 2 T early Base,38,0.7687,,0.9256,,0.9256
+Ablation: Decay λ=0.5 on 2 T early Base,39,0.6929,,0.7727,,0.7727
+Ablation: Decay λ=0.5 on 2 T early Base,40,0.6776,,0.7362,,0.7362
+Ablation: Decay λ=0.5 on 2 T early Base,41,0.8534,,0.8861,,0.8861
+Ablation: Decay λ=0.5 on 2 T early Base,42,0.8134,,0.8752,,0.8752
+Ablation: Decay λ=0.5 on 2 T early Base,43,0.0333,,0.0309,,0.0309
+Ablation: Decay λ=0.5 on 2 T early Base,44,0.0519,,0.0364,,0.0364
+Ablation: Decay λ=0.5 on 2 T early Base,45,0.0,,0.0135,,0.0135
+Ablation: Decay λ=0.5 on 2 T early Base,46,0.0,,0.0057,,0.0057
+Ablation: Decay λ=0.5 on 2 T early Base,47,0.0,,0.0724,,0.0724
+Ablation: Decay λ=0.5 on 2 T early Base,48,0.5676,,0.541,,0.541
+Ablation: Decay λ=0.5 on 2 T early Base,49,0.791,,0.8799,,0.8799
+Ablation: Decay λ=0.5 on 2 T late Base,35,0.801,,0.8928,,0.8928
+Ablation: Decay λ=0.5 on 2 T late Base,36,0.6154,,0.5813,,0.5813
+Ablation: Decay λ=0.5 on 2 T late Base,37,0.5091,,0.787,,0.787
+Ablation: Decay λ=0.5 on 2 T late Base,38,0.8829,,0.918,,0.918
+Ablation: Decay λ=0.5 on 2 T late Base,39,0.7273,,0.8019,,0.8019
+Ablation: Decay λ=0.5 on 2 T late Base,40,0.7222,,0.7672,,0.7672
+Ablation: Decay λ=0.5 on 2 T late Base,41,0.8732,,0.905,,0.905
+Ablation: Decay λ=0.5 on 2 T late Base,42,0.8127,,0.8735,,0.8735
+Ablation: Decay λ=0.5 on 2 T late Base,43,0.0,,0.0422,,0.0422
+Ablation: Decay λ=0.5 on 2 T late Base,44,0.075,,0.0669,,0.0669
+Ablation: Decay λ=0.5 on 2 T late Base,45,0.0,,0.08,,0.08
+Ablation: Decay λ=0.5 on 2 T late Base,46,0.2857,,0.5022,,0.5022
+Ablation: Decay λ=0.5 on 2 T late Base,47,0.0,,0.0625,,0.0625
+Ablation: Decay λ=0.5 on 2 T late Base,48,0.3529,,0.6013,,0.6013
+Ablation: Decay λ=0.5 on 2 T late Base,49,0.672,,0.7536,,0.7536
 Ablation: Decay λ=0.5 on 3 F early Base,35,0.782,,0.8181,,0.8181
 Ablation: Decay λ=0.5 on 3 F early Base,36,0.5672,,0.6692,,0.6692
 Ablation: Decay λ=0.5 on 3 F early Base,37,0.6349,,0.8223,,0.8223
@@ -164,6 +374,66 @@ Ablation: Decay λ=0.5 on 3 F late Base,46,0.0,,0.0412,,0.0412
 Ablation: Decay λ=0.5 on 3 F late Base,47,0.0,,0.0662,,0.0662
 Ablation: Decay λ=0.5 on 3 F late Base,48,0.5128,,0.4762,,0.4762
 Ablation: Decay λ=0.5 on 3 F late Base,49,0.7451,,0.8044,,0.8044
+Ablation: Decay λ=0.5 on 3 F late PCA,35,0.801,,0.8979,,0.8979
+Ablation: Decay λ=0.5 on 3 F late PCA,36,0.4681,,0.5633,,0.5633
+Ablation: Decay λ=0.5 on 3 F late PCA,37,0.6087,,0.7477,,0.7477
+Ablation: Decay λ=0.5 on 3 F late PCA,38,0.8093,,0.9339,,0.9339
+Ablation: Decay λ=0.5 on 3 F late PCA,39,0.7949,,0.8314,,0.8314
+Ablation: Decay λ=0.5 on 3 F late PCA,40,0.6354,,0.6949,,0.6949
+Ablation: Decay λ=0.5 on 3 F late PCA,41,0.8273,,0.8864,,0.8864
+Ablation: Decay λ=0.5 on 3 F late PCA,42,0.7843,,0.8347,,0.8347
+Ablation: Decay λ=0.5 on 3 F late PCA,43,0.0625,,0.0304,,0.0304
+Ablation: Decay λ=0.5 on 3 F late PCA,44,0.125,,0.0744,,0.0744
+Ablation: Decay λ=0.5 on 3 F late PCA,45,0.0,,0.0272,,0.0272
+Ablation: Decay λ=0.5 on 3 F late PCA,46,0.0,,0.023,,0.023
+Ablation: Decay λ=0.5 on 3 F late PCA,47,0.0,,0.063,,0.063
+Ablation: Decay λ=0.5 on 3 F late PCA,48,0.4595,,0.4105,,0.4105
+Ablation: Decay λ=0.5 on 3 F late PCA,49,0.5122,,0.7665,,0.7665
+Ablation: Decay λ=0.5 on 3 T None PCA,35,0.7763,,0.8709,,0.8709
+Ablation: Decay λ=0.5 on 3 T None PCA,36,0.5287,,0.5568,,0.5568
+Ablation: Decay λ=0.5 on 3 T None PCA,37,0.5263,,0.714,,0.714
+Ablation: Decay λ=0.5 on 3 T None PCA,38,0.7527,,0.9017,,0.9017
+Ablation: Decay λ=0.5 on 3 T None PCA,39,0.434,,0.7564,,0.7564
+Ablation: Decay λ=0.5 on 3 T None PCA,40,0.6359,,0.6697,,0.6697
+Ablation: Decay λ=0.5 on 3 T None PCA,41,0.8082,,0.8844,,0.8844
+Ablation: Decay λ=0.5 on 3 T None PCA,42,0.7713,,0.8019,,0.8019
+Ablation: Decay λ=0.5 on 3 T None PCA,43,0.1143,,0.0692,,0.0692
+Ablation: Decay λ=0.5 on 3 T None PCA,44,0.0714,,0.0421,,0.0421
+Ablation: Decay λ=0.5 on 3 T None PCA,45,0.1111,,0.1069,,0.1069
+Ablation: Decay λ=0.5 on 3 T None PCA,46,0.2,,0.1711,,0.1711
+Ablation: Decay λ=0.5 on 3 T None PCA,47,0.0,,0.0408,,0.0408
+Ablation: Decay λ=0.5 on 3 T None PCA,48,0.4944,,0.4738,,0.4738
+Ablation: Decay λ=0.5 on 3 T None PCA,49,0.2899,,0.5667,,0.5667
+Ablation: Decay λ=0.5 on 3 T early PCA,35,0.7252,,0.8349,,0.8349
+Ablation: Decay λ=0.5 on 3 T early PCA,36,0.4731,,0.5082,,0.5082
+Ablation: Decay λ=0.5 on 3 T early PCA,37,0.5357,,0.6955,,0.6955
+Ablation: Decay λ=0.5 on 3 T early PCA,38,0.816,,0.8815,,0.8815
+Ablation: Decay λ=0.5 on 3 T early PCA,39,0.32,,0.6896,,0.6896
+Ablation: Decay λ=0.5 on 3 T early PCA,40,0.6381,,0.6723,,0.6723
+Ablation: Decay λ=0.5 on 3 T early PCA,41,0.8016,,0.8569,,0.8569
+Ablation: Decay λ=0.5 on 3 T early PCA,42,0.7812,,0.8215,,0.8215
+Ablation: Decay λ=0.5 on 3 T early PCA,43,0.1111,,0.0444,,0.0444
+Ablation: Decay λ=0.5 on 3 T early PCA,44,0.0465,,0.07,,0.07
+Ablation: Decay λ=0.5 on 3 T early PCA,45,0.0,,0.0277,,0.0277
+Ablation: Decay λ=0.5 on 3 T early PCA,46,0.0,,0.0037,,0.0037
+Ablation: Decay λ=0.5 on 3 T early PCA,47,0.0,,0.0414,,0.0414
+Ablation: Decay λ=0.5 on 3 T early PCA,48,0.5217,,0.6181,,0.6181
+Ablation: Decay λ=0.5 on 3 T early PCA,49,0.8545,,0.9166,,0.9166
+Ablation: Decay λ=0.5 on 3 T late PCA,35,0.668,,0.8875,,0.8875
+Ablation: Decay λ=0.5 on 3 T late PCA,36,0.4762,,0.4375,,0.4375
+Ablation: Decay λ=0.5 on 3 T late PCA,37,0.625,,0.7181,,0.7181
+Ablation: Decay λ=0.5 on 3 T late PCA,38,0.8279,,0.9079,,0.9079
+Ablation: Decay λ=0.5 on 3 T late PCA,39,0.629,,0.7719,,0.7719
+Ablation: Decay λ=0.5 on 3 T late PCA,40,0.5917,,0.668,,0.668
+Ablation: Decay λ=0.5 on 3 T late PCA,41,0.7636,,0.8883,,0.8883
+Ablation: Decay λ=0.5 on 3 T late PCA,42,0.7783,,0.8297,,0.8297
+Ablation: Decay λ=0.5 on 3 T late PCA,43,0.0769,,0.0934,,0.0934
+Ablation: Decay λ=0.5 on 3 T late PCA,44,0.023,,0.0323,,0.0323
+Ablation: Decay λ=0.5 on 3 T late PCA,45,0.125,,0.0258,,0.0258
+Ablation: Decay λ=0.5 on 3 T late PCA,46,0.0,,0.0567,,0.0567
+Ablation: Decay λ=0.5 on 3 T late PCA,47,0.0,,0.0422,,0.0422
+Ablation: Decay λ=0.5 on 3 T late PCA,48,0.383,,0.5893,,0.5893
+Ablation: Decay λ=0.5 on 3 T late PCA,49,0.7368,,0.8088,,0.8088
 Ablation: Decay λ=0.5 on XGBoost,35,0.9648,,0.9915,,0.9915
 Ablation: Decay λ=0.5 on XGBoost,36,0.9231,,0.9828,,0.9828
 Ablation: Decay λ=0.5 on XGBoost,37,0.7692,,0.8738,,0.8738
@@ -179,6 +449,66 @@ Ablation: Decay λ=0.5 on XGBoost,46,0.5,,0.5096,,0.5096
 Ablation: Decay λ=0.5 on XGBoost,47,0.439,,0.4708,,0.4708
 Ablation: Decay λ=0.5 on XGBoost,48,0.7397,,0.6591,,0.6591
 Ablation: Decay λ=0.5 on XGBoost,49,0.7826,,0.9912,,0.9912
+Ablation: IPCA 3 F late,35,0.8193,,0.7159,,0.7159
+Ablation: IPCA 3 F late,36,0.463,,0.4638,,0.4638
+Ablation: IPCA 3 F late,37,0.6,,0.7964,,0.7964
+Ablation: IPCA 3 F late,38,0.8548,,0.9214,,0.9214
+Ablation: IPCA 3 F late,39,0.7972,,0.8845,,0.8845
+Ablation: IPCA 3 F late,40,0.7136,,0.7428,,0.7428
+Ablation: IPCA 3 F late,41,0.8273,,0.8919,,0.8919
+Ablation: IPCA 3 F late,42,0.8083,,0.8586,,0.8586
+Ablation: IPCA 3 F late,43,0.0,,0.0264,,0.0264
+Ablation: IPCA 3 F late,44,0.0556,,0.0252,,0.0252
+Ablation: IPCA 3 F late,45,0.0667,,0.0337,,0.0337
+Ablation: IPCA 3 F late,46,0.0,,0.0055,,0.0055
+Ablation: IPCA 3 F late,47,0.0769,,0.0937,,0.0937
+Ablation: IPCA 3 F late,48,0.2222,,0.2821,,0.2821
+Ablation: IPCA 3 F late,49,0.5862,,0.541,,0.541
+Ablation: IPCA 3 T None,35,0.7333,0.0,0.6468,0.0,0.6468
+Ablation: IPCA 3 T None,36,0.6197,0.0,0.6561,0.0,0.6561
+Ablation: IPCA 3 T None,37,0.5357,0.0,0.7686,0.0,0.7686
+Ablation: IPCA 3 T None,38,0.8402,0.0,0.9242,0.0,0.9242
+Ablation: IPCA 3 T None,39,0.8535,0.0,0.88,0.0,0.88
+Ablation: IPCA 3 T None,40,0.7302,0.0,0.7795,0.0,0.7795
+Ablation: IPCA 3 T None,41,0.8312,0.0,0.8775,0.0,0.8775
+Ablation: IPCA 3 T None,42,0.8326,0.0,0.873,0.0,0.873
+Ablation: IPCA 3 T None,43,0.075,0.0,0.0308,0.0,0.0308
+Ablation: IPCA 3 T None,44,0.0952,0.0,0.0382,0.0,0.0382
+Ablation: IPCA 3 T None,45,0.0,0.0,0.0156,0.0,0.0156
+Ablation: IPCA 3 T None,46,0.0,0.0,0.0183,0.0,0.0183
+Ablation: IPCA 3 T None,47,0.0,0.0,0.0842,0.0,0.0842
+Ablation: IPCA 3 T None,48,0.2128,0.0,0.4797,0.0,0.4797
+Ablation: IPCA 3 T None,49,0.2545,0.0,0.3039,0.0,0.3039
+Ablation: IPCA 3 T early,35,0.7282,0.0,0.6156,0.0,0.6156
+Ablation: IPCA 3 T early,36,0.3796,0.0,0.2659,0.0,0.2659
+Ablation: IPCA 3 T early,37,0.5246,0.0,0.6879,0.0,0.6879
+Ablation: IPCA 3 T early,38,0.6948,0.0,0.9179,0.0,0.9179
+Ablation: IPCA 3 T early,39,0.7391,0.0,0.8243,0.0,0.8243
+Ablation: IPCA 3 T early,40,0.7047,0.0,0.7478,0.0,0.7478
+Ablation: IPCA 3 T early,41,0.781,0.0,0.896,0.0,0.896
+Ablation: IPCA 3 T early,42,0.816,0.0,0.8746,0.0,0.8746
+Ablation: IPCA 3 T early,43,0.0,0.0,0.0308,0.0,0.0308
+Ablation: IPCA 3 T early,44,0.0741,0.0,0.0824,0.0,0.0824
+Ablation: IPCA 3 T early,45,0.0,0.0,0.021,0.0,0.021
+Ablation: IPCA 3 T early,46,0.0,0.0,0.0185,0.0,0.0185
+Ablation: IPCA 3 T early,47,0.0571,0.0,0.0592,0.0,0.0592
+Ablation: IPCA 3 T early,48,0.5225,0.0,0.4587,0.0,0.4587
+Ablation: IPCA 3 T early,49,0.4478,0.0,0.4741,0.0,0.4741
+Ablation: IPCA 3 T late,35,0.6903,0.0,0.5714,0.0,0.5714
+Ablation: IPCA 3 T late,36,0.5672,0.0,0.6244,0.0,0.6244
+Ablation: IPCA 3 T late,37,0.5763,0.0,0.7037,0.0,0.7037
+Ablation: IPCA 3 T late,38,0.8125,0.0,0.9005,0.0,0.9005
+Ablation: IPCA 3 T late,39,0.8129,0.0,0.8201,0.0,0.8201
+Ablation: IPCA 3 T late,40,0.6631,0.0,0.6924,0.0,0.6924
+Ablation: IPCA 3 T late,41,0.7949,0.0,0.8624,0.0,0.8624
+Ablation: IPCA 3 T late,42,0.8125,0.0,0.8711,0.0,0.8711
+Ablation: IPCA 3 T late,43,0.0,0.0,0.0255,0.0,0.0255
+Ablation: IPCA 3 T late,44,0.0474,0.0,0.0365,0.0,0.0365
+Ablation: IPCA 3 T late,45,0.0,0.0,0.0139,0.0,0.0139
+Ablation: IPCA 3 T late,46,0.0,0.0,0.0341,0.0,0.0341
+Ablation: IPCA 3 T late,47,0.0,0.0,0.0536,0.0,0.0536
+Ablation: IPCA 3 T late,48,0.5217,0.0,0.4236,0.0,0.4236
+Ablation: IPCA 3 T late,49,0.1942,0.0,0.2855,0.0,0.2855
 Baseline: XGBoost WF (epsilon-fallback),35,0.9443,0.0,0.9936,0.0,0.9936
 Baseline: XGBoost WF (epsilon-fallback),36,0.9688,0.0,0.9966,0.0,0.9966
 Baseline: XGBoost WF (epsilon-fallback),37,0.7879,0.0,0.9203,0.0,0.9203
@@ -224,6 +554,36 @@ Baseline: XGBoost WF (epsilon-fallback),49,0.7273,0.0,0.9909,0.0,0.9909
 "Best WF: Grid: K=2, Dir=F, Topo=None",47,0.0,,0.0606,,0.0606
 "Best WF: Grid: K=2, Dir=F, Topo=None",48,0.5,,0.4224,,0.4224
 "Best WF: Grid: K=2, Dir=F, Topo=None",49,0.4091,,0.5594,,0.5594
+"Best WF: Grid: K=2, Dir=T, Topo=early",35,0.7493,,0.7617,,0.7617
+"Best WF: Grid: K=2, Dir=T, Topo=early",36,0.2344,,0.1128,,0.1128
+"Best WF: Grid: K=2, Dir=T, Topo=early",37,0.6102,,0.7902,,0.7902
+"Best WF: Grid: K=2, Dir=T, Topo=early",38,0.8066,,0.8951,,0.8951
+"Best WF: Grid: K=2, Dir=T, Topo=early",39,0.8289,,0.8504,,0.8504
+"Best WF: Grid: K=2, Dir=T, Topo=early",40,0.7461,,0.7775,,0.7775
+"Best WF: Grid: K=2, Dir=T, Topo=early",41,0.8664,,0.9199,,0.9199
+"Best WF: Grid: K=2, Dir=T, Topo=early",42,0.7991,,0.8739,,0.8739
+"Best WF: Grid: K=2, Dir=T, Topo=early",43,0.0667,,0.0483,,0.0483
+"Best WF: Grid: K=2, Dir=T, Topo=early",44,0.0457,,0.0365,,0.0365
+"Best WF: Grid: K=2, Dir=T, Topo=early",45,0.0,,0.0116,,0.0116
+"Best WF: Grid: K=2, Dir=T, Topo=early",46,0.2222,,0.5057,,0.5057
+"Best WF: Grid: K=2, Dir=T, Topo=early",47,0.0,,0.068,,0.068
+"Best WF: Grid: K=2, Dir=T, Topo=early",48,0.4771,,0.3806,,0.3806
+"Best WF: Grid: K=2, Dir=T, Topo=early",49,0.2564,,0.3308,,0.3308
+"Best WF: Grid: K=2, Dir=T, Topo=late",35,0.7931,,0.7461,,0.7461
+"Best WF: Grid: K=2, Dir=T, Topo=late",36,0.5974,,0.6406,,0.6406
+"Best WF: Grid: K=2, Dir=T, Topo=late",37,0.5763,,0.7124,,0.7124
+"Best WF: Grid: K=2, Dir=T, Topo=late",38,0.8254,,0.9575,,0.9575
+"Best WF: Grid: K=2, Dir=T, Topo=late",39,0.5758,,0.6421,,0.6421
+"Best WF: Grid: K=2, Dir=T, Topo=late",40,0.7213,,0.7896,,0.7896
+"Best WF: Grid: K=2, Dir=T, Topo=late",41,0.8978,,0.9298,,0.9298
+"Best WF: Grid: K=2, Dir=T, Topo=late",42,0.8271,,0.8811,,0.8811
+"Best WF: Grid: K=2, Dir=T, Topo=late",43,0.0,,0.0483,,0.0483
+"Best WF: Grid: K=2, Dir=T, Topo=late",44,0.1154,,0.0406,,0.0406
+"Best WF: Grid: K=2, Dir=T, Topo=late",45,0.0,,0.0123,,0.0123
+"Best WF: Grid: K=2, Dir=T, Topo=late",46,0.0,,0.0202,,0.0202
+"Best WF: Grid: K=2, Dir=T, Topo=late",47,0.0,,0.0551,,0.0551
+"Best WF: Grid: K=2, Dir=T, Topo=late",48,0.3462,,0.4577,,0.4577
+"Best WF: Grid: K=2, Dir=T, Topo=late",49,0.2778,,0.4876,,0.4876
 "Best WF: Grid: K=3, Dir=F, Topo=early",35,0.8992,,0.948,,0.948
 "Best WF: Grid: K=3, Dir=F, Topo=early",36,0.5106,,0.5279,,0.5279
 "Best WF: Grid: K=3, Dir=F, Topo=early",37,0.5614,,0.7846,,0.7846
@@ -254,6 +614,51 @@ Baseline: XGBoost WF (epsilon-fallback),49,0.7273,0.0,0.9909,0.0,0.9909
 "Best WF: Grid: K=3, Dir=F, Topo=late",47,0.0,0.0,0.0807,0.01583919189857865,0.0807
 "Best WF: Grid: K=3, Dir=F, Topo=late",48,0.39925,0.08591347391416554,0.4001,0.054871486220076086,0.4001
 "Best WF: Grid: K=3, Dir=F, Topo=late",49,0.47014999999999996,0.06653874810965416,0.39165,0.06158900064134826,0.39165
+"Best WF: Grid: K=3, Dir=T, Topo=None",35,0.6771,,0.5422,,0.5422
+"Best WF: Grid: K=3, Dir=T, Topo=None",36,0.3741,,0.2088,,0.2088
+"Best WF: Grid: K=3, Dir=T, Topo=None",37,0.5357,,0.7485,,0.7485
+"Best WF: Grid: K=3, Dir=T, Topo=None",38,0.7619,,0.9069,,0.9069
+"Best WF: Grid: K=3, Dir=T, Topo=None",39,0.7714,,0.8221,,0.8221
+"Best WF: Grid: K=3, Dir=T, Topo=None",40,0.7016,,0.735,,0.735
+"Best WF: Grid: K=3, Dir=T, Topo=None",41,0.7984,,0.8622,,0.8622
+"Best WF: Grid: K=3, Dir=T, Topo=None",42,0.8285,,0.8699,,0.8699
+"Best WF: Grid: K=3, Dir=T, Topo=None",43,0.0,,0.0546,,0.0546
+"Best WF: Grid: K=3, Dir=T, Topo=None",44,0.0519,,0.0696,,0.0696
+"Best WF: Grid: K=3, Dir=T, Topo=None",45,0.025,,0.0246,,0.0246
+"Best WF: Grid: K=3, Dir=T, Topo=None",46,0.1176,,0.1715,,0.1715
+"Best WF: Grid: K=3, Dir=T, Topo=None",47,0.0,,0.0517,,0.0517
+"Best WF: Grid: K=3, Dir=T, Topo=None",48,0.5962,,0.4449,,0.4449
+"Best WF: Grid: K=3, Dir=T, Topo=None",49,0.2419,,0.2709,,0.2709
+"Best WF: Grid: K=3, Dir=T, Topo=early",35,0.7277,,0.5633,,0.5633
+"Best WF: Grid: K=3, Dir=T, Topo=early",36,0.5385,,0.4826,,0.4826
+"Best WF: Grid: K=3, Dir=T, Topo=early",37,0.5517,,0.6964,,0.6964
+"Best WF: Grid: K=3, Dir=T, Topo=early",38,0.8245,,0.9424,,0.9424
+"Best WF: Grid: K=3, Dir=T, Topo=early",39,0.8456,,0.8391,,0.8391
+"Best WF: Grid: K=3, Dir=T, Topo=early",40,0.6667,,0.6964,,0.6964
+"Best WF: Grid: K=3, Dir=T, Topo=early",41,0.886,,0.9163,,0.9163
+"Best WF: Grid: K=3, Dir=T, Topo=early",42,0.7971,,0.8733,,0.8733
+"Best WF: Grid: K=3, Dir=T, Topo=early",43,0.0556,,0.0349,,0.0349
+"Best WF: Grid: K=3, Dir=T, Topo=early",44,0.0455,,0.0321,,0.0321
+"Best WF: Grid: K=3, Dir=T, Topo=early",45,0.0667,,0.0285,,0.0285
+"Best WF: Grid: K=3, Dir=T, Topo=early",46,0.0,,0.004,,0.004
+"Best WF: Grid: K=3, Dir=T, Topo=early",47,0.0,,0.0445,,0.0445
+"Best WF: Grid: K=3, Dir=T, Topo=early",48,0.5116,,0.4091,,0.4091
+"Best WF: Grid: K=3, Dir=T, Topo=early",49,0.5444,,0.5526,,0.5526
+"Best WF: Grid: K=3, Dir=T, Topo=late",35,0.7538,,0.7142,,0.7142
+"Best WF: Grid: K=3, Dir=T, Topo=late",36,0.4565,,0.5343,,0.5343
+"Best WF: Grid: K=3, Dir=T, Topo=late",37,0.5455,,0.7373,,0.7373
+"Best WF: Grid: K=3, Dir=T, Topo=late",38,0.8255,,0.9185,,0.9185
+"Best WF: Grid: K=3, Dir=T, Topo=late",39,0.5487,,0.8148,,0.8148
+"Best WF: Grid: K=3, Dir=T, Topo=late",40,0.7513,,0.7652,,0.7652
+"Best WF: Grid: K=3, Dir=T, Topo=late",41,0.8348,,0.8895,,0.8895
+"Best WF: Grid: K=3, Dir=T, Topo=late",42,0.7807,,0.8335,,0.8335
+"Best WF: Grid: K=3, Dir=T, Topo=late",43,0.0,,0.0327,,0.0327
+"Best WF: Grid: K=3, Dir=T, Topo=late",44,0.0588,,0.0471,,0.0471
+"Best WF: Grid: K=3, Dir=T, Topo=late",45,0.0267,,0.0161,,0.0161
+"Best WF: Grid: K=3, Dir=T, Topo=late",46,0.1667,,0.5065,,0.5065
+"Best WF: Grid: K=3, Dir=T, Topo=late",47,0.0,,0.0543,,0.0543
+"Best WF: Grid: K=3, Dir=T, Topo=late",48,0.5102,,0.4475,,0.4475
+"Best WF: Grid: K=3, Dir=T, Topo=late",49,0.3696,,0.493,,0.493
 Best WF: Sweep 1: SGC (baseline),35,0.6175,,0.5675,,0.5675
 Best WF: Sweep 1: SGC (baseline),36,0.0865,,0.0554,,0.0554
 Best WF: Sweep 1: SGC (baseline),37,0.3824,,0.4109,,0.4109
@@ -284,3 +689,33 @@ Best WF: Sweep 2: + MLP Head,46,0.0909,,0.0413,,0.0413
 Best WF: Sweep 2: + MLP Head,47,0.0,,0.0668,,0.0668
 Best WF: Sweep 2: + MLP Head,48,0.3492,,0.3654,,0.3654
 Best WF: Sweep 2: + MLP Head,49,0.2449,,0.3865,,0.3865
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),35,0.9644,,0.9901,,0.9901
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),36,0.9846,,0.9983,,0.9983
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),37,0.7879,,0.8981,,0.8981
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),38,0.8927,,0.9694,,0.9694
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),39,0.8767,,0.9734,,0.9734
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),40,0.7917,,0.7825,,0.7825
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),41,0.96,,0.9617,,0.9617
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),42,0.8739,,0.9051,,0.9051
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),43,0.0,,0.0753,,0.0753
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),44,0.1951,,0.1653,,0.1653
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),45,0.0,,0.031,,0.031
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),46,0.1538,,0.5127,,0.5127
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),47,0.1481,,0.237,,0.237
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),48,0.1818,,0.5695,,0.5695
+Ensemble: XGB(0.7) + 3 T late PCA(0.3),49,0.7045,,0.9708,,0.9708
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",35,0.7146,,0.8043,,0.8043
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",36,0.5915,,0.6367,,0.6367
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",37,0.5763,,0.7909,,0.7909
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",38,0.8421,,0.8941,,0.8941
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",39,0.7887,,0.819,,0.819
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",40,0.7282,,0.762,,0.762
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",41,0.8899,,0.9261,,0.9261
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",42,0.8378,,0.8852,,0.8852
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",43,0.1304,,0.0436,,0.0436
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",44,0.1463,,0.0438,,0.0438
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",45,0.0,,0.03,,0.03
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",46,0.1053,,0.0426,,0.0426
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",47,0.0,,0.06,,0.06
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",48,0.4628,,0.4449,,0.4449
+"Grid: K=3, Dir=T, Topo=early (Var Base) WF",49,0.2588,,0.3341,,0.3341
