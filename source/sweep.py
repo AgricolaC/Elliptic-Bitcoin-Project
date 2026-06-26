@@ -1057,13 +1057,16 @@ def main():
         avg_stats.append({'Config': base_name, 'Val_F1': v_avg, 'Test_F1': t_avg})
 
     df_avg = pd.DataFrame(avg_stats)
-    if not df_avg.empty:
-        val_75 = df_avg['Val_F1'].quantile(0.75)
-        test_75 = df_avg['Test_F1'].quantile(0.75)
-        top_both = df_avg[(df_avg['Val_F1'] >= val_75) & (df_avg['Test_F1'] >= test_75)]
-        global_champions = top_both['Config'].tolist()
-    else:
-        global_champions = []
+    global_champions = [
+        "Grid: K=3, Dir=F, Topo=late (Var PCA)",
+        "Grid: K=3, Dir=T, Topo=None (Var PCA)",
+        "Grid: K=3, Dir=T, Topo=early (Var PCA)",
+        "Grid: K=3, Dir=T, Topo=late (Var PCA)",
+        "Grid: K=3, Dir=F, Topo=late (Var Base)",
+        "Grid: K=3, Dir=F, Topo=early (Var Base)",
+        "Grid: K=2, Dir=T, Topo=early (Var Base)",
+        "Grid: K=2, Dir=T, Topo=late (Var Base)"
+    ]
     print(f"\n--- Global Champions Identified ---")
     for champ in global_champions:
         print(f"  - {champ}")

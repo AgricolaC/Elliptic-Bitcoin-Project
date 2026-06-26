@@ -181,6 +181,8 @@ def walk_forward_validation(
     return_records: bool = False,
     window: int = None,
     eval_steps: range = None,       # P0-A: pass cfg.val_steps or cfg.test_steps
+    xgb_dm: Any = None,             # Ensemble Addition
+    xgb_weight: float = 0.5         # Ensemble Addition
 ) -> Any:
     """
     Walk-forward temporal validation with dynamic class weights.
@@ -268,6 +270,18 @@ def walk_forward_validation(
 
         t0 = time.perf_counter()
         model = fit_head(Xtr_w, ytr_w, dm.sgc_input_dim, cfg, cls_w, device, epochs=n_epochs)
+        
+        model_xgb = None
+        if xgb_dm is not None:
+            from evaluation.ablation_validation import _tab_block
+            from xgboost import XGBClassifier
+            Xtr_xgb, ytr_xgb = _tab_block(xgb_dm, train_block)
+            spw = (ytr_xgb == 0).sum() / max((ytr_xgb == 1).sum(), 1)
+            model_xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+                                      scale_pos_weight=spw, eval_metric="aucpr", 
+                                      random_state=getattr(cfg, "seed", 42), n_jobs=1)
+            model_xgb.fit(Xtr_xgb, ytr_xgb)
+
         total_wf_train_time += (time.perf_counter() - t0)
         
         model.eval()
@@ -290,6 +304,13 @@ def walk_forward_validation(
                         s_cal = torch.softmax(
                             model(g_cal["prop"][m_cal].to(device)), dim=1
                         )[:, 1].cpu().numpy()
+                    
+                    if xgb_dm is not None and model_xgb is not None:
+                        from evaluation.ablation_validation import _tab_step
+                        Xc_xgb, yc_xgb = _tab_step(xgb_dm, calib_step)
+                        s_cal_xgb = model_xgb.predict_proba(Xc_xgb)[:, 1]
+                        s_cal = xgb_weight * s_cal_xgb + (1 - xgb_weight) * s_cal
+                        
                     threshold, fallback = _calibrate_threshold(y_cal, s_cal)
 
         with torch.no_grad():
@@ -300,6 +321,12 @@ def walk_forward_validation(
             assert logits_te.shape[1] == 2, \
                 f"tau={tau}: expected 2-class logits, got shape {logits_te.shape}"
             s = torch.softmax(logits_te, dim=1)[:, 1].cpu().numpy()
+            
+            if xgb_dm is not None and model_xgb is not None:
+                from evaluation.ablation_validation import _tab_step
+                Xte_xgb, yte_xgb = _tab_step(xgb_dm, tau)
+                s_te_xgb = model_xgb.predict_proba(Xte_xgb)[:, 1]
+                s = xgb_weight * s_te_xgb + (1 - xgb_weight) * s
 
         y_pred = (s >= threshold).astype(int)
         step_f1 = float(f1_score(yte_w, y_pred, pos_label=1, zero_division=0))
