@@ -1,0 +1,155 @@
+\begin{thebibliography}{10}
+
+\bibitem{Nakahara}
+M.~Nakahara.
+\newblock {\em Geometry, Topology and Physics}.
+\newblock Adam Hilger, Bristol, 1991.
+
+\bibitem{PettiniBook}
+M.~Pettini.
+\newblock {\em Geometry and Topology in Hamiltonian Dynamics and Statistical
+  Mechanics}.
+\newblock IAM Series n. 33. Springer-Verlag New York, 2007.
+
+\bibitem{TH1}
+R.~Franzosi and M.~Pettini.
+\newblock Topology and phase transitions ii. theorem on a necessary relation.
+\newblock {\em Nuclear Physics B}, 782(3):219 -- 240, 2007.
+
+\bibitem{TH2}
+R.~Franzosi, M.~Pettini, and L.~Spinelli.
+\newblock Topology and phase transitions i. preliminary results.
+\newblock {\em Nuclear Physics B}, 782(3):189 -- 218, 2007.
+
+\bibitem{Niyogi:2006}
+P.~Niyogi, S.~Smale, and S.~Weinberger.
+\newblock Finding the homology of submanifolds with high confidence from random
+  samples.
+\newblock {\em Discrete and Computational Geometry}, 39:419--441, 2008.
+
+\bibitem{Ghrist:2008tw}
+R~Ghrist.
+\newblock Barcodes: The persistent topology of data.
+\newblock {\em B. AM. Math. Soc.}, 45(61), 2008.
+
+\bibitem{Pers}
+G~Carlsson and A~Zomorodian.
+\newblock Persistent homology - a survey.
+\newblock {\em Discrete Comput. Geom}, 33(2):249--274, 2005.
+
+\bibitem{Top}
+G~Carlsson.
+\newblock Topology and data.
+\newblock {\em B. Am. Math. Soc.}, 46(2):255--308, 2009.
+
+\bibitem{edels:2002}
+H.~Edelsbrunner, D.~Letscher, and A.Zomorodian.
+\newblock Topological persistence and simplification.
+\newblock {\em Discrete Comput. Geom.}, 28:511–533, 2002.
+
+\bibitem{Petri:2014hq}
+G.~Petri, P~Expert, F~Turkheimer, R~Carhart-Harris, D~Nutt, P~J Hellyer, and
+  F~Vaccarino.
+\newblock {Homological scaffolds of brain functional networks}.
+\newblock {\em Journal of The Royal Society Interface},
+  11(101):20140873--20140873, December 2014.
+
+\bibitem{DeSilva:2007ve}
+V.~De~Silva and R.~Ghrist.
+\newblock Coverage in sensor networks via persistent homology.
+\newblock {\em Algebraic and Geometric Topology 7}, page 339–358, 2007.
+
+\bibitem{Antoni:2005}
+M.~Antoni and S.~Ruffo.
+\newblock Clustering and relaxation in hamiltonian long-range dynamics.
+\newblock {\em Phys. Rev. E}, 52:2361, 1995.
+
+\bibitem{review_longrange}
+A.~Campa, T.~Dauxois, and S.~Ruffo.
+\newblock {Statistical mechanics and dynamics of solvable models with
+  long-range interactions}.
+\newblock {\em Phys. Rep.}, 480(3--6):57--159, 2009.
+
+\bibitem{milnor}
+J.~Milnor.
+\newblock Morse theory.
+\newblock {\em Ann. Math. Studies 51 (Princeton University Press, Princeton)},
+  1963.
+
+\bibitem{xymf}
+L.~Casetti, M.~Pettini, and E.~G.~D. Cohen.
+\newblock Phase transitions and topology changes in configuration space.
+\newblock {\em J. Stat. Phys.}, 111:1091, 2003.
+
+\bibitem{physrep}
+L.~Casetti, M.~Pettini, and E.~G.~D. Cohen.
+\newblock Geometric approach to hamiltonian dynamics and statistical mechanics.
+\newblock {\em Phys. Rep.}, 337:237–341, 2000.
+
+\bibitem{KastMehta}
+M.~Kastner and D.~Mehta.
+\newblock Phase transitions detached from stationary points of the energy
+  landscape.
+\newblock {\em Phys. Rev. Lett.}, 107:160602, 2011.
+
+\bibitem{huang}
+K.~Huang.
+\newblock {\em Statistical Mechanics}.
+\newblock John Wiley and Sons, New York, 1963.
+
+\bibitem{ising3d}
+D.~S. Gaunt and C.~Domb.
+\newblock { The specific heat of the three-dimensional Ising model below
+  $T_c$}.
+\newblock {\em J. Phys. C: Solid State Physics}, 1:1038, 1968.
+
+\bibitem{Caiani:1998}
+L.~Caiani, L.~Casetti, and M.~Pettini.
+\newblock Hamiltonian dynamics of the two-dimensional lattice $\phi^4$ model.
+\newblock {\em J. Phys. A: Math. Gen.}, 31:3357, 1998.
+
+\bibitem{CCCPPG}
+L.~Caiani, L.~Casetti, C.~Clementi, G.~Pettini, M.~Pettini, and R.~Gatto.
+\newblock { Geometry of dynamics and phase transitions in classical lattice
+  $\phi^4$ theories}.
+\newblock {\em Phys.Rev. E}, 57:3886, 1998.
+
+\bibitem{goripettini}
+M.~Gori, R.~Franzosi, and M.~Pettini.
+\newblock On the apparent failure of the topological theory of phase
+  transitions.
+\newblock {\em In preparation}, 2015.
+
+\bibitem{McLachlan92}
+R.~I. McLachlan and P.~Atela.
+\newblock {The accuracy of symplectic integrators}.
+\newblock {\em Nonlinearity}, 5(2):541, 1992.
+
+\bibitem{Casetti:1995}
+L.~Casetti.
+\newblock Efficient symplectic algorithms for numerical simulations of
+  hamiltonian flows.
+\newblock {\em Physica Scripta 51}, 29, 1995.
+
+\bibitem{DeSilva:2005}
+J.~Silva, J.~S. Marques, and J.~M. Lemos.
+\newblock Sparse multidimensional scaling using landmark points.
+\newblock {\em Conference: Neural Information Processing Systems-NIPS}, 2005.
+
+\bibitem{gamble}
+J.~Gamble and G.~Heo.
+\newblock Exploring uses of persistent homology for statistical analysis of
+  landmark-based shape data.
+\newblock {\em J. Multivar. Analysis}, 101:2184–2199, 2010.
+
+\bibitem{bubenik}
+P.~Bubenik.
+\newblock Statistical topological data analysis using persistence landscapes.
+\newblock {\em Journal of Machine Learning Research}, 16:77--102, 2015.
+
+\bibitem{chazal}
+F.~Chazal, B.~T. Fasy, F.~Lecci, B.~Michel, A.~Rinaldo, and L.~Wasserman.
+\newblock Subsampling methods for persistent homology.
+\newblock {\em arXiv:1406.1901v1 [math.AT]}, 2014.
+
+\end{thebibliography}
