@@ -613,6 +613,53 @@ class TestTemporalModels:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Deep Residual MLP head hardening
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDeepResidualMLPHead:
+    """The SGC head must support the Phase 2.5 Deep Residual ablation knobs."""
+
+    def test_silu_head_produces_two_class_logits(self):
+        from config import Config
+        from models.classifier import SGCHead
+
+        cfg = Config(
+            use_mlp_head=True,
+            mlp_hidden=(16, 8),
+            use_layernorm=True,
+            use_residual=True,
+            activation="silu",
+        )
+        model = SGCHead(in_dim=10, cfg=cfg)
+        logits = model(torch.randn(5, 10))
+        assert logits.shape == (5, 2)
+
+    def test_invalid_activation_raises(self):
+        from config import Config
+        from models.classifier import SGCHead
+
+        cfg = Config(use_mlp_head=True, activation="gelu")
+        with pytest.raises(ValueError, match="Unsupported activation"):
+            SGCHead(in_dim=10, cfg=cfg)
+
+    def test_residual_projection_handles_dimension_change(self):
+        import torch.nn as nn
+        from config import Config
+        from models.classifier import SGCHead
+
+        cfg = Config(
+            use_mlp_head=True,
+            mlp_hidden=(8, 4),
+            use_residual=True,
+            use_layernorm=True,
+            activation="silu",
+        )
+        model = SGCHead(in_dim=10, cfg=cfg)
+        assert isinstance(model.hidden_net[0].shortcut, nn.Linear)
+        assert model(torch.randn(3, 10)).shape == (3, 2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Phase 2.5 MLP-variation expansion — every (target × variation) must be emitted
 # Guards the loop-nesting bug where variations ran for only one target.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -620,9 +667,9 @@ class TestTemporalModels:
 class TestMLPVariationExpansion:
     """
     Phase 2.5 tunes MLP heads on BOTH the Champion and Challenger configs across
-    three variations (Wide / Residual / ResWide). A loop-nesting bug emitted the
-    variations for only the last-bound target. The expansion must be a pure
-    function producing one spec per (target × variation).
+    every Deep Residual variant. A loop-nesting bug emitted the variations for
+    only the last-bound target. The expansion must be a pure function producing
+    one spec per (target × variation).
     """
 
     def _make_targets(self):
@@ -637,16 +684,18 @@ class TestMLPVariationExpansion:
 
     def _variations(self):
         return [
-            ("Wide", {"mlp_hidden": (512, 256, 128), "use_residual": False}),
-            ("Residual", {"mlp_hidden": (128, 64), "use_residual": True}),
-            ("ResWide", {"mlp_hidden": (512, 256, 128), "use_residual": True}),
+            ("MLP-LN-SiLU",        {"mlp_hidden": (128, 64),       "use_residual": False}),
+            ("MLP-Wide-LN-SiLU",   {"mlp_hidden": (512, 256, 128), "use_residual": False}),
+            ("MLP-ResidualSmall",  {"mlp_hidden": (128, 128),      "use_residual": True}),
+            ("MLP-ResidualMedium", {"mlp_hidden": (256, 256),      "use_residual": True}),
+            ("MLP-ResidualWide",   {"mlp_hidden": (512, 256, 128), "use_residual": True}),
         ]
 
     def test_every_target_gets_every_variation(self):
         from sweep import build_mlp_variation_specs
         specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
                                           seed=42, var="Base", mode="standard")
-        assert len(specs) == 6  # 2 targets × 3 variations
+        assert len(specs) == 10  # 2 targets × 5 variations
 
     def test_each_variation_inherits_its_own_base_cfg(self):
         from sweep import build_mlp_variation_specs
@@ -654,8 +703,8 @@ class TestMLPVariationExpansion:
                                           seed=42, var="Base", mode="standard")
         champ_specs = [c for (_, name, c) in specs if "K=1" in name]
         chall_specs = [c for (_, name, c) in specs if "K=3" in name]
-        assert len(champ_specs) == 3
-        assert len(chall_specs) == 3
+        assert len(champ_specs) == 5
+        assert len(chall_specs) == 5
         assert all(c.sgc_k == 1 and not c.use_directional_prop for c in champ_specs)
         assert all(c.sgc_k == 3 and c.use_directional_prop for c in chall_specs)
 
@@ -664,6 +713,66 @@ class TestMLPVariationExpansion:
         specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
                                           seed=43, var="PCA", mode="mega")
         assert all("(Seed 43, Var PCA)" in key for (key, _, _) in specs)
+
+    def test_variations_force_deep_residual_defaults(self):
+        from sweep import build_mlp_variation_specs
+        specs = build_mlp_variation_specs(self._make_targets(), self._variations(),
+                                          seed=42, var="Base", mode="standard")
+        assert all(cfg.use_mlp_head and cfg.use_multiscale_prop for (_, _, cfg) in specs)
+        assert all(cfg.use_layernorm and cfg.activation == "silu" for (_, _, cfg) in specs)
+        assert all(abs(cfg.mlp_dropout - 0.3) < 1e-12 for (_, _, cfg) in specs)
+
+
+class TestPhase25ChampionSelection:
+    """Phase 2.5 target selection must use validation PR-AUC, never OOT metrics."""
+
+    def _row(self, sweep, seed, var, val_macro, val_pooled, oot_macro=0.0, oot_pooled=0.0):
+        return {
+            "Sweep": sweep,
+            "Seed": seed,
+            "Variation": var,
+            "Static_Val_Macro_PRAUC": val_macro,
+            "Static_Val_Pooled_PRAUC": val_pooled,
+            "Static_OOT_Macro_PRAUC": oot_macro,
+            "Static_OOT_Pooled_PRAUC": oot_pooled,
+        }
+
+    def test_oot_oracle_row_is_not_selected_when_validation_is_poor(self):
+        from sweep import select_phase25_targets
+
+        rows = [
+            self._row("Grid: K=1, Dir=F, Topo=None (Seed 42, Var Base)", 42, "Base", 0.90, 0.90, 0.10, 0.10),
+            self._row("Grid: K=3, Dir=T, Topo=early (Seed 42, Var Base)", 42, "Base", 0.10, 0.10, 0.99, 0.99),
+        ]
+        selected = select_phase25_targets(rows, top_n=1)
+        names = [target[1] for target in selected]
+        assert names == ["Grid: K=1, Dir=F, Topo=None"]
+
+    def test_duplicate_configs_aggregate_across_seeds(self):
+        from sweep import select_phase25_targets
+
+        rows = [
+            self._row("Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)", 42, "Base", 0.40, 0.40),
+            self._row("Grid: K=2, Dir=F, Topo=None (Seed 43, Var Base)", 43, "Base", 0.80, 0.80),
+            self._row("Grid: K=1, Dir=F, Topo=None (Seed 42, Var Base)", 42, "Base", 0.55, 0.55),
+        ]
+        selected = select_phase25_targets(rows, top_n=1)
+        assert len(selected) == 1
+        assert selected[0][1] == "Grid: K=2, Dir=F, Topo=None"
+        assert selected[0][3] == "Base"
+
+    def test_macro_and_pooled_validation_rankings_are_unioned(self):
+        from sweep import select_phase25_targets
+
+        rows = [
+            self._row("Grid: K=1, Dir=F, Topo=None (Seed 42, Var Base)", 42, "Base", 0.90, 0.10),
+            self._row("Grid: K=2, Dir=T, Topo=late (Seed 42, Var Base)", 42, "Base", 0.10, 0.90),
+        ]
+        selected = select_phase25_targets(rows, top_n=1)
+        assert [target[1] for target in selected] == [
+            "Grid: K=1, Dir=F, Topo=None",
+            "Grid: K=2, Dir=T, Topo=late",
+        ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

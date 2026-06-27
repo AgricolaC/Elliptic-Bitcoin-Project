@@ -58,6 +58,14 @@ _RESULT_KEYS = (
     "Notes",
 )
 
+PHASE25_MLP_VARIATIONS = (
+    ("MLP-LN-SiLU",        {"mlp_hidden": (128, 64),       "use_residual": False}),
+    ("MLP-Wide-LN-SiLU",   {"mlp_hidden": (512, 256, 128), "use_residual": False}),
+    ("MLP-ResidualSmall",  {"mlp_hidden": (128, 128),      "use_residual": True}),
+    ("MLP-ResidualMedium", {"mlp_hidden": (256, 256),      "use_residual": True}),
+    ("MLP-ResidualWide",   {"mlp_hidden": (512, 256, 128), "use_residual": True}),
+)
+
 import tracemalloc
 import time
 from contextlib import contextmanager
@@ -175,6 +183,161 @@ def _make_result(
     assert set(result.keys()) == set(_RESULT_KEYS), \
         f"Result key schema violation: {set(result.keys())} != {set(_RESULT_KEYS)}"
     return result
+
+
+def _metric_float(value):
+    """Return a finite float metric or None for N/A/missing values."""
+    if value is None or value == "" or value == "N/A":
+        return None
+    try:
+        metric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if np.isnan(metric) else metric
+
+
+def _canonical_grid_name(row: dict) -> str | None:
+    """Canonicalize a Phase-2 Grid row while preserving its data variation."""
+    sweep = row.get("Sweep", "")
+    if not isinstance(sweep, str) or not sweep.startswith("Grid:"):
+        return None
+
+    seeded = re.match(r"^(Grid: .*?) \(Seed \d+, Var ([^)]+)\)$", sweep)
+    if seeded:
+        return f"{seeded.group(1)} (Var {seeded.group(2)})"
+
+    already_canonical = re.match(r"^(Grid: .*?) \(Var ([^)]+)\)$", sweep)
+    if already_canonical:
+        return sweep
+
+    variation = row.get("Variation", "Base")
+    return f"{sweep} (Var {variation})"
+
+
+def _target_from_canonical_grid(canonical: str) -> tuple[Config, str, str] | None:
+    """Build the base Config, base sweep name, and variation from a canonical Grid name."""
+    match = re.match(
+        r"^(Grid: K=(\d+), Dir=(T|F), Topo=(None|late|early)) \(Var ([^)]+)\)$",
+        canonical,
+    )
+    if not match:
+        return None
+
+    base_name = match.group(1)
+    k = int(match.group(2))
+    directional = match.group(3) == "T"
+    topo_mode = match.group(4)
+    variation = match.group(5)
+    use_topo = topo_mode != "None"
+
+    cfg = Config(
+        use_mlp_head=True,
+        use_multiscale_prop=True,
+        sgc_k=k,
+        use_directional_prop=directional,
+        use_graph_structural=use_topo,
+        topo_injection_mode=topo_mode if use_topo else "late",
+        use_pca=(variation == "PCA"),
+        pca_variance=0.98 if variation == "PCA" else 0.99,
+    )
+    return cfg, base_name, variation
+
+
+def select_phase25_targets(results: list[dict], top_n: int = 3) -> list[tuple]:
+    """
+    Select Phase 2.5 target graph configs using validation PR-AUC only.
+
+    Returns tuples shaped as ``(cfg, base_name, reason, variation)``. OOT/test
+    metrics are intentionally ignored to avoid model-selection leakage.
+    """
+    grouped: dict[str, dict] = {}
+
+    for row in results:
+        canonical = _canonical_grid_name(row)
+        if canonical is None:
+            continue
+
+        parsed = _target_from_canonical_grid(canonical)
+        if parsed is None:
+            continue
+
+        macro = _metric_float(row.get("Static_Val_Macro_PRAUC"))
+        pooled = _metric_float(row.get("Static_Val_Pooled_PRAUC"))
+        if macro is None and pooled is None:
+            continue
+
+        cfg, base_name, variation = parsed
+        entry = grouped.setdefault(
+            canonical,
+            {
+                "cfg": cfg,
+                "base_name": base_name,
+                "variation": variation,
+                "macro": [],
+                "pooled": [],
+                "canonical": canonical,
+            },
+        )
+        if macro is not None:
+            entry["macro"].append(macro)
+        if pooled is not None:
+            entry["pooled"].append(pooled)
+
+    def mean_metric(entry: dict, metric: str) -> float:
+        values = entry[metric]
+        return float(sum(values) / len(values))
+
+    def ranked(metric: str) -> list[dict]:
+        eligible = [entry for entry in grouped.values() if entry[metric]]
+        return sorted(
+            eligible,
+            key=lambda entry: (-mean_metric(entry, metric), entry["canonical"]),
+        )[:top_n]
+
+    selected: list[tuple] = []
+    seen: set[str] = set()
+    for metric, reason in (("macro", "ValMacroPRAUC"), ("pooled", "ValPooledPRAUC")):
+        for entry in ranked(metric):
+            if entry["canonical"] in seen:
+                continue
+            seen.add(entry["canonical"])
+            selected.append((
+                entry["cfg"],
+                entry["base_name"],
+                reason,
+                entry["variation"],
+            ))
+    return selected
+
+
+def build_mlp_variation_specs(
+    targets: list[tuple],
+    variations: list[tuple] | tuple[tuple, ...],
+    seed: int,
+    var: str,
+    mode: str,
+) -> list[tuple[str, str, Config]]:
+    """Expand every selected target across every Phase 2.5 MLP variant."""
+    from dataclasses import replace
+
+    specs: list[tuple[str, str, Config]] = []
+    for target in targets:
+        base_cfg, base_name, _reason = target[:3]
+        for variant_name, overrides in variations:
+            forced = {
+                "seed": seed,
+                "use_mlp_head": True,
+                "use_multiscale_prop": True,
+                "use_layernorm": True,
+                "activation": "silu",
+                "mlp_dropout": 0.3,
+            }
+            forced.update(overrides)
+            cfg = replace(base_cfg, **forced)
+            name = f"Phase 2.5: {base_name} + {variant_name}"
+            sweep_key = f"{name} (Seed {seed}, Var {var})" if mode in {"mega", "mega_k5"} else name
+            specs.append((sweep_key, name, cfg))
+    return specs
 
 
 
@@ -1028,48 +1191,44 @@ def main():
 
             
 
-    # ── PHASE 2.5: Aggregated Champion Selection & Deep Residual Ablation ───────
-    import collections
-    import re
-    config_stats = collections.defaultdict(lambda: {"val_f1": [], "test_f1": []})
-    
-    for r in results:
-        sweep_str = r.get("Sweep", "")
-        if not isinstance(sweep_str, str) or not sweep_str.startswith("Grid:"):
-            continue
-            
-        match = re.match(r"^(Grid: .*?) \(Seed \d+, Var (.*?)\)$", sweep_str)
-        if match:
-            base_name = f"{match.group(1)} (Var {match.group(2)})"
-            
-            v_f1 = r.get("Static_Val_Macro_F1", 0.0)
-            t_f1 = r.get("Static_OOT_Macro_F1", 0.0)
-            
-            if pd.notna(v_f1) and v_f1 != "N/A":
-                config_stats[base_name]["val_f1"].append(float(v_f1))
-            if pd.notna(t_f1) and t_f1 != "N/A":
-                config_stats[base_name]["test_f1"].append(float(t_f1))
+    # ── PHASE 2.5: Validation-PR-AUC Champion Selection & Deep Residual MLP ───
+    global_champions = []
+    phase25_targets = []
+    if args.mode == "temporal" or args.only_wf:
+        print("\n--- Phase 2.5 skipped: temporal/only-wf mode has no static Grid validation rows. ---")
+    else:
+        current_seeds = set(seeds)
+        current_variations = set(variations)
 
-    avg_stats = []
-    for base_name, stats in config_stats.items():
-        v_avg = sum(stats["val_f1"]) / len(stats["val_f1"]) if stats["val_f1"] else 0.0
-        t_avg = sum(stats["test_f1"]) / len(stats["test_f1"]) if stats["test_f1"] else 0.0
-        avg_stats.append({'Config': base_name, 'Val_F1': v_avg, 'Test_F1': t_avg})
+        def _current_phase2_row(row):
+            if row.get("Variation", "Base") not in current_variations:
+                return False
+            try:
+                return int(row.get("Seed")) in current_seeds
+            except (TypeError, ValueError):
+                return False
 
-    df_avg = pd.DataFrame(avg_stats)
-    global_champions = [
-        "Grid: K=3, Dir=F, Topo=late (Var PCA)",
-        "Grid: K=3, Dir=T, Topo=None (Var PCA)",
-        "Grid: K=3, Dir=T, Topo=early (Var PCA)",
-        "Grid: K=3, Dir=T, Topo=late (Var PCA)",
-        "Grid: K=3, Dir=F, Topo=late (Var Base)",
-        "Grid: K=3, Dir=F, Topo=early (Var Base)",
-        "Grid: K=2, Dir=T, Topo=early (Var Base)",
-        "Grid: K=2, Dir=T, Topo=late (Var Base)"
-    ]
-    print(f"\n--- Global Champions Identified ---")
-    for champ in global_champions:
-        print(f"  - {champ}")
+        candidate_results = [r for r in results if _current_phase2_row(r)]
+        phase25_targets = select_phase25_targets(candidate_results, top_n=3)
+        global_champions = [f"{target[1]} (Var {target[3]})" for target in phase25_targets]
+
+        if not phase25_targets:
+            print("\n--- Phase 2.5 skipped: no eligible Grid validation PR-AUC rows found. ---")
+        else:
+            print("\n--- Phase 2.5 Targets Selected by Validation PR-AUC ---")
+            for champ in global_champions:
+                print(f"  - {champ}")
+
+            for seed in seeds:
+                for var in variations:
+                    var_targets = [target[:3] for target in phase25_targets if target[3] == var]
+                    if not var_targets:
+                        continue
+                    for sweep_key, name, cfg in build_mlp_variation_specs(
+                        var_targets, PHASE25_MLP_VARIATIONS, seed=seed, var=var, mode=args.mode
+                    ):
+                        res = execute_sweep(sweep_key, name, cfg, var)
+                        all_configs_run[sweep_key] = cfg
 
 
 

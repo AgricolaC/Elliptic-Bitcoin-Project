@@ -13,11 +13,24 @@ class MLPBlock(nn.Module):
         self.use_residual = use_residual
         self.lin = nn.Linear(in_dim, out_dim)
         self.ln = nn.LayerNorm(out_dim) if use_ln else nn.Identity()
-        self.act = F.silu if act_type.lower() == 'silu' else F.relu
+        act_name = act_type.lower()
+        if act_name not in {"relu", "silu"}:
+            raise ValueError(f"Unsupported activation '{act_type}'. Expected one of: relu, silu.")
+        self.act = F.silu if act_name == 'silu' else F.relu
         self.drop = nn.Dropout(p)
         
         if self.use_residual:
             self.shortcut = nn.Identity() if in_dim == out_dim else nn.Linear(in_dim, out_dim)
+
+    @property
+    def in_features(self) -> int:
+        """Expose Linear-compatible metadata for downstream shape tests."""
+        return self.lin.in_features
+
+    @property
+    def out_features(self) -> int:
+        """Expose Linear-compatible metadata for downstream shape tests."""
+        return self.lin.out_features
             
     def forward(self, x):
         h = self.lin(x)
@@ -62,4 +75,3 @@ class SGCHead(nn.Module):
             return self.classifier(h)
         else:
             return self._net(x)
-
