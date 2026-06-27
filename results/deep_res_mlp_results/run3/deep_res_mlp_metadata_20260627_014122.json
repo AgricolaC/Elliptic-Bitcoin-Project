@@ -1,0 +1,22 @@
+{
+  "run_id": "run3",
+  "head_name": "ln_silu_tapered_no_residual",
+  "mlp_hidden": [
+    256,
+    128
+  ],
+  "use_residual": false,
+  "metrics_csv": "results/deep_res_mlp_results/run3/deep_res_mlp_results_20260627_014122.csv",
+  "comparison_md": "results/deep_res_mlp_results/run3/deep_res_mlp_comparison_20260627_014122.md",
+  "run_config_json": "results/deep_res_mlp_results/run3/run_config.json",
+  "benchmark": "Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)",
+  "comparison_source": "results/deep_res_mlp_results/run2/deep_res_mlp_results_20260627_013307.csv",
+  "worker_caps": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "torch_num_threads": 1
+  }
+}

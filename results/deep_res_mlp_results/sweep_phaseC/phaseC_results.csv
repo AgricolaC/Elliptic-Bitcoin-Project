@@ -1,0 +1,13 @@
+Sweep_ID,Run_Index,Total_Runs,Seed,Variation,sgc_k,use_directional_prop,topology,topo_injection_mode,use_graph_structural,use_multiscale_prop,use_pca,pca_variance,use_layernorm,activation,use_residual,mlp_hidden,mlp_dropout,Seconds,sgc_input_dim,Val_Pooled_F1,Val_Pooled_PRAUC,Val_Macro_F1,Val_Macro_PRAUC,OOT_Pooled_F1,OOT_Pooled_PRAUC,OOT_Macro_F1,OOT_Macro_PRAUC
+sweep_phaseC,1,12,42,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.1,38.087,263,0.842156,0.912967,0.773089,0.841608,0.409783,0.412244,0.220019,0.291437
+sweep_phaseC,2,12,42,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.2,36.83,263,0.850071,0.922765,0.778341,0.816218,0.423294,0.338013,0.235659,0.220863
+sweep_phaseC,3,12,42,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.3,37.435,263,0.880779,0.944942,0.815135,0.86829,0.452404,0.416189,0.25182,0.266753
+sweep_phaseC,4,12,42,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.4,37.146,263,0.876648,0.951781,0.810309,0.889064,0.48446,0.49691,0.259846,0.305853
+sweep_phaseC,5,12,43,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.1,37.176,263,0.857278,0.923822,0.812473,0.867726,0.479679,0.447798,0.255455,0.301773
+sweep_phaseC,6,12,43,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.2,36.645,263,0.863548,0.937229,0.823864,0.894309,0.563017,0.566431,0.306201,0.367413
+sweep_phaseC,7,12,43,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.3,37.478,263,0.855065,0.936579,0.809918,0.891905,0.510616,0.514833,0.275774,0.333211
+sweep_phaseC,8,12,43,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.4,37.277,263,0.8566,0.92207,0.794853,0.867863,0.470099,0.425368,0.264944,0.285592
+sweep_phaseC,9,12,44,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.1,37.464,263,0.837209,0.923369,0.757161,0.857533,0.320449,0.362546,0.167232,0.261372
+sweep_phaseC,10,12,44,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.2,38.006,263,0.881112,0.947778,0.812079,0.859009,0.393663,0.300386,0.213355,0.213869
+sweep_phaseC,11,12,44,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.3,38.364,263,0.856729,0.922135,0.810053,0.881107,0.485116,0.471327,0.259159,0.314643
+sweep_phaseC,12,12,44,PCA,3,True,late,late,True,True,True,0.98,True,silu,False,"(64, 64)",0.4,39.978,263,0.859768,0.933039,0.808157,0.885812,0.458511,0.433599,0.248936,0.278039

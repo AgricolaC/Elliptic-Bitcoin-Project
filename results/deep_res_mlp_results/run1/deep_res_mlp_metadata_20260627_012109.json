@@ -1,0 +1,23 @@
+{
+  "run_id": "run1",
+  "head_name": "deep_residual_small_ln_silu",
+  "mlp_hidden": [
+    128,
+    128
+  ],
+  "metrics_csv": "results/deep_res_mlp_results/run1/deep_res_mlp_results_20260627_012109.csv",
+  "comparison_md": "results/deep_res_mlp_results/run1/deep_res_mlp_comparison_20260627_012109.md",
+  "run_config_json": "results/deep_res_mlp_results/run1/run_config.json",
+  "benchmarks": [
+    "Grid: K=1, Dir=F, Topo=late (Seed 44, Var Base)",
+    "Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)"
+  ],
+  "worker_caps": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "torch_num_threads": 1
+  }
+}

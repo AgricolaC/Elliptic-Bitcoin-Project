@@ -1,0 +1,54 @@
+{
+  "run_id": "run3",
+  "created_at": "2026-06-27",
+  "purpose": "Targeted follow-up on the promising run2 directional/PCA config, testing a tapered LayerNorm + SiLU MLP without residual connections.",
+  "benchmark_source": "results/sweep_results.csv",
+  "comparison_source": "results/deep_res_mlp_results/run2/deep_res_mlp_results_20260627_013307.csv",
+  "head": {
+    "name": "ln_silu_tapered_no_residual",
+    "use_mlp_head": true,
+    "use_layernorm": true,
+    "activation": "silu",
+    "use_residual": false,
+    "mlp_hidden": [256, 128],
+    "mlp_dropout": 0.3
+  },
+  "training": {
+    "loss": "weighted_cross_entropy",
+    "focal_loss": false,
+    "optimizer": "AdamW",
+    "sgc_epochs": 200,
+    "sgc_lr": 0.01,
+    "sgc_weight_decay": 0.0005,
+    "sgc_l1_lambda": 0.0001,
+    "threshold": 0.5
+  },
+  "benchmarks": [
+    {
+      "case": "val_pooled_champion",
+      "previous_sweep": "Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)",
+      "seed": 44,
+      "variation": "PCA",
+      "sgc_k": 2,
+      "use_directional_prop": true,
+      "use_graph_structural": true,
+      "topo_injection_mode": "late",
+      "use_multiscale_prop": true,
+      "use_pca": true,
+      "pca_variance": 0.98
+    }
+  ],
+  "worker_caps": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "NUMEXPR_NUM_THREADS": 1,
+    "VECLIB_MAXIMUM_THREADS": 1,
+    "torch_num_threads": 1
+  },
+  "notes": [
+    "Run2 showed the no-residual LayerNorm + SiLU head improved OOT PR-AUC on the directional/PCA benchmark.",
+    "This run tests whether a tapered [256, 128] head improves over run2's [128, 128] head without expanding back to the over-parameterized run0 width.",
+    "Only the promising directional/PCA benchmark is re-run; this is not a full sweep."
+  ]
+}

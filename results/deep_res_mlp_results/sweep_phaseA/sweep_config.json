@@ -1,0 +1,67 @@
+{
+  "sweep_id": "sweep_phaseA",
+  "created_at": "2026-06-27",
+  "purpose": "Focused static sweep around the run2 winner: LayerNorm + SiLU MLP without residual connections on PCA directional multiscale SGC configs.",
+  "benchmark_source": "results/sweep_results.csv",
+  "output_folder": "results/deep_res_mlp_results/sweep_phaseA",
+  "selection_policy": {
+    "primary_metric": "Val_Macro_PRAUC",
+    "secondary_metric": "Val_Pooled_PRAUC",
+    "oot_metrics": "reported_only_not_used_for_selection"
+  },
+  "fixed_head": {
+    "use_mlp_head": true,
+    "use_layernorm": true,
+    "activation": "silu",
+    "use_residual": false,
+    "mlp_dropout": 0.3
+  },
+  "head_grid": {
+    "mlp_hidden": [
+      [64, 64],
+      [128, 64],
+      [128, 128],
+      [256, 128]
+    ]
+  },
+  "graph_grid": {
+    "sgc_k": [1, 2, 3],
+    "use_directional_prop": [true],
+    "topo_injection_mode": ["late"],
+    "variation": ["PCA"],
+    "use_graph_structural": true,
+    "use_multiscale_prop": true,
+    "use_pca": true,
+    "pca_variance": 0.98
+  },
+  "seeds": [42, 43, 44],
+  "total_runs": 36,
+  "training": {
+    "loss": "weighted_cross_entropy",
+    "focal_loss": false,
+    "optimizer": "AdamW",
+    "sgc_epochs": 200,
+    "sgc_lr": 0.01,
+    "sgc_weight_decay": 0.0005,
+    "sgc_l1_lambda": 0.0001,
+    "threshold": 0.5
+  },
+  "worker_caps": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "NUMEXPR_NUM_THREADS": 1,
+    "VECLIB_MAXIMUM_THREADS": 1,
+    "torch_num_threads": 1
+  },
+  "expected_outputs": {
+    "raw_results": "phaseA_results.csv",
+    "aggregated_results": "phaseA_aggregated.csv",
+    "summary": "phaseA_summary.md",
+    "metadata": "phaseA_metadata.json"
+  },
+  "notes": [
+    "This is a static-only sweep. Walk-forward is intentionally deferred until finalists are selected.",
+    "The sweep does not write to results/sweep_results.csv."
+  ]
+}

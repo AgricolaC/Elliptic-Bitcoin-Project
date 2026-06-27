@@ -1,0 +1,63 @@
+{
+  "sweep_id": "sweep_phaseC",
+  "created_at": "2026-06-27",
+  "purpose": "Dropout micro-sweep around the Phase B winner.",
+  "phaseA_source": "results/deep_res_mlp_results/sweep_phaseA/phaseA_summary.md",
+  "phaseB_source": "results/deep_res_mlp_results/sweep_phaseB/phaseB_summary.md",
+  "output_folder": "results/deep_res_mlp_results/sweep_phaseC",
+  "selection_policy": {
+    "primary_metric": "Val_Macro_PRAUC",
+    "secondary_metric": "Val_Pooled_PRAUC",
+    "oot_metrics": "reported_only_not_used_for_selection"
+  },
+  "fixed_head": {
+    "use_mlp_head": true,
+    "use_layernorm": true,
+    "activation": "silu",
+    "use_residual": false,
+    "mlp_hidden": [64, 64]
+  },
+  "dropout_grid": {
+    "mlp_dropout": [0.1, 0.2, 0.3, 0.4]
+  },
+  "fixed_graph": {
+    "sgc_k": 3,
+    "use_multiscale_prop": true,
+    "use_directional_prop": true,
+    "use_graph_structural": true,
+    "topo_injection_mode": "late",
+    "variation": "PCA",
+    "use_pca": true,
+    "pca_variance": 0.98
+  },
+  "seeds": [42, 43, 44],
+  "total_runs": 12,
+  "training": {
+    "loss": "weighted_cross_entropy",
+    "focal_loss": false,
+    "optimizer": "AdamW",
+    "sgc_epochs": 200,
+    "sgc_lr": 0.01,
+    "sgc_weight_decay": 0.0005,
+    "sgc_l1_lambda": 0.0001,
+    "threshold": 0.5
+  },
+  "worker_caps": {
+    "OMP_NUM_THREADS": 1,
+    "OPENBLAS_NUM_THREADS": 1,
+    "MKL_NUM_THREADS": 1,
+    "NUMEXPR_NUM_THREADS": 1,
+    "VECLIB_MAXIMUM_THREADS": 1,
+    "torch_num_threads": 1
+  },
+  "expected_outputs": {
+    "raw_results": "phaseC_results.csv",
+    "aggregated_results": "phaseC_aggregated.csv",
+    "summary": "phaseC_summary.md",
+    "metadata": "phaseC_metadata.json"
+  },
+  "notes": [
+    "This is a static-only dropout sweep. Walk-forward is intentionally deferred.",
+    "The sweep does not write to results/sweep_results.csv."
+  ]
+}

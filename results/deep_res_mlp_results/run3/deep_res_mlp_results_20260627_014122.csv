@@ -1,0 +1,4 @@
+Case,Benchmark_Sweep,Seed,Variation,K,Directional,Topo,Head,Seconds,Val_Pooled_F1,Val_Pooled_PRAUC,Val_Macro_F1,Val_Macro_PRAUC,OOT_Pooled_F1,OOT_Pooled_PRAUC,OOT_Macro_F1,OOT_Macro_PRAUC
+val_pooled_champion,"Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)",44,PCA,2,True,late,previous_mlp_head,10.5,0.871,0.949,0.804,0.867,0.394,0.35,0.206,0.265
+val_pooled_champion,"Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)",44,PCA,2,True,late,ln_silu_small_no_residual,54.045,0.865184,0.946772,0.822489,0.87594,0.460481,0.425243,0.265999,0.28271
+val_pooled_champion,"Grid: K=2, Dir=T, Topo=late (Seed 44, Var PCA)",44,PCA,2,True,late,ln_silu_tapered_no_residual,77.617,0.857414,0.938895,0.812086,0.869662,0.471032,0.415618,0.266427,0.280031
