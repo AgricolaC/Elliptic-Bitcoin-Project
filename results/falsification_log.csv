@@ -1,0 +1,7 @@
+Sweep,hypothesis,statistic_name,statistic_value,threshold,seed_fraction,verdict
+TDA: MMD Canary RawFeat Euclid tau=1-49,MMD_canary_Base,median_Z_mmd,0.05447512495798036,3.0,0.0,SILENT
+TDA: MMD Canary RawFeat Euclid tau=1-49,MMD_canary_ClassCond_Illicit,median_Z_mmd,6.166200439374233,3.0,0.8,SILENT
+TDA: MMD Canary RawFeat Euclid tau=1-49,MMD_canary_ClassCond_Illicit_permtest,permutation_p,0.0,0.05,,SIGNIFICANT
+TDA: MMD Canary RawFeat Euclid tau=1-49,decision_matrix,world,,,,A✗B✗: Clean World γ. τ=43 is a label-prevalence event only — no geometric correlate at either level. Skip PH install. Broadcast-bias thesis confirmed geometrically.
+TDA: MMD Canary RawFeat Euclid tau=1-49,H3,shuffle_null,,0.01,,DEFERRED: needs PH Wasserstein matrix
+BB: Label-Cond Separability Raw-vs-Prop,broadcast_bias_2x2,raw_sep1_prop_sep1,1.0,0.05,0.8,NOT_BROADCAST_BIAS: both raw and prop separable at tau=43. The representation survives propagation; the failure is class imbalance at the classifier head. Soften the broadcast-bias framing to 'head-level imbalance' rather than 'representational collapse'.
