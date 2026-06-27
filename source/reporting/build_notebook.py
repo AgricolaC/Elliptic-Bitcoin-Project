@@ -158,3 +158,101 @@ def build_boilerplate_cells() -> list:
     )
 
     return [cell0, cell1, cell2]
+
+
+def build_section_1() -> list:
+    """EDA: PCA embeddings + homophily over time."""
+    cells = []
+    cells.append(_md(
+        "---\n"
+        + _read_narrative("eda_embeddings_analysis.md")
+    ))
+    cells.append(_code(
+        "import pandas as pd\n"
+        "import matplotlib.pyplot as plt\n\n"
+        "df_pca = pd.read_csv(f'{RESULTS_DIR}eda_pca.csv')\n"
+        "color_map = {0: '#2ecc71', 1: '#e74c3c', -1: '#95a5a6'}\n"
+        "label_map = {0: 'Licit', 1: 'Illicit', -1: 'Unknown'}\n\n"
+        "fig, ax = plt.subplots(figsize=(10, 7))\n"
+        "for lv in [-1, 0, 1]:\n"
+        "    sub = df_pca[df_pca['label'] == lv]\n"
+        "    ax.scatter(sub['pca1'], sub['pca2'],\n"
+        "               c=color_map[lv], label=label_map[lv],\n"
+        "               alpha=0.3, s=10, rasterized=True)\n"
+        "ax.set_xlabel('PC 1'); ax.set_ylabel('PC 2')\n"
+        "ax.set_title('PCA Embedding of Elliptic Dataset (166 Features)')\n"
+        "ax.legend(markerscale=3, framealpha=0.9)\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    cells.append(_md(_read_narrative("eda_homophily_analysis.md")))
+    cells.append(_code(
+        "df_h = pd.read_csv(f'{RESULTS_DIR}eda_homophily.csv')\n"
+        "fig, ax = plt.subplots(figsize=(12, 5))\n"
+        "cols_colors = {\n"
+        "    'licit_licit':     '#2ecc71',\n"
+        "    'illicit_illicit': '#e74c3c',\n"
+        "    'illicit_licit':   '#e67e22',\n"
+        "    'illicit_unknown': '#9b59b6',\n"
+        "}\n"
+        "for col, color in cols_colors.items():\n"
+        "    ax.plot(df_h['tau'], df_h[col],\n"
+        "            label=col.replace('_', '–'), color=color, linewidth=2)\n"
+        "ax.axvline(43, color='red', linestyle='--', alpha=0.7, label='τ=43 (AlphaBay)')\n"
+        "ax.set_xlabel('Time Step τ'); ax.set_ylabel('Edge Count')\n"
+        "ax.set_title('Homophily: Edge-Type Counts Over Time')\n"
+        "ax.legend()\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    return cells
+
+
+def build_section_2() -> list:
+    """τ=43 Anomaly: drift + prevalence collapse."""
+    cells = []
+    cells.append(_md(
+        "---\n"
+        + _read_narrative("diagnostic_falsification_report.md")
+    ))
+    # Plot 2a: MMD + Wasserstein drift (dual-axis)
+    cells.append(_code(
+        "df_drift = pd.read_csv(f'{RESULTS_DIR}eda_drift.csv')\n"
+        "fig, ax1 = plt.subplots(figsize=(12, 5))\n"
+        "ax2 = ax1.twinx()\n"
+        "ax1.plot(df_drift['tau'], df_drift['mmd'],\n"
+        "         color='#3498db', linewidth=2, label='MMD (Feature Drift)')\n"
+        "ax2.plot(df_drift['tau'], df_drift['wasserstein_pca'],\n"
+        "         color='#e74c3c', linewidth=2, linestyle='--',\n"
+        "         label='Wasserstein-PCA (Embedding Drift)')\n"
+        "for tau_val, color, label in [(43, 'red', 'τ=43'), (44, 'orange', 'τ=44')]:\n"
+        "    ax1.axvline(tau_val, color=color, linestyle=':', linewidth=2, alpha=0.8)\n"
+        "    ax1.text(tau_val + 0.3, ax1.get_ylim()[1] * 0.85,\n"
+        "             label, color=color, fontsize=9)\n"
+        "ax1.set_xlabel('Time Step τ')\n"
+        "ax1.set_ylabel('MMD', color='#3498db')\n"
+        "ax2.set_ylabel('Wasserstein (PCA)', color='#e74c3c')\n"
+        "ax1.set_title('Covariate Drift Over Time — Spike Occurs AFTER τ=43')\n"
+        "l1, lb1 = ax1.get_legend_handles_labels()\n"
+        "l2, lb2 = ax2.get_legend_handles_labels()\n"
+        "ax1.legend(l1 + l2, lb1 + lb2, loc='upper left')\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    cells.append(_md(_read_narrative("tda.md")))
+    # Plot 2b: N_illicit prevalence (full 49-step series from snapshot_topology)
+    cells.append(_code(
+        "df_topo = pd.read_csv(f'{RESULTS_DIR}snapshot_topology.csv')\n"
+        "bar_colors = ['#e74c3c' if t == 43 else '#3498db'\n"
+        "              for t in df_topo['Tau']]\n"
+        "fig, ax = plt.subplots(figsize=(14, 5))\n"
+        "ax.bar(df_topo['Tau'], df_topo['N_illicit'],\n"
+        "       color=bar_colors, alpha=0.85)\n"
+        "ax.axvline(43, color='red', linestyle='--', alpha=0.5)\n"
+        "ax.annotate('τ=43\\n(AlphaBay\\nshutdown)',\n"
+        "            xy=(43, df_topo.loc[df_topo['Tau']==43, 'N_illicit'].values[0]),\n"
+        "            xytext=(40, 150), fontsize=9, color='red',\n"
+        "            arrowprops=dict(arrowstyle='->', color='red'))\n"
+        "ax.set_xlabel('Time Step τ')\n"
+        "ax.set_ylabel('Number of Illicit Nodes')\n"
+        "ax.set_title('Illicit Node Count — 90% Collapse at τ=43 (Prior Probability Shift)')\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    return cells
