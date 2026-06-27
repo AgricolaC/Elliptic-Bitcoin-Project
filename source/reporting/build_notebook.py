@@ -488,3 +488,132 @@ def build_section_6() -> list:
         "plt.tight_layout(); plt.show()"
     ))
     return cells
+
+
+# ── SECTION 7 ─────────────────────────────────────────────────────────────────
+
+def build_section_7() -> list:
+    """Temporal Decay Ablation — two plots: SGC temporal + XGBoost λ-curve."""
+    # Section 7 narrative is the last section of wf_temporal_analysis.md.
+    # We already embedded the full file in Section 6. Add a section header only.
+    section_header = (
+        "---\n"
+        "## Section 7: The Solution — Temporal Decay Ablation\n\n"
+        "> This section uses data from `walk_forward_timesteps.csv` (n=1 seed, Seed=42).\n"
+        "> Grey bands mark Low-Confidence timesteps (N_illicit < 10).\n"
+        "> The λ curve for XGBoost shows a non-monotonic response — this is real and expected."
+    )
+    cells = [_md(section_header)]
+
+    # Plot A: SGC K=2/T/early temporal PRAUC across λ values
+    cells.append(_code(
+        "import pandas as pd, matplotlib.pyplot as plt\n"
+        "from sweep_parser import select, add_parsed_columns\n\n"
+        "df_ts = pd.read_csv(f'{RESULTS_DIR}walk_forward_timesteps.csv')\n"
+        "df_ts = add_parsed_columns(df_ts)\n\n"
+        "# Baseline (no decay): K=2, Dir=T, Topo=early validated in pre-flight\n"
+        "BASE_SWEEP = 'Best WF: Grid: K=2, Dir=T, Topo=early (Seed 42, Var Base)'\n"
+        "lam_palette = {None: '#95a5a6', 0.05: '#3498db', 0.25: '#e74c3c', 0.5: '#e67e22'}\n"
+        "lam_labels  = {None: 'λ=0 (baseline)', 0.05: 'λ=0.05', 0.25: 'λ=0.25 ★', 0.5: 'λ=0.50'}\n\n"
+        "fig, ax = plt.subplots(figsize=(14, 6))\n\n"
+        "# No-decay baseline\n"
+        "base = df_ts[df_ts['Sweep'] == BASE_SWEEP].drop_duplicates('Tau').sort_values('Tau')\n"
+        "ax.plot(base['Tau'], base['PRAUC'], label=lam_labels[None],\n"
+        "        color=lam_palette[None], linewidth=2, linestyle='--')\n\n"
+        "# Decay variants for K=2, Dir=T, Topo=early\n"
+        "for lam_val in [0.05, 0.25, 0.5]:\n"
+        "    sub = df_ts[\n"
+        "        select(df_ts, family='SGC', K=2, Dir=True, Topo='early', lam=lam_val)\n"
+        "        & (df_ts['_variation'] == 'Base')\n"
+        "    ].drop_duplicates('Tau').sort_values('Tau')\n"
+        "    if sub.empty:\n"
+        "        print(f'WARNING: no data for SGC K=2 Dir=T Topo=early lam={lam_val}')\n"
+        "        continue\n"
+        "    ax.plot(sub['Tau'], sub['PRAUC'],\n"
+        "            label=lam_labels[lam_val], color=lam_palette[lam_val], linewidth=2)\n"
+        "    for _, row in sub[sub['Low_Confidence']].iterrows():\n"
+        "        ax.axvspan(row['Tau'] - 0.45, row['Tau'] + 0.45, alpha=0.12, color='grey')\n\n"
+        "ax.axvline(42.5, color='black', linestyle=':', alpha=0.4, linewidth=1)\n"
+        "ax.axvline(43.5, color='black', linestyle=':', alpha=0.4, linewidth=1)\n"
+        "ax.set_xlabel('Time Step τ')\n"
+        "ax.set_ylabel('PRAUC  [primary metric]')\n"
+        "ax.set_title(\n"
+        "    'SGC (K=2, Dir=T, Topo=early): Temporal Decay Effect on PRAUC\\n'\n"
+        "    '★ λ=0.25 best recovery (+158% F1 vs baseline)  |  '\n"
+        "    'Grey bands = Low-Confidence  |  n=1 seed, Seed=42'\n"
+        ")\n"
+        "ax.legend()\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+
+    # Plot B: XGBoost recovery PRAUC vs λ (shows non-monotonicity)
+    cells.append(_code(
+        "# XGBoost λ-response curve (recovery phase only)\n"
+        "XGB_BASE = 'Baseline: XGBoost WF (epsilon-fallback)'\n\n"
+        "xgb_pts = []\n"
+        "# No-decay baseline\n"
+        "base_xgb = df_ts[df_ts['Sweep'] == XGB_BASE]\n"
+        "rec_prauc_base = base_xgb[base_xgb['Regime'] == 'recovery']['PRAUC'].mean()\n"
+        "xgb_pts.append({'lam_label': 'None\\n(no decay)', 'recovery_prauc': rec_prauc_base,\n"
+        "                'sort_key': -1})\n\n"
+        "for lam_val in [0.05, 0.25, 0.5]:\n"
+        "    sub = df_ts[select(df_ts, family='XGBoost', lam=lam_val)]\n"
+        "    rec_prauc = sub[sub['Regime'] == 'recovery']['PRAUC'].mean()\n"
+        "    xgb_pts.append({'lam_label': str(lam_val), 'recovery_prauc': rec_prauc,\n"
+        "                    'sort_key': lam_val})\n\n"
+        "df_xgb = pd.DataFrame(xgb_pts).sort_values('sort_key')\n\n"
+        "fig, ax = plt.subplots(figsize=(8, 5))\n"
+        "ax.plot(range(len(df_xgb)), df_xgb['recovery_prauc'],\n"
+        "        'o-', color='#e74c3c', linewidth=2.5, markersize=11)\n"
+        "ax.set_xticks(range(len(df_xgb)))\n"
+        "ax.set_xticklabels(df_xgb['lam_label'])\n"
+        "ax.set_xlabel('Decay Parameter λ')\n"
+        "ax.set_ylabel('Mean Recovery PRAUC (τ ≥ 44)')\n"
+        "ax.set_title(\n"
+        "    'XGBoost: Recovery PRAUC vs λ\\n'\n"
+        "    'Non-monotonic: λ=0.05 > λ=0.25, then λ=0.50 is peak  |  n=1 seed, Seed=42'\n"
+        ")\n"
+        "for i, row in df_xgb.reset_index(drop=True).iterrows():\n"
+        "    ax.annotate(f\"{row['recovery_prauc']:.3f}\",\n"
+        "                (i, row['recovery_prauc']),\n"
+        "                textcoords='offset points', xytext=(0, 10),\n"
+        "                ha='center', fontsize=10)\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    return cells
+
+
+# ── MAIN ASSEMBLY ─────────────────────────────────────────────────────────────
+
+def build_and_write_notebook():
+    _preflight()
+
+    nb = nbf.v4.new_notebook()
+    nb.metadata["kernelspec"] = {
+        "display_name": "Python 3",
+        "language": "python",
+        "name": "python3",
+    }
+
+    cells = []
+    cells += build_boilerplate_cells()     # Cell 0, 1, 2
+    cells += build_section_1()             # §1: PCA + Homophily
+    cells += build_section_2()             # §2: Drift + Prevalence
+    cells += build_section_3()             # §3: Baselines efficiency
+    cells += build_section_4()             # §4: Grid K/PCA savior
+    cells += build_section_5()             # §5: Deep Res MLP (static)
+    cells += build_section_6()             # §6: WF trap
+    cells += build_section_7()             # §7: Decay cure
+
+    nb.cells = cells
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
+        nbf.write(nb, f)
+
+    print(f"[BUILD] Notebook written: {OUT_PATH}")
+    print(f"[BUILD] Total cells: {len(nb.cells)}")
+
+
+if __name__ == "__main__":
+    build_and_write_notebook()
