@@ -25,3 +25,6 @@ references/study
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
+
+# Generated presentation notebook (rebuild with: python source/reporting/build_notebook.py)
+presentation/presentation.ipynb

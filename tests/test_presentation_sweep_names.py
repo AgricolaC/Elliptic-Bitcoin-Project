@@ -5,9 +5,9 @@ def _extract_string_literals(source: str, pattern: str) -> list[str]:
     return re.findall(pattern, source)
 
 def test_presentation_xgb_sweep_names_match_ablation():
-    """build_presentation.py must not reference XGBoost sweep names that the
+    """build_notebook.py must not reference XGBoost sweep names that the
     current pipeline never writes."""
-    with open("source/reporting/build_presentation.py") as f:
+    with open("source/reporting/build_notebook.py") as f:
         pres_src = f.read()
     with open("source/evaluation/ablation_validation.py") as f:
         abl_src = f.read()

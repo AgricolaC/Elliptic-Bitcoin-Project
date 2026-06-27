@@ -124,7 +124,7 @@ def _read_narrative(filename: str) -> str:
 def build_boilerplate_cells() -> list:
     """Return the three mandatory preamble cells for Colab execution."""
 
-    # Cell 0 — pip installs (giotto-tda before torch to avoid conflicts)
+    # Cell 0 — install runtime dependencies
     cell0 = _code(
         "# Install dependencies\n"
         "!pip install --quiet nbformat pandas matplotlib seaborn\n"
@@ -264,8 +264,7 @@ def build_section_3() -> list:
     cells.append(_code(
         "import numpy as np\n\n"
         "df_sr = pd.read_csv(f'{RESULTS_DIR}sweep_results.csv')\n"
-        "df_sr = add_parsed_columns(df_sr)\n"
-        "df_sr['_config_id'] = df_sr['Sweep'].map(family_config_id)\n\n"
+        "df_sr = add_parsed_columns(df_sr)\n\n"
         "# Aggregate by config (collapses seeds and Base/PCA variants)\n"
         "agg = (\n"
         "    df_sr\n"
@@ -468,9 +467,12 @@ def build_section_6() -> list:
         "    sub = sub.sort_values('Tau')\n"
         "    ax.plot(sub['Tau'], sub['PRAUC'],\n"
         "            label=name, color=palette_wf[name], linewidth=2)\n"
-        "    # Grey bands for Low-Confidence timesteps\n"
-        "    for _, row in sub[sub['Low_Confidence']].iterrows():\n"
-        "        ax.axvspan(row['Tau'] - 0.45, row['Tau'] + 0.45, alpha=0.15, color='grey')\n\n"
+        "# Grey bands for Low-Confidence timesteps — collect union across all models, draw once\n"
+        "lc_taus = set()\n"
+        "for sub in models.values():\n"
+        "    lc_taus.update(sub[sub['Low_Confidence']]['Tau'].tolist())\n"
+        "for tau in lc_taus:\n"
+        "    ax.axvspan(tau - 0.45, tau + 0.45, alpha=0.15, color='grey')\n\n"
         "# Regime boundaries\n"
         "ax.axvline(42.5, color='black', linestyle='--', alpha=0.5, linewidth=1)\n"
         "ax.axvline(43.5, color='black', linestyle='--', alpha=0.5, linewidth=1)\n"
@@ -548,6 +550,7 @@ def build_section_7() -> list:
 
     # Plot B: XGBoost recovery PRAUC vs λ (shows non-monotonicity)
     cells.append(_code(
+        "# df_ts and models are loaded in the preceding Plot A cell — run that cell first\n"
         "# XGBoost λ-response curve (recovery phase only)\n"
         "XGB_BASE = 'Baseline: XGBoost WF (epsilon-fallback)'\n\n"
         "xgb_pts = []\n"
