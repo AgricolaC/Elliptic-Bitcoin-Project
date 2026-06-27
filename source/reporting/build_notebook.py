@@ -97,3 +97,64 @@ def _preflight():
         sys.exit(1)
 
     print("[PRE-FLIGHT] All checks passed.")
+
+
+# ── IMPORT PARSER (for build-time filter validation) ────────────────────────
+sys.path.insert(0, str(Path(__file__).parent))
+from sweep_parser import parse_sweep, select, add_parsed_columns, family_config_id
+
+
+# ── CELL BUILDERS ────────────────────────────────────────────────────────────
+
+def _md(source: str) -> nbf.NotebookNode:
+    """Return a markdown cell."""
+    return nbf.v4.new_markdown_cell(source)
+
+
+def _code(source: str) -> nbf.NotebookNode:
+    """Return a code cell."""
+    return nbf.v4.new_code_cell(source)
+
+
+def _read_narrative(filename: str) -> str:
+    """Read a narrative markdown file verbatim."""
+    return (NARR_DIR / filename).read_text(encoding="utf-8")
+
+
+def build_boilerplate_cells() -> list:
+    """Return the three mandatory preamble cells for Colab execution."""
+
+    # Cell 0 — pip installs (giotto-tda before torch to avoid conflicts)
+    cell0 = _code(
+        "# Install dependencies\n"
+        "!pip install --quiet nbformat pandas matplotlib seaborn\n"
+        "# Note: giotto-tda not needed at runtime — TDA was a build-time analysis\n"
+        "print('Dependencies ready.')"
+    )
+
+    # Cell 1 — Drive mount with local fallback + path config
+    cell1 = _code(
+        "import os\n"
+        "from pathlib import Path\n\n"
+        "try:\n"
+        "    from google.colab import drive\n"
+        "    drive.mount('/content/drive')\n"
+        "    RESULTS_DIR = '/content/drive/MyDrive/elliptic/results/'\n"
+        "except ImportError:\n"
+        "    # Running locally\n"
+        "    RESULTS_DIR = str(Path().resolve() / 'results') + '/'\n\n"
+        "print(f'RESULTS_DIR = {RESULTS_DIR}')\n"
+        "# Verify key CSV is accessible\n"
+        "assert os.path.exists(RESULTS_DIR + 'sweep_results.csv'), \\\n"
+        "    f'Cannot find results at {RESULTS_DIR} — check Drive path or local path'"
+    )
+
+    # Cell 2 — sweep_parser source embedded verbatim (no Drive dependency)
+    parser_source = (Path(__file__).parent / "sweep_parser.py").read_text(encoding="utf-8")
+    cell2 = _code(
+        "# sweep_parser — auto-embedded by build_notebook.py\n"
+        + parser_source
+        + "\nprint('sweep_parser loaded.')"
+    )
+
+    return [cell0, cell1, cell2]
