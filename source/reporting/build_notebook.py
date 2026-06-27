@@ -367,3 +367,124 @@ def build_section_4() -> list:
         "print('This is distinct from the drift-diagnostic PCA in Section 2.')"
     ))
     return cells
+
+
+# ── SECTION 5 ─────────────────────────────────────────────────────────────────
+
+def _build_phase_table() -> str:
+    """Read phaseA-D aggregated CSVs at build time. Returns markdown table string."""
+    rows = []
+
+    # Phase A: best by OOT_Pooled_PRAUC_mean
+    df_a = pd.read_csv(PHASE_DIR / "sweep_phaseA" / "phaseA_aggregated.csv")
+    best_a = df_a.sort_values("OOT_Pooled_PRAUC_mean", ascending=False).iloc[0]
+    rows.append(
+        f"| A: Architecture depth | K ∈ {{1,2,3}}, MLP hidden dims | "
+        f"K={int(best_a['sgc_k'])}, {best_a['mlp_hidden']} | "
+        f"{best_a['OOT_Pooled_PRAUC_mean']:.3f} ± {best_a['OOT_Pooled_PRAUC_std']:.3f} | "
+        f"{best_a['OOT_Pooled_F1_mean']:.3f} ± {best_a['OOT_Pooled_F1_std']:.3f} | "
+        f"{int(best_a['n_seeds'])} |"
+    )
+
+    # Phase B: best by OOT_Pooled_PRAUC_mean
+    df_b = pd.read_csv(PHASE_DIR / "sweep_phaseB" / "phaseB_aggregated.csv")
+    best_b = df_b.sort_values("OOT_Pooled_PRAUC_mean", ascending=False).iloc[0]
+    dir_str = "Dir=T" if best_b["use_directional_prop"] else "Dir=F"
+    rows.append(
+        f"| B: Graph features | Features, Direction, Topology | "
+        f"{best_b['Variation']} + {dir_str} + Topo={best_b['topology']} | "
+        f"{best_b['OOT_Pooled_PRAUC_mean']:.3f} ± {best_b['OOT_Pooled_PRAUC_std']:.3f} | "
+        f"{best_b['OOT_Pooled_F1_mean']:.3f} ± {best_b['OOT_Pooled_F1_std']:.3f} | "
+        f"{int(best_b['n_seeds'])} |"
+    )
+
+    # Phase C: best by OOT_Pooled_PRAUC_mean
+    df_c = pd.read_csv(PHASE_DIR / "sweep_phaseC" / "phaseC_aggregated.csv")
+    best_c = df_c.sort_values("OOT_Pooled_PRAUC_mean", ascending=False).iloc[0]
+    rows.append(
+        f"| C: Dropout | p ∈ {{0.1, 0.2, 0.3, 0.4}} | "
+        f"p={best_c['mlp_dropout']:.1f} | "
+        f"{best_c['OOT_Pooled_PRAUC_mean']:.3f} ± {best_c['OOT_Pooled_PRAUC_std']:.3f} | "
+        f"{best_c['OOT_Pooled_F1_mean']:.3f} ± {best_c['OOT_Pooled_F1_std']:.3f} | "
+        f"{int(best_c['n_seeds'])} |"
+    )
+
+    # Phase D: best by OOT_Pooled_PRAUC_mean
+    df_d = pd.read_csv(PHASE_DIR / "sweep_phaseD" / "phaseD_aggregated.csv")
+    best_d = df_d.sort_values("OOT_Pooled_PRAUC_mean", ascending=False).iloc[0]
+    rows.append(
+        f"| D: Optimizer | LR, Weight Decay | "
+        f"LR={best_d['sgc_lr']:.4f}, WD={best_d['sgc_weight_decay']:.4f} | "
+        f"{best_d['OOT_Pooled_PRAUC_mean']:.3f} ± {best_d['OOT_Pooled_PRAUC_std']:.3f} | "
+        f"{best_d['OOT_Pooled_F1_mean']:.3f} ± {best_d['OOT_Pooled_F1_std']:.3f} | "
+        f"{int(best_d['n_seeds'])} |"
+    )
+
+    header = (
+        "| Phase | Swept | Best Config | OOT Pooled PRAUC | OOT Pooled F1 | Seeds |\n"
+        "|---|---|---|---|---|---|\n"
+    )
+    return header + "\n".join(rows)
+
+
+def build_section_5() -> list:
+    """Deep Res MLP — narrative only, no code cells. Table built at build time."""
+    table = _build_phase_table()
+    table_md = (
+        "## Deep Res MLP: Greedy Phase Sweep Summary\n\n"
+        "> Numbers read from `results/deep_res_mlp_results/sweep_phase*/phase*_aggregated.csv` "
+        "at notebook build time. Best config per phase selected by OOT Pooled PRAUC "
+        "(primary metric). All phases fixed n=3 seeds.\n\n"
+        + table
+        + "\n\n*Phase D slightly trails Phase C because validation PRAUC (not OOT) was used "
+        "to select dropout=0.4 for the optimizer sweep; the OOT-optimal dropout was 0.3.*"
+    )
+    return [
+        _md("---\n" + _read_narrative("deep_res_mlp_analysis.md")),
+        _md(table_md),
+    ]
+
+
+# ── SECTION 6 ─────────────────────────────────────────────────────────────────
+
+def build_section_6() -> list:
+    """Walk-Forward Analysis: The Graph Recovery Trap."""
+    cells = [_md("---\n" + _read_narrative("wf_temporal_analysis.md"))]
+    cells.append(_code(
+        "df_ts = pd.read_csv(f'{RESULTS_DIR}walk_forward_timesteps.csv')\n"
+        "df_ts = add_parsed_columns(df_ts)\n\n"
+        "# Three key models — strings validated in build pre-flight\n"
+        "SGC_SWEEP  = 'Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)'\n"
+        "MLP_SWEEP  = 'Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)'\n"
+        "XGB_SWEEP  = 'Baseline: XGBoost WF (epsilon-fallback)'\n\n"
+        "models = {\n"
+        "    'SGC (baseline)': df_ts[df_ts['Sweep'] == SGC_SWEEP].drop_duplicates('Tau'),\n"
+        "    'SGC+MLP':        df_ts[df_ts['Sweep'] == MLP_SWEEP].drop_duplicates('Tau'),\n"
+        "    'XGBoost WF':     df_ts[df_ts['Sweep'] == XGB_SWEEP].drop_duplicates('Tau'),\n"
+        "}\n"
+        "palette_wf = {'SGC (baseline)': '#9b59b6', 'SGC+MLP': '#3498db', 'XGBoost WF': '#e74c3c'}\n\n"
+        "fig, ax = plt.subplots(figsize=(14, 6))\n"
+        "for name, sub in models.items():\n"
+        "    sub = sub.sort_values('Tau')\n"
+        "    ax.plot(sub['Tau'], sub['PRAUC'],\n"
+        "            label=name, color=palette_wf[name], linewidth=2)\n"
+        "    # Grey bands for Low-Confidence timesteps\n"
+        "    for _, row in sub[sub['Low_Confidence']].iterrows():\n"
+        "        ax.axvspan(row['Tau'] - 0.45, row['Tau'] + 0.45, alpha=0.15, color='grey')\n\n"
+        "# Regime boundaries\n"
+        "ax.axvline(42.5, color='black', linestyle='--', alpha=0.5, linewidth=1)\n"
+        "ax.axvline(43.5, color='black', linestyle='--', alpha=0.5, linewidth=1)\n"
+        "ymax = ax.get_ylim()[1]\n"
+        "ax.text(39, ymax * 0.95, 'Pre-Shock', fontsize=9, ha='center', style='italic')\n"
+        "ax.text(43, ymax * 0.95, 'Shock',     fontsize=9, ha='center', style='italic', color='red')\n"
+        "ax.text(46.5, ymax * 0.95, 'Recovery', fontsize=9, ha='center', style='italic', color='#e67e22')\n\n"
+        "ax.set_xlabel('Time Step τ')\n"
+        "ax.set_ylabel('PRAUC  [primary metric]')\n"
+        "ax.set_title(\n"
+        "    'Walk-Forward PRAUC: Graph Recovery Trap vs. XGBoost Resilience\\n'\n"
+        "    'Grey bands = Low-Confidence τ (N_illicit < 10)  |  n=1 seed, Seed=42'\n"
+        ")\n"
+        "ax.legend(loc='upper right')\n"
+        "plt.tight_layout(); plt.show()"
+    ))
+    return cells
