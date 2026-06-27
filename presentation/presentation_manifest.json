@@ -1,0 +1,11 @@
+{
+  "notebook": "presentation/elliptic_bitcoin_math_presentation.ipynb",
+  "assets_dir": "presentation/assets",
+  "asset_count": 15,
+  "sources": [
+    "results/*.csv",
+    "results/deep_res_mlp_results/**",
+    "source/**",
+    "source/reporting/results/*.md"
+  ]
+}
