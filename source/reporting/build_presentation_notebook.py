@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import nbformat as nbf
 import numpy as np
 import pandas as pd
+from sweep_parser import add_parsed_columns, select
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -95,6 +96,94 @@ def savefig(name: str) -> str:
     return f"assets/{name}"
 
 
+
+
+def plot_sgc_oversmoothing(df_fa: pd.DataFrame) -> str:
+    df_fa = add_parsed_columns(df_fa.copy())
+
+    # Grid rows only — explicit K=/Dir=/Topo= strings
+    grid = df_fa[
+        select(df_fa, family_tag='Grid')
+        & df_fa['_K'].notna()
+    ].copy()
+    grid['K'] = grid['_K'].astype(int)
+    grid['Var'] = grid['_variation'].fillna(grid['Variation'])
+
+    # Best PRAUC per (K, Var) combination
+    pivot = (
+        grid
+        .groupby(['K', 'Var'])['Static_OOT_Macro_PRAUC_mean']
+        .max()
+        .unstack('Var')
+    )
+
+    k_vals = [1, 2, 3]
+    width = 0.35
+    base_vals = [pivot.get('Base', pd.Series()).get(k, 0) for k in k_vals]
+    pca_vals  = [pivot.get('PCA',  pd.Series()).get(k, 0) for k in k_vals]
+
+    fig, ax = plt.subplots(figsize=(9, 6))
+    xs = list(range(len(k_vals)))
+    ax.bar([x - width/2 for x in xs], base_vals, width,
+           label='Raw (Base)', color='#e74c3c', alpha=0.85)
+    ax.bar([x + width/2 for x in xs], pca_vals,  width,
+           label='PCA',        color='#3498db', alpha=0.85)
+    ax.set_xlabel('Neighborhood Depth K')
+    ax.set_ylabel('Best OOT Macro PR-AUC  [primary metric]')
+    ax.set_title(
+        'PCA as Oversmoothing Regularizer\n'
+        'K=3 Raw → collapse; K=3 PCA → best graph-model OOT score'
+    )
+    ax.set_xticks(xs); ax.set_xticklabels(['K=1', 'K=2', 'K=3'])
+    ax.legend()
+    return savefig("13_sgc_oversmoothing.png")
+
+def plot_cost_vs_performance(sweep_df: pd.DataFrame) -> str:
+    df_sr = add_parsed_columns(sweep_df.copy())
+    agg = (
+        df_sr
+        .dropna(subset=['Static_Time_s', 'Static_OOT_Macro_PRAUC'])
+        .groupby('_family')
+        .agg(
+            time_mean=('Static_Time_s', 'mean'),
+            prauc_mean=('Static_OOT_Macro_PRAUC', 'mean'),
+            prauc_std=('Static_OOT_Macro_PRAUC', 'std'),
+        )
+        .reset_index()
+        .rename(columns={'_family': 'family'})
+        .dropna(subset=['prauc_mean'])
+    )
+    agg = agg[agg['family'] != 'IsolationForest']
+
+    palette = {
+        'XGBoost': '#e74c3c', 'RandomForest': '#e67e22',
+        'SGC+MLP': '#3498db', 'SGC': '#9b59b6',
+        'LogisticRegression': '#1abc9c', 'GCN': '#34495e',
+    }
+    display_names = {
+        'LogisticRegression': 'Logistic Reg.', 'GCN': 'PyG GCN',
+    }
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    for _, row in agg.iterrows():
+        color = palette.get(row['family'], '#7f8c8d')
+        ax.scatter(row['time_mean'], row['prauc_mean'],
+                   color=color, s=180, zorder=5)
+        name = display_names.get(row['family'], row['family'])
+        ax.annotate(name, (row['time_mean'], row['prauc_mean']),
+                    textcoords='offset points', xytext=(8, 4), fontsize=10)
+        if pd.notna(row['prauc_std']) and row['prauc_std'] > 0:
+            ax.errorbar(row['time_mean'], row['prauc_mean'],
+                        yerr=row['prauc_std'], fmt='none',
+                        color='grey', capsize=4, alpha=0.6)
+    ax.set_xscale('log')
+    ax.set_xlabel('Training Time (seconds, log scale)')
+    ax.set_ylabel('OOT Macro PR-AUC  [primary metric]')
+    ax.set_title('Computational Cost vs. OOT Performance\n'
+                 'Error bars = ±1 std across 3 seeds (SGC/SGC+MLP)')
+    ax.grid(True, alpha=0.3)
+    return savefig("12_cost_vs_perf.png")
+
 def load_data() -> dict[str, pd.DataFrame]:
     data = {
         "snapshot": read_csv("snapshot_topology.csv"),
@@ -103,6 +192,7 @@ def load_data() -> dict[str, pd.DataFrame]:
         "homophily": read_csv("eda_homophily.csv"),
         "degree": read_csv("eda_degree.csv"),
         "degree_stats": read_csv("eda_degree_stats.csv"),
+        "sweep": read_csv("sweep_results.csv"),
         "pca": read_csv("eda_pca.csv"),
         "tsne": read_csv("eda_tsne.csv"),
         "intrinsic": read_csv("eda_grid_intrinsic_dim.csv"),
@@ -303,7 +393,7 @@ def selected_static_rows(final: pd.DataFrame, phase_d: pd.DataFrame) -> pd.DataF
                 {
                     "Model": label,
                     "OOT Pooled F1": row.get("Static_OOT_Pooled_F1_mean"),
-                    "OOT Pooled PR-AUC": row.get("Static_OOT_Pooled_PRAUC_mean"),
+                    "OOT Pooled PR-AUC": row.get("Static_OOT_Macro_PRAUC_mean"),
                     "Val Macro PR-AUC": row.get("Static_Val_Macro_PRAUC_mean"),
                 }
             )
@@ -319,19 +409,6 @@ def selected_static_rows(final: pd.DataFrame, phase_d: pd.DataFrame) -> pd.DataF
     return pd.DataFrame(rows)
 
 
-def plot_static_results(static_df: pd.DataFrame) -> str:
-    df = static_df.copy()
-    x = np.arange(len(df))
-    width = 0.36
-    fig, ax = plt.subplots(figsize=(11, 5.2))
-    ax.bar(x - width / 2, df["OOT Pooled F1"], width, label="OOT pooled F1", color="#4C72B0")
-    ax.bar(x + width / 2, df["OOT Pooled PR-AUC"], width, label="OOT pooled PR-AUC", color="#55A868")
-    ax.set_xticks(x)
-    ax.set_xticklabels(df["Model"], rotation=25, ha="right")
-    ax.set_ylim(0, 0.88)
-    ax.set_title("Static out-of-time results: tabular baselines remain strongest")
-    ax.legend()
-    return savefig("07_static_results.png")
 
 
 def plot_wf_regimes(final: pd.DataFrame) -> str:
@@ -366,7 +443,7 @@ def plot_wf_regimes(final: pd.DataFrame) -> str:
     ax.set_xticks(x)
     ax.set_xticklabels(df["Model"], rotation=25, ha="right")
     ax.set_ylim(0, 1.0)
-    ax.set_ylabel("pooled illicit F1")
+    ax.set_ylabel("Phase F1")
     ax.set_title("Walk-forward regime breakdown reveals the graph recovery trap")
     ax.legend()
     return savefig("08_wf_regimes.png")
@@ -411,9 +488,7 @@ def compute_deep_validation_table(data: dict[str, pd.DataFrame]) -> tuple[str, p
     grid = final[final["Sweep"].astype(str).str.startswith("Grid:")].copy()
     metrics = [
         ("Val Macro F1", "Static_Val_Macro_F1_mean", "Val_Macro_F1"),
-        ("Val Pooled F1", "Static_Val_Pooled_F1_mean", "Val_Pooled_F1"),
         ("Val Macro PR-AUC", "Static_Val_Macro_PRAUC_mean", "Val_Macro_PRAUC"),
-        ("Val Pooled PR-AUC", "Static_Val_Pooled_PRAUC_mean", "Val_Pooled_PRAUC"),
     ]
     rows = []
     values = []
@@ -501,34 +576,6 @@ def plot_deep_validation_heatmap(values: pd.DataFrame) -> str:
     return savefig("10_deep_mlp_validation_deltas.png")
 
 
-def plot_phase_sweeps(data: dict[str, pd.DataFrame]) -> str:
-    rows = []
-    for phase in "ABCD":
-        df = data[f"phase{phase}"].copy()
-        for col in ["Val_Macro_PRAUC_mean", "Val_Pooled_PRAUC_mean", "OOT_Pooled_PRAUC_mean"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        r = df.loc[df["Val_Macro_PRAUC_mean"].idxmax()]
-        rows.append(
-            {
-                "Phase": phase,
-                "Val Macro PR-AUC": r["Val_Macro_PRAUC_mean"],
-                "Val Pooled PR-AUC": r["Val_Pooled_PRAUC_mean"],
-                "OOT Pooled PR-AUC": r["OOT_Pooled_PRAUC_mean"],
-            }
-        )
-    df = pd.DataFrame(rows)
-    fig, ax = plt.subplots(figsize=(9, 5))
-    for col, color in [
-        ("Val Macro PR-AUC", "#C44E52"),
-        ("Val Pooled PR-AUC", "#4C72B0"),
-        ("OOT Pooled PR-AUC", "#55A868"),
-    ]:
-        ax.plot(df["Phase"], df[col], marker="o", lw=2.6, label=col, color=color)
-    ax.set_ylim(0.25, 0.98)
-    ax.set_xlabel("sweep phase")
-    ax.set_title("Final MLP-head sweep: gains came from small LN+SiLU, not residuals")
-    ax.legend(loc="lower right")
-    return savefig("11_phase_sweeps.png")
 
 
 def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
@@ -582,7 +629,7 @@ def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
                     model,
                     r["Static_Val_Macro_PRAUC_mean"],
                     r["Static_OOT_Pooled_F1_mean"],
-                    r["Static_OOT_Pooled_PRAUC_mean"],
+                    r["Static_OOT_Macro_PRAUC_mean"],
                     r["Static_OOT_Macro_F1_mean"],
                 ]
             )
@@ -661,7 +708,14 @@ def build_notebook(data: dict[str, pd.DataFrame], assets: dict[str, str], tables
         "celltoolbar": "Slideshow",
     }
 
+    def read_narrative(filename: str) -> str:
+        path = SOURCE / "reporting" / "results" / filename
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+        return ""
+
     cells = []
+    
     cells.append(
         md_cell(
             """
@@ -671,10 +725,8 @@ def build_notebook(data: dict[str, pd.DataFrame], assets: dict[str, str], tables
 
 **Dataset:** Elliptic Bitcoin transaction graph  
 **Task:** detect illicit transactions under temporal non-stationarity  
-**Main thesis:** the catastrophic post-shock failure is mostly a *prior-shift / topology-adaptation problem*, not a collapse of the node representation.
 
 Generated from:
-
 - `results/` experiment outputs
 - `source/` implementation
 - `source/reporting/results/` analysis summaries
@@ -682,311 +734,81 @@ Generated from:
         )
     )
 
-    cells.append(
-        md_cell(
-            """
-## Executive summary
+    narrative = read_narrative("executive_summary.md")
+    if narrative:
+        cells.append(md_cell(narrative))
 
-1. The Elliptic graph is a sequence of directed transaction snapshots $G_\\tau=(V_\\tau,E_\\tau)$.
-2. The shock at $\\tau=43$ is not primarily a geometric collapse. It is a **class-prior collapse**: illicit labels drop from 239 at $\\tau=42$ to 24 at $\\tau=43$.
-3. SGC propagation and PCA uncover useful graph structure, but graph models overfit to pre-shock micro-motifs.
-4. XGBoost is the strongest overall benchmark because node-level tabular structure survives the regime change better than graph motifs.
-5. The final MLP-head experiment improved the old graph-MLP validation PR-AUC, but the residual connection itself did not help. The useful head is **LayerNorm + SiLU + small non-residual MLP**.
-"""
-        )
-    )
+    if "eda_panel_b_volume" in assets:
+        cells.append(md_cell(f"![Transaction Volume per Snapshot]({assets['eda_panel_b_volume']})"))
 
-    cells.append(
-        md_cell(
-            """
-## Data model and notation
+    narrative = read_narrative("snapshot_topology_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+        
+    if "panel1_ground_truth" in assets:
+        cells.append(md_cell(f"![Ground truth timeline]({assets['panel1_ground_truth']})"))
 
-At each time step $\\tau \\in \\{1,\\dots,49\\}$ we have a directed graph
-
-$$
-G_\\tau=(V_\\tau,E_\\tau,X_\\tau,y_\\tau),
-$$
-
-where each node is a Bitcoin transaction, each edge is a flow of funds, and
-
-$$
-y_i \\in \\{0,1,-1\\}
-$$
-
-means licit, illicit, or unknown. Unknown labels are excluded from the loss and metrics.
-
-The supervised task is imbalanced: the positive class is illicit, so **PR-AUC** is more informative than accuracy.
-"""
-        )
-    )
-
-    cells.append(
-        md_cell(
-            f"""
-## The temporal regime split
-
-{tables['shock_table']}
-
-The key observation is the discontinuity in illicit prevalence at $\\tau=43$. The global graph is still present; the minority class almost disappears.
-"""
-        )
-    )
-
-    cells.append(md_cell(f"![Prior shift]({assets['prior_shift']})"))
+    cells.append(md_cell(f"### The temporal regime split\n\n{tables['shock_table']}"))
     cells.append(md_cell(f"![Graph stability]({assets['graph_stability']})"))
-    if all(k in assets for k in ["panel1_ground_truth", "eda_panel_a_imbalance", "eda_panel_b_volume", "eda_panel_c_hairball"]):
-        cells.append(
-            md_cell(
-                f"""
-## Visual diagnostics from the EDA pipeline
 
-These figures were generated earlier in the project and copied from `results/figures/`.
-
-![Ground truth timeline]({assets['panel1_ground_truth']})
-
-![Class imbalance panel]({assets['eda_panel_a_imbalance']})
-
-![Volume panel]({assets['eda_panel_b_volume']})
-
-![Graph hairball panel]({assets['eda_panel_c_hairball']})
-"""
-            )
-        )
-
-    cells.append(
-        md_cell(
-            """
-## Exploratory graph geometry
-
-The raw feature geometry and local graph structure are informative:
-
-- illicit nodes are more structurally constrained downstream;
-- illicit interactions often pass through unknown intermediaries;
-- licit transactions include high-degree service-like hubs;
-- graph homophily is weak for illicit nodes, which makes naive neighbor smoothing risky.
-"""
-        )
-    )
-
+    narrative = read_narrative("eda_degree_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+    
+    narrative = read_narrative("eda_embeddings_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
     cells.append(md_cell(f"![Embeddings]({assets['embeddings']})"))
+
+    narrative = read_narrative("eda_pagerank_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+    
+    if "eda_panel_c_hairball" in assets:
+        cells.append(md_cell(f"![PCA+TSNE+PageRank]({assets['eda_panel_c_hairball']})"))
+
+    narrative = read_narrative("eda_homophily_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
     cells.append(md_cell(f"![Homophily and degree]({assets['homophily_degree']})"))
 
-    cells.append(
-        md_cell(
-            """
-## SGC propagation: the graph signal used by the model
-
-The implementation in `source/models/layers.py` uses a symmetrically normalized adjacency
-
-$$
-\\tilde A = D^{-1/2}\\,(\\max(A,A^T)+I)\\,D^{-1/2}.
-$$
-
-For multiscale SGC, the representation is
-
-$$
-\\Phi_K(X)=\\left[X\\;\\middle|\\;\\tilde A X\\;\\middle|\\;\\tilde A^2X\\;\\middle|\\;\\cdots\\;\\middle|\\;\\tilde A^KX\\right].
-$$
-
-The directional version augments the symmetric channel with outgoing and incoming row-normalized channels:
-
-$$
-\\Phi_K^{dir}(X)=
-\\left[
-X,
-\\tilde A_{sym}X,\\tilde A_{out}X,\\tilde A_{in}X,
-\\dots,
-\\tilde A_{sym}^KX,\\tilde A_{out}^KX,\\tilde A_{in}^KX
-\\right].
-$$
-
-This is not a trainable GCN layer; propagation is deterministic, and the learning happens in the classifier head.
-"""
-        )
-    )
-
-    cells.append(
-        md_cell(
-            """
-## PCA and oversmoothing
-
-Deep propagation increases the amount of neighborhood information mixed into each node. For large $K$, this can cause **oversmoothing**: node representations become too similar.
-
-The project tested intrinsic dimensionality as a diagnostic. A drop in intrinsic dimension at larger $K$ is evidence that representations are collapsing toward a lower-dimensional, less discriminative manifold.
-"""
-        )
-    )
-    cells.append(md_cell(f"![Intrinsic dimension]({assets['intrinsic']})"))
-
-    cells.append(
-        md_cell(
-            f"""
-## Falsifying representational collapse at $\\tau=43$
-
-The strongest misconception is: "the graph embedding collapses at the shock." The diagnostic files contradict that.
-
-**Feature drift around the shock:**
-
-{tables['drift_table']}
-
-**Permutation separability tests:**
-
-{tables['sep_table']}
-
-The propagated representation at $\\tau=43$ remains separable. The model failure is therefore more consistent with **label deprivation and threshold/head-level imbalance** than with geometric collapse.
-"""
-        )
-    )
+    narrative = read_narrative("diagnostic_falsification_report.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+    cells.append(md_cell(f"### Feature drift around the shock\n\n{tables['drift_table']}"))
+    cells.append(md_cell(f"### Permutation separability tests\n\n{tables['sep_table']}"))
     cells.append(md_cell(f"![Drift and separability]({assets['drift_sep']})"))
 
-    cells.append(
-        md_cell(
-            """
-## Static evaluation: validation and out-of-time tests
+    narrative = read_narrative("baseline_performance_report.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+    if "cost_vs_perf" in assets:
+        cells.append(md_cell(f"![Cost vs Performance]({assets['cost_vs_perf']})"))
 
-The static protocol trains on early timesteps, validates on an intermediate block, and reports out-of-time performance on future timesteps.
+    narrative = read_narrative("sgc_grid_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+    if "sgc_oversmoothing" in assets:
+        cells.append(md_cell(f"![PCA as Oversmoothing Regularizer]({assets['sgc_oversmoothing']})"))
+        cells.append(md_cell("> **NOTE**: PCA here = input-compression regularizer (reduces oversmoothing at K=3). This is distinct from the drift-diagnostic PCA in Section 2."))
+    
+    narrative = read_narrative("deep_res_mlp_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+        cells.append(md_cell(f"![MLP validation deltas]({assets['deep_heatmap']})"))
+        cells.append(md_cell(f"### Validation deltas versus the old Grid MLP benchmark\n\n{deep_table}"))
 
-This is where graph propagation helps compared with a plain SGC baseline, but tabular tree models remain very strong.
-"""
-        )
-    )
-    cells.append(md_cell(f"![Static results]({assets['static_results']})"))
-    cells.append(md_cell(f"### Static result table\n\n{tables['static_table']}"))
-
-    cells.append(
-        md_cell(
-            """
-## Walk-forward validation
-
-The implementation in `source/evaluation/validation.py` uses a leakage-guarded walk-forward protocol:
-
-$$
-\\text{train on } [1,\\tau-2],\\quad
-\\text{calibrate threshold on } \\tau-1,\\quad
-\\text{test on } \\tau.
-$$
-
-This separates training from threshold selection. When the calibration step has too few positives, the code uses an $\\epsilon$-fallback threshold rule.
-"""
-        )
-    )
+    narrative = read_narrative("wf_temporal_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
     cells.append(md_cell(f"![WF regimes]({assets['wf_regimes']})"))
     cells.append(md_cell(f"### Walk-forward result table\n\n{tables['wf_table']}"))
-
-    cells.append(
-        md_cell(
-            """
-## The graph recovery trap
-
-Graph models can perform well before the shock because they learn the local motifs of the pre-shock illicit economy.
-
-After $\\tau=43$, illicit actors re-enter through different local structures. The graph features learned before the shock become stale. This is **topological overfitting**:
-
-$$
-\\text{good pre-shock motif memory} \\;\\not\\Rightarrow\\; \\text{good post-shock generalization}.
-$$
-
-The evidence is the recovery gap: XGBoost recovers substantially better than SGC variants, even though graph models can be competitive pre-shock.
-"""
-        )
-    )
-
-    cells.append(
-        md_cell(
-            """
-## Temporal decay
-
-The temporal-decay ablation in `source/evaluation/ablation_validation.py` weights old training examples less:
-
-$$
-w_i \\propto \\exp\\{-\\lambda(\\tau-t_i)\\}\\,c(y_i),
-$$
-
-where $c(y_i)$ is the class-imbalance multiplier. The mathematical idea is simple: if the graph regime has changed, old topology should not dominate the loss.
-"""
-        )
-    )
     cells.append(md_cell(f"![Temporal decay]({assets['decay']})"))
 
     cells.append(
         md_cell(
             """
-## The final MLP-head experiment
-
-The late experiment tried to improve the graph head on top of multiscale SGC.
-
-The proposed residual idea was tested, but the result was clear:
-
-- wide residual heads overfit and underperform;
-- small residual heads still underperform;
-- the useful change is **LayerNorm + SiLU + a small non-residual MLP**.
-
-The winning graph-head recipe is therefore:
-
-```python
-use_mlp_head = True
-use_layernorm = True
-activation = "silu"
-use_residual = False
-mlp_hidden = (64, 64)
-mlp_dropout = 0.4
-sgc_k = 3
-use_directional_prop = True
-topo_injection_mode = "late"
-use_pca = True
-pca_variance = 0.98
-sgc_lr = 0.01
-sgc_weight_decay = 0.0005
-```
-"""
-        )
-    )
-    cells.append(md_cell(f"![MLP validation deltas]({assets['deep_heatmap']})"))
-    cells.append(md_cell(f"### Validation deltas versus the old Grid MLP benchmark\n\n{deep_table}"))
-    cells.append(md_cell(f"![Phase sweeps]({assets['phase_sweeps']})"))
-
-    cells.append(
-        md_cell(
-            """
-## What the final MLP head did and did not prove
-
-**It did prove:**
-
-- LayerNorm + SiLU improves graph-head ranking metrics over the old graph MLP baseline.
-- Small heads generalize better than wide heads.
-- Residual connections are not automatically beneficial in this setting.
-
-**It did not prove:**
-
-- that the graph model beats the best tabular baseline;
-- that F1 improves under the fixed $0.5$ threshold;
-- that architecture alone solves the $\\tau=43$ label-deprivation problem.
-
-The final claim should be precise: **we improved the graph MLP ranking performance, but the global benchmark is still dominated by tree-based tabular models.**
-"""
-        )
-    )
-
-    cells.append(
-        md_cell(
-            """
-## Final conclusions
-
-1. The Elliptic Bitcoin task is dominated by temporal non-stationarity and class imbalance.
-2. $\\tau=43$ is mainly a prior-shift event: the illicit class nearly disappears.
-3. $\\tau\\ge 44$ creates the harder recovery problem: illicit actors return with different micro-structure.
-4. SGC and multiscale graph features help, but deep graph propagation risks topological overfitting.
-5. PCA regularizes deep propagation and partially rescues $K=3$.
-6. Temporal decay is the most principled fix for stale topology.
-7. The best final graph head is small, normalized, and non-residual.
-8. XGBoost remains the strongest overall model, which is an important negative result for the graph-learning hypothesis.
-"""
-        )
-    )
-
-    cells.append(
-        md_cell(
-            """
+---
 ## Implementation map
 
 Important source files checked for this presentation:
@@ -1023,6 +845,10 @@ Important source files checked for this presentation:
         )
     )
 
+    narrative = read_narrative("conclusion.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+
     nb["cells"] = cells
     nbf.write(nb, NOTEBOOK)
 
@@ -1039,10 +865,10 @@ def main() -> None:
         "embeddings": plot_embeddings(data["pca"], data["tsne"]),
         "homophily_degree": plot_homophily_degree(data["homophily"], data["degree"]),
         "intrinsic": plot_intrinsic_dim(data["intrinsic"]),
-        "static_results": plot_static_results(selected_static_rows(data["final"], data["phaseD"])),
         "wf_regimes": plot_wf_regimes(data["final"]),
         "decay": plot_decay(data["final"]),
-        "phase_sweeps": plot_phase_sweeps(data),
+        "sgc_oversmoothing": plot_sgc_oversmoothing(data["final"]),
+        "cost_vs_perf": plot_cost_vs_performance(data["sweep"]),
     }
     assets.update(copied)
     deep_table, deep_values = compute_deep_validation_table(data)

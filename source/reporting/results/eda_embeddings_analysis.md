@@ -1,10 +1,10 @@
-# Exploratory Data Analysis: PCA & t-SNE Embeddings
+## Exploratory Data Analysis: PCA & t-SNE Embeddings
 
-This report analyzes the distributions of the reduced-dimensionality feature spaces (PCA and t-SNE) for `class 0` (Licit) and `class 1` (Illicit) nodes across a subset of specific time steps ($\tau \in \{1, 42, 43, 44, 49\}$). 
+The raw dataset contains dozens of abstract, anonymized tabular features. To understand the intrinsic difficulty of the classification task, we generated 2D projections of this feature space. We performed this embedding analysis to visually assess whether the illicit and licit classes are naturally separable, and to observe if the AlphaBay shutdown fundamentally altered the geometry of the transaction space. 
 
-By compressing the original feature space into 2 dimensions, we can evaluate how linearly separable the classes are (via PCA) and how they cluster locally (via t-SNE).
+By compressing the original feature space into 2 dimensions, we can evaluate how linearly separable the classes are (via PCA) and how they cluster locally (via t-SNE) across specific time steps ($\tau \in \{1, 42, 43, 44, 49\}$).
 
-## 1. PCA: Linear Feature Space Characteristics
+### 1. PCA: Linear Feature Space Characteristics
 
 Principal Component Analysis (PCA) performs a linear transformation, maximizing the variance captured in the first few components. 
 
@@ -16,12 +16,12 @@ Principal Component Analysis (PCA) performs a linear transformation, maximizing 
 | **PCA 1 Range** | [-18.92, 247.40] | [-7.69, 0.64] |
 | **PCA 1 Kurtosis**| 241.22 | 1.54 |
 
-### Analytical Insights:
+#### Analytical Insights:
 * **Illicit Homogeneity**: In the linear PCA space, illicit nodes occupy a highly constrained, dense region. Their PCA 1 standard deviation is extremely small ($1.19$) compared to licit nodes ($8.09$), and their maximum PCA 1 value is only $0.64$. This indicates that illicit transactions are very similar to each other in the original feature space.
 * **Licit Heterogeneity**: Licit transactions span a massive range, driven by extreme outliers (max PCA 1 = 247.4, kurtosis = 241). This represents the vast diversity of normal Bitcoin usage (e.g., small retail payments, huge exchange consolidations, mining rewards).
 * **Linear Separability**: Because almost all illicit nodes fall within a narrow PCA 1 band (`< 0.64`), linear models (like Logistic Regression) should be able to cleanly separate a large portion of the right-tail Licit nodes (whales, exchanges) from the rest of the dataset. However, separating the illicit nodes from the "normal-sized" licit nodes that overlap in that same region will require non-linear boundaries.
 
-## 2. t-SNE: Non-Linear Local Clustering
+### 2. t-SNE: Non-Linear Local Clustering
 
 t-Distributed Stochastic Neighbor Embedding (t-SNE) is non-linear and prioritizes keeping similar data points close together.
 
@@ -32,11 +32,11 @@ t-Distributed Stochastic Neighbor Embedding (t-SNE) is non-linear and prioritize
 | **t-SNE 1 Std Dev**| 25.68 | 12.20 |
 | **t-SNE 2 Std Dev**| 24.36 | 16.64 |
 
-### Analytical Insights:
+#### Analytical Insights:
 * **Distinct Centers of Gravity**: The mean positions of the two classes differ significantly. Licit nodes are centered near the origin `(0, 0)`, while Illicit nodes are clustered on average around `(-6.19, 7.86)` (the upper-left quadrant).
 * **Manifold Overlap**: While their centers differ, the standard deviations of both classes in the t-SNE space are very large. This indicates that illicit nodes don't form one single, isolated island. Instead, they are likely distributed in multiple small clusters or "pockets" scattered within the larger manifold of licit transactions.
 
-## Conclusion & Modeling Implications
+### Conclusion & Modeling Implications
 
 1. **Illicit behavior is not randomly distributed**; it occupies a specific, dense sub-region of the feature space (as proven by the incredibly tight PCA variance).
 2. **"Normal" is diverse**: Licit nodes show massive variance, reflecting many different typologies of normal economic behavior.

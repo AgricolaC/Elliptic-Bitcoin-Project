@@ -14,3 +14,5 @@ seaborn
 nbformat
 nbconvert
 pytest
+joblib
+giotto-tda
