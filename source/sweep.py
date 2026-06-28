@@ -1319,16 +1319,57 @@ def main():
 
 
 
-    # ── PHASE 3: Walk-Forward on Global Champions ──────────────────────
+    # ── PHASE 3: Walk-Forward Champion Selection & Decay Ablation ──────────────────────
     if args.mode != "temporal" and not args.only_static:
-        print("\n--- Walk-Forward Validation (Global Champions) ---")
+        print("\n--- PHASE 3: Champion Selection ---")
         
-        # We define a helper to execute WF for a specific config
-        def run_wf_for_config(best_cfg, k, directional, topo_str, var, seed, base_sweep_name):
-            wf_name = f"Best WF: {base_sweep_name}"
+        def get_best_champion(prefix_pattern):
+            import numpy as np
+            scores_by_config = {}
+            for res in results:
+                sweep = res.get("Sweep", "")
+                if re.match(prefix_pattern, sweep):
+                    var = res.get("Variation", "Base")
+                    seed = str(res.get("Seed", ""))
+                    if seed not in ["42", "43", "44"]: continue
+                    val = _metric_float(res.get("Static_OOT_Macro_F1"))
+                    if val is None: continue
+                    key = f"{sweep} (Var {var})"
+                    if key not in scores_by_config: scores_by_config[key] = []
+                    scores_by_config[key].append(val)
+            if not scores_by_config: return None, None
+            avg_scores = {k: np.mean(v) for k, v in scores_by_config.items()}
+            best_key = max(avg_scores.items(), key=lambda x: x[1])[0]
+            print(f"Selected Champion for {prefix_pattern}: {best_key} (Avg OOT Macro F1: {avg_scores[best_key]:.3f})")
+            match = re.match(r"^(.*?) \(Var (.*?)\)$", best_key)
+            if match:
+                return match.group(1), match.group(2)
+            # Sweep 1 does not have (Var Base) normally in the name, but my get_best_champion appended it
+            match_no_var = re.match(r"^(.*?) \(Var Base\)$", best_key)
+            if match_no_var:
+                return match_no_var.group(1), "Base"
+            return best_key, "Base"
+
+        champ_sgc = get_best_champion(r"^Sweep 1: SGC \(baseline\) K=\d+$")
+        champ_nomp = get_best_champion(r"^NoMP Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$")
+        champ_global = get_best_champion(r"^Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$")
+        
+        champions = [c for c in [champ_sgc, champ_nomp, champ_global] if c[0] is not None]
+        
+        print("\n--- Running Walk-Forward Evaluation for Champions (Seed 42) ---")
+        for base_name, var in champions:
+            seed42_key = (base_name, "42", var)
+            if seed42_key not in all_configs_run:
+                print(f"Skipping WF for {base_name}, no Config found.")
+                continue
             
-            if (wf_name, str(seed), var) not in completed_sweeps:
-                print(f"\nRunning WF on: {base_sweep_name}")
+            orig_cfg = all_configs_run[seed42_key]
+            from dataclasses import replace
+            best_cfg = replace(orig_cfg, seed=42)
+            
+            wf_name = f"WF Champion: {base_name}"
+            if (wf_name, "42", var) not in completed_sweeps:
+                print(f"\nRunning Standard WF on: {base_name}")
                 with profile_resources() as wf_stat:
                     dm_best = EllipticDataModule(df, df_edge, feature_cols, best_cfg)
                     dm_best.setup()
@@ -1339,194 +1380,84 @@ def main():
                 agg, rows = stratified_wf_metrics(records_dict, threshold=0.5)
 
                 wf_res = _make_result(
-                    cfg=best_cfg,
-                    seed=seed,
-                    variation=var,
-                    sweep=wf_name,
-                    static_time="N/A",
-                    static_mem="N/A",
-                    static_oot_pooled_f1="N/A",
-                    static_oot_pooled_prauc="N/A",
-                    wf_time=round(wf_stat.get("time", 0.0), 3),
-                    wf_mem=round(wf_stat.get("peak_mem", 0.0), 2),
-                    wf_f1=round(agg["WF_Macro_F1"], 3),
-                    wf_prauc=round(agg["WF_Macro_PRAUC"], 3),
-                    wf_pooled_f1=round(agg["WF_Pooled_F1"], 3),
-                    wf_pooled_prauc=round(agg["WF_Pooled_PRAUC"], 3),
-                    wf_pre43_pooled_f1=round(agg["WF_Pre43_Pooled_F1"], 3),
-                    wf_pre43_prauc=round(agg["WF_Pre43_PRAUC"], 3),
-                    wf_shock_f1=round(agg["WF_Shock_F1"], 3),
-                    wf_shock_prauc=round(agg["WF_Shock_PRAUC"], 3),
-                    wf_recovery_pooled_f1=round(agg["WF_Recovery_Pooled_F1"], 3),
-                    wf_recovery_prauc=round(agg["WF_Recovery_PRAUC"], 3),
-                    feature_set="Prop-N",
-                    threshold="τ-1 calibrated",
+                    cfg=best_cfg, seed=42, variation=var, sweep=wf_name,
+                    static_time="N/A", static_mem="N/A", static_oot_pooled_f1="N/A", static_oot_pooled_prauc="N/A",
+                    wf_time=round(wf_stat.get("time", 0.0), 3), wf_mem=round(wf_stat.get("peak_mem", 0.0), 2),
+                    wf_f1=round(agg["WF_Macro_F1"], 3), wf_prauc=round(agg["WF_Macro_PRAUC"], 3),
+                    wf_pooled_f1=round(agg["WF_Pooled_F1"], 3), wf_pooled_prauc=round(agg["WF_Pooled_PRAUC"], 3),
+                    wf_pre43_pooled_f1=round(agg["WF_Pre43_Pooled_F1"], 3), wf_pre43_prauc=round(agg["WF_Pre43_PRAUC"], 3),
+                    wf_shock_f1=round(agg["WF_Shock_F1"], 3), wf_shock_prauc=round(agg["WF_Shock_PRAUC"], 3),
+                    wf_recovery_pooled_f1=round(agg["WF_Recovery_Pooled_F1"], 3), wf_recovery_prauc=round(agg["WF_Recovery_PRAUC"], 3),
+                    feature_set="Prop-N", threshold="τ-1 calibrated",
                 )
                 results.append(wf_res)
                 pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                completed_sweeps.add((wf_name, "42", var))
                 print(f"--> {wf_res}\n")
-                completed_sweeps.add((wf_name, str(seed), var))
 
-        # 1. Run baselines & explicit edge cases for Seed 42
-        print("\n--- Running Baseline Sweeps & Edge Cases for Walk-Forward (Seed 42) ---")
-        cfg_s1 = Config(use_mlp_head=False, use_multiscale_prop=False, sgc_k=2, use_directional_prop=False, use_graph_structural=False, seed=42)
-        run_wf_for_config(cfg_s1, 2, False, 'None', 'Base', 42, "Sweep 1: SGC (baseline)")
-        
-        cfg_s2 = Config(use_mlp_head=True, use_multiscale_prop=False, sgc_k=2, use_directional_prop=False, use_graph_structural=False, seed=42)
-        run_wf_for_config(cfg_s2, 2, False, 'None', 'Base', 42, "Sweep 2: + MLP Head")
+        print("\n=== IPCA Ablation on Global Champion ===")
+        if champ_global[0] is not None and champ_global[1] == "PCA":
+            base_name, var = champ_global
+            seed42_key = (base_name, "42", var)
+            if seed42_key in all_configs_run:
+                orig_cfg = all_configs_run[seed42_key]
+                cfg_ipca = replace(orig_cfg, seed=42, use_ipca=True)
+                w_name = f"Ablation: IPCA on {base_name}"
+                if (w_name, "42", var) not in completed_sweeps:
+                    from evaluation.ablation_validation import evaluate_ipca_wf
+                    ipca_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_ipca)
+                    ipca_dm.setup()
+                    res = evaluate_ipca_wf(ipca_dm, cfg_ipca, w_name, _make_result)
+                    res["Variation"] = var
+                    results.append(res)
+                    pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                    completed_sweeps.add((w_name, "42", var))
 
-        # Edge Case 1: Multi-scale direct comparison to Sweep 2
-        cfg_ec1 = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=2, use_directional_prop=False, use_graph_structural=False, seed=42)
-        run_wf_for_config(cfg_ec1, 2, False, 'None', 'Base', 42, "Grid: K=2, Dir=F, Topo=None")
-
-        # Edge Case 2 & 3: PCA versions of our winners
-        cfg_ec2 = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=1, use_directional_prop=False, use_graph_structural=True, topo_injection_mode='late', use_pca=True, pca_variance=0.98, seed=42)
-        run_wf_for_config(cfg_ec2, 1, False, 'late', 'PCA', 42, "Grid: K=1, Dir=F, Topo=late")
-
-        cfg_ec3 = Config(use_mlp_head=True, use_multiscale_prop=True, sgc_k=3, use_directional_prop=False, use_graph_structural=True, topo_injection_mode='late', use_pca=True, pca_variance=0.98, seed=42)
-        run_wf_for_config(cfg_ec3, 3, False, 'late', 'PCA', 42, "Grid: K=3, Dir=F, Topo=late")
-
-        # 2. Run global champions for Seed 42 only
-        print("\n--- Running Global Champions for Walk-Forward (Seed 42) ---")
-        for champ in global_champions:
-            match = re.match(r"^Grid: K=(\d+), Dir=(T|F), Topo=(None|late|early) \(Var (.*?)\)$", champ)
-            if not match: continue
-            k = int(match.group(1))
-            directional = (match.group(2) == 'T')
-            topo_str = match.group(3)
-            var = match.group(4)
-            topo = (topo_str != 'None')
-            injection = topo_str if topo else 'late'
-
-            for seed in [42]:
-                from dataclasses import replace
-                best_cfg = Config(
-                    use_mlp_head=True,
-                    use_multiscale_prop=True,
-                    sgc_k=k,
-                    use_directional_prop=directional,
-                    use_graph_structural=topo,
-                    topo_injection_mode=injection,
-                    seed=seed
-                )
-                if var == "PCA":
-                    best_cfg = replace(best_cfg, use_pca=True, pca_variance=0.98)
-                
-                base_sweep_name = f"Grid: K={k}, Dir={'T' if directional else 'F'}, Topo={topo_str}"
-                run_wf_for_config(best_cfg, k, directional, topo_str, var, seed, base_sweep_name)
-
-        # PHASE 4: IPCA Ablation on Global Champions
-        print("\n=== PHASE 4: IPCA Ablation ===")
-        from evaluation.ablation_validation import evaluate_ipca_wf
-        
-        
-        pca_champions = [c for c in global_champions if "Var PCA" in c]
-        for champ in pca_champions:
-            match = re.match(r"^Grid: K=(\d+), Dir=(T|F), Topo=(None|late|early) \(Var (.*?)\)$", champ)
-            if not match: continue
-            k = int(match.group(1))
-            directional = (match.group(2) == 'T')
-            topo_str = match.group(3)
-            
-            cfg_ipca = Config(
-                use_mlp_head=True, use_multiscale_prop=True, sgc_k=k,
-                use_directional_prop=directional, use_graph_structural=(topo_str != 'None'),
-                topo_injection_mode=topo_str if topo_str != 'None' else 'early',
-                use_pca=True, pca_variance=0.98, use_ipca=True, seed=42
-            )
-            w_name = f"Ablation: IPCA {k} {'T' if directional else 'F'} {topo_str}"
-            ipca_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_ipca)
-            ipca_dm.setup()
-            res = evaluate_ipca_wf(ipca_dm, cfg_ipca, w_name, _make_result)
-            results.append(res)
-            
-        # PHASE 5: Exponential Decay
-        print("\n=== PHASE 5: Exponential Decay Ablation ===")
+        print("\n=== Exponential Decay Ablation on Champions ===")
         from evaluation.ablation_validation import evaluate_decay_wf, evaluate_xgb_decay_wf
         
         # 1. Decay on XGBoost
         for lam in [0.05, 0.25, 0.50]:
             sweep_name = f"Ablation: Decay λ={lam} on XGBoost"
-            if (sweep_name, '42', 'Base') in completed_sweeps:
-                print(f"Already completed {sweep_name}, skipping.")
-                continue
-            def _make_result_xgb(*args, _lam=lam, **kwargs):
-                kwargs['cfg'] = cfg_tabular
-                kwargs['decay_lambda'] = _lam
-                return _make_result(*args, **kwargs)
-            xgb_decay_res = evaluate_xgb_decay_wf(dm_base, cfg_tabular, lam, _make_result_xgb)
-            results.append(xgb_decay_res)
+            if (sweep_name, '42', 'Base') not in completed_sweeps:
+                print(f"\nRunning WF Decay: {sweep_name}")
+                def _make_result_xgb(*args, _lam=lam, **kwargs):
+                    kwargs['cfg'] = Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=42)
+                    kwargs['decay_lambda'] = _lam
+                    return _make_result(*args, **kwargs)
+                dm_xgb = EllipticDataModule(df, df_edge, feature_cols, Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=42))
+                dm_xgb.setup()
+                xgb_decay_res = evaluate_xgb_decay_wf(dm_xgb, Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=42), lam, _make_result_xgb)
+                results.append(xgb_decay_res)
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                completed_sweeps.add((sweep_name, "42", "Base"))
 
-
-        # Phase 1.5 No-MP Champions
-        print("\n--- Running Exponential Decay for Top 3 No-MP Champions ---")
-        for champ in nomp_champions:
-            import re
-            match = re.match(r"^(NoMP Grid:.*?) \(Var (.*?)\)$", champ)
-            if not match:
-                continue
-            base_name = match.group(1)
-            var = match.group(2)
-            
+        # 2. Decay on Graph Champions
+        for base_name, var in champions:
             seed42_key = (base_name, "42", var)
-            if seed42_key in all_configs_run:
-                cfg = all_configs_run[seed42_key]
-                topo_val = cfg.topo_injection_mode if cfg.use_graph_structural else 'None'
+            if seed42_key not in all_configs_run: continue
+            
+            orig_cfg = all_configs_run[seed42_key]
+            for lam in [0.05, 0.25, 0.50]:
+                w_name = f"Ablation: Decay λ={lam} on {base_name}"
+                if (w_name, "42", var) in completed_sweeps: continue
                 
-                # The evaluate_decay_wf function signature expects slightly different args than run_wf_for_config
-                # In sweep.py Phase 5, it is called directly.
-                cfg_decay = Config(use_mlp_head=True, use_multiscale_prop=False, sgc_k=cfg.sgc_k, use_directional_prop=False, use_graph_structural=cfg.use_graph_structural, topo_injection_mode=cfg.topo_injection_mode, seed=42)
-                from evaluation.ablation_validation import evaluate_decay_wf
+                print(f"\nRunning WF Decay: {w_name} (Var {var})")
+                cfg_decay = replace(orig_cfg, seed=42)
                 decay_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_decay)
                 decay_dm.setup()
                 
-                w_name = f"Ablation: Decay λ={lam} on {base_name}"
-                if (w_name, '42', var) in completed_sweeps:
-                    print(f"Already completed {w_name}, skipping.")
-                    continue
-                print(f"\nRunning Decay on: {w_name}")
-                # We can't easily pass cfg via evaluate_decay_wf signature without changing it, so we'll wrap _make_result
-                def _make_result_wrapped(*args, _lam=lam, **kwargs):
-                    kwargs['cfg'] = cfg_decay
+                def _make_result_wrapped(*args, _lam=lam, _cfg=cfg_decay, **kwargs):
+                    kwargs['cfg'] = _cfg
                     kwargs['decay_lambda'] = _lam
                     return _make_result(*args, **kwargs)
+                    
                 res = evaluate_decay_wf(decay_dm, cfg_decay, lam, w_name, _make_result_wrapped)
+                res["Variation"] = var
                 results.append(res)
                 pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                completed_sweeps.add((w_name, "42", var))
                 print(f"--> {res}\n")
-
-        # 2. Decay on All Global Champions
-        for champ in global_champions:
-            match = re.match(r"^Grid: K=(\d+), Dir=(T|F), Topo=(None|late|early) \(Var (.*?)\)$", champ)
-            if not match: continue
-            k = int(match.group(1))
-            directional = (match.group(2) == 'T')
-            topo_str = match.group(3)
-            var = match.group(4)
-            
-            cfg_decay = Config(
-                use_mlp_head=True, use_multiscale_prop=True, sgc_k=k,
-                use_directional_prop=directional, use_graph_structural=(topo_str != 'None'),
-                topo_injection_mode=topo_str if topo_str != 'None' else 'early',
-                use_pca=(var == "PCA"), pca_variance=0.98 if var == "PCA" else None,
-                seed=42
-            )
-            decay_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_decay)
-            decay_dm.setup()
-            
-            for lam in [0.05, 0.25, 0.50]:
-                w_name = f"Ablation: Decay λ={lam} on K={k}, Dir={'T' if directional else 'F'}, Topo={topo_str}"
-                if (w_name, '42', var) in completed_sweeps:
-                    print(f"Already completed {w_name}, skipping.")
-                    continue
-                # We can't easily pass cfg via evaluate_decay_wf signature without changing it, so we'll wrap _make_result
-                def _make_result_wrapped(*args, _lam=lam, **kwargs):
-                    kwargs['cfg'] = cfg_decay
-                    kwargs['decay_lambda'] = _lam
-                    return _make_result(*args, **kwargs)
-                res = evaluate_decay_wf(decay_dm, cfg_decay, lam, w_name, _make_result_wrapped)
-                results.append(res)
-                    
 
     df_res = pd.DataFrame(results, columns=list(_RESULT_KEYS))
     df_res.to_csv(out_file, index=False)
