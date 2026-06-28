@@ -152,6 +152,8 @@ def _make_result(
 ) -> dict:
     if cfg is not None:
         sgc_k = cfg.sgc_k if hasattr(cfg, 'sgc_k') else "N/A"
+        if sgc_k == 0:
+            sgc_k = "N/A"
         multiscale_prop = cfg.use_multiscale_prop
         directionality = cfg.use_directional_prop
         if cfg.use_graph_structural:
