@@ -1173,10 +1173,13 @@ def main():
     print("\n--- PHASE 1: Sweep 1 (SGC no-MLP) ---")
     for s_seed in [42, 43, 44]:
         for k in [1, 2, 3]:
-            name = f"Sweep 1: SGC (baseline) K={k}"
-            cfg = Config(use_mlp_head=False, use_multiscale_prop=False, sgc_k=k, use_graph_structural=False, seed=s_seed)
-            execute_sweep(name, cfg, "Base", s_seed)
-            all_configs_run[(name, str(s_seed), "Base")] = cfg
+            for topo_str in ["None", "late", "early"]:
+                topo_bool = (topo_str != "None")
+                injection = topo_str if topo_bool else "None"
+                name = f"Sweep 1: SGC (baseline) K={k}, Topo={topo_str}"
+                cfg = Config(use_mlp_head=False, use_multiscale_prop=False, sgc_k=k, use_graph_structural=topo_bool, topo_injection_mode=injection, seed=s_seed)
+                execute_sweep(name, cfg, "Base", s_seed)
+                all_configs_run[(name, str(s_seed), "Base")] = cfg
 
     for seed in seeds:
         for var in variations:
@@ -1325,7 +1328,7 @@ def main():
     if args.mode != "temporal" and not args.only_static:
         print("\n--- PHASE 3: Champion Selection ---")
         
-        def get_best_champion(prefix_pattern):
+        def get_best_champions(prefix_pattern, top_n=1):
             import numpy as np
             scores_by_config = {}
             for res in results:
@@ -1339,27 +1342,33 @@ def main():
                     key = f"{sweep} (Var {var})"
                     if key not in scores_by_config: scores_by_config[key] = []
                     scores_by_config[key].append(val)
-            if not scores_by_config: return None, None
+            if not scores_by_config: return []
             avg_scores = {k: np.mean(v) for k, v in scores_by_config.items()}
-            best_key = max(avg_scores.items(), key=lambda x: x[1])[0]
-            print(f"Selected Champion for {prefix_pattern}: {best_key} (Avg OOT Macro F1: {avg_scores[best_key]:.3f})")
-            match = re.match(r"^(.*?) \(Var (.*?)\)$", best_key)
-            if match:
-                return match.group(1), match.group(2)
-            # Sweep 1 does not have (Var Base) normally in the name, but my get_best_champion appended it
-            match_no_var = re.match(r"^(.*?) \(Var Base\)$", best_key)
-            if match_no_var:
-                return match_no_var.group(1), "Base"
-            return best_key, "Base"
+            # sort descending
+            sorted_keys = sorted(avg_scores.keys(), key=lambda k: avg_scores[k], reverse=True)
+            
+            top_champs = []
+            for best_key in sorted_keys[:top_n]:
+                print(f"Selected Champion for {prefix_pattern}: {best_key} (Avg OOT Macro F1: {avg_scores[best_key]:.3f})")
+                match = re.match(r"^(.*?) \(Var (.*?)\)$", best_key)
+                if match:
+                    top_champs.append((match.group(1), match.group(2)))
+                else:
+                    match_no_var = re.match(r"^(.*?) \(Var Base\)$", best_key)
+                    if match_no_var:
+                        top_champs.append((match_no_var.group(1), "Base"))
+                    else:
+                        top_champs.append((best_key, "Base"))
+            return top_champs
 
-        champ_sgc = get_best_champion(r"^Sweep 1: SGC \(baseline\) K=\d+$")
-        champ_nomp = get_best_champion(r"^NoMP Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$")
-        champ_global = get_best_champion(r"^Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$")
+        champs_sgc = get_best_champions(r"^Sweep 1: SGC \(baseline\) K=\d+, Topo=(None|late|early)$", top_n=3)
+        champs_nomp = get_best_champions(r"^NoMP Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$", top_n=5)
+        champs_global = get_best_champions(r"^Grid: K=\d+, Dir=(T|F), Topo=(None|late|early)$", top_n=10)
         
-        champions = [c for c in [champ_sgc, champ_nomp, champ_global] if c[0] is not None]
+        all_selected_champions = champs_sgc + champs_nomp + champs_global
         
-        print("\n--- Running Walk-Forward Evaluation for Champions (Seed 42) ---")
-        for base_name, var in champions:
+        print(f"\n--- Running Walk-Forward Evaluation for {len(all_selected_champions)} Champions (Seed 42) ---")
+        for base_name, var in all_selected_champions:
             seed42_key = (base_name, "42", var)
             if seed42_key not in all_configs_run:
                 print(f"Skipping WF for {base_name}, no Config found.")
@@ -1397,9 +1406,13 @@ def main():
                 completed_sweeps.add((wf_name, "42", var))
                 print(f"--> {wf_res}\n")
 
-        print("\n=== IPCA Ablation on Global Champion ===")
-        if champ_global[0] is not None and champ_global[1] == "PCA":
-            base_name, var = champ_global
+        print("\n=== IPCA Ablation on Global Champions ===")
+        pca_champs = [c for c in champs_global if c[1] == "PCA"]
+        if pca_champs:
+            # We just do IPCA on the top 1 PCA champion from champs_global for simplicity, or all of them? 
+            # The prompt says "Phase 5 will pick the WF champion for all 4 specific models". Doesn't mention Phase 4 IPCA. 
+            # I will just run IPCA on the top 1 PCA champ.
+            base_name, var = pca_champs[0]
             seed42_key = (base_name, "42", var)
             if seed42_key in all_configs_run:
                 orig_cfg = all_configs_run[seed42_key]
@@ -1415,7 +1428,7 @@ def main():
                     pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
                     completed_sweeps.add((w_name, "42", var))
 
-        print("\n=== Exponential Decay Ablation on Champions ===")
+        print("\n=== Phase 5: Exponential Decay Ablation ===")
         from evaluation.ablation_validation import evaluate_decay_wf, evaluate_xgb_decay_wf
         
         # 1. Decay on XGBoost
@@ -1434,17 +1447,40 @@ def main():
                 pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
                 completed_sweeps.add((sweep_name, "42", "Base"))
 
-        # 2. Decay on Graph Champions
-        for base_name, var in champions:
+        # Helper to find the best WF champion among a list of candidates
+        def get_best_wf_champion(candidate_champs):
+            best_f1 = -1.0
+            best_champ = None
+            for base_name, var in candidate_champs:
+                wf_name = f"WF Champion: {base_name}"
+                # look through results for this WF run
+                for r in results:
+                    if r.get("Sweep") == wf_name and r.get("Seed") == 42 and r.get("Variation") == var:
+                        f1 = _metric_float(r.get("WF_Macro_F1"))
+                        if f1 is not None and f1 > best_f1:
+                            best_f1 = f1
+                            best_champ = (base_name, var)
+            return best_champ
+
+        top_wf_sgc = get_best_wf_champion(champs_sgc)
+        top_wf_nomp = get_best_wf_champion(champs_nomp)
+        top_wf_global = get_best_wf_champion(champs_global)
+        
+        wf_champions = [c for c in [top_wf_sgc, top_wf_nomp, top_wf_global] if c is not None]
+        
+        # 2. Decay on Graph Champions (The Top 1 WF Champion from each family)
+        for base_name, var in wf_champions:
             seed42_key = (base_name, "42", var)
             if seed42_key not in all_configs_run: continue
+            
+            print(f"\nSelected WF Champion for Decay: {base_name} (Var {var})")
             
             orig_cfg = all_configs_run[seed42_key]
             for lam in [0.05, 0.25, 0.50]:
                 w_name = f"Ablation: Decay λ={lam} on {base_name}"
                 if (w_name, "42", var) in completed_sweeps: continue
                 
-                print(f"\nRunning WF Decay: {w_name} (Var {var})")
+                print(f"Running WF Decay: {w_name} (Var {var})")
                 cfg_decay = replace(orig_cfg, seed=42)
                 decay_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_decay)
                 decay_dm.setup()
