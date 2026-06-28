@@ -1377,6 +1377,8 @@ def main():
             orig_cfg = all_configs_run[seed42_key]
             from dataclasses import replace
             best_cfg = replace(orig_cfg, seed=42)
+            if var == "PCA":
+                best_cfg = replace(best_cfg, use_pca=True, pca_variance=0.98)
             
             wf_name = f"WF Champion: {base_name}"
             if (wf_name, "42", var) not in completed_sweeps:
@@ -1417,6 +1419,8 @@ def main():
             if seed42_key in all_configs_run:
                 orig_cfg = all_configs_run[seed42_key]
                 cfg_ipca = replace(orig_cfg, seed=42, use_ipca=True)
+                if var == "PCA":
+                    cfg_ipca = replace(cfg_ipca, pca_variance=0.98)
                 w_name = f"Ablation: IPCA on {base_name}"
                 if (w_name, "42", var) not in completed_sweeps:
                     from evaluation.ablation_validation import evaluate_ipca_wf
@@ -1482,6 +1486,8 @@ def main():
                 
                 print(f"Running WF Decay: {w_name} (Var {var})")
                 cfg_decay = replace(orig_cfg, seed=42)
+                if var == "PCA":
+                    cfg_decay = replace(cfg_decay, use_pca=True, pca_variance=0.98)
                 decay_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_decay)
                 decay_dm.setup()
                 
