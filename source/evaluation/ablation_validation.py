@@ -15,16 +15,18 @@ from evaluation.validation import SGCHead
 TS_CSV = os.path.join(OUTPUT_DIR, "walk_forward_timesteps.csv")
 CSV2_COLS = ["Sweep", "Seed", "Tau", "N_labeled", "N_illicit", "N_licit",
              "Low_Confidence", "Regime", "Train_Window_Size", "Calib_Threshold",
-             "Calib_Fallback", "F1", "PRAUC", "Precision", "Recall", "Selfcond_Bug"]
+             "Calib_Fallback", "F1", "PRAUC", "Precision", "Recall", "Selfcond_Bug",
+             "Feature_Set", "SGC_K", "Multiscale_Prop", "Directionality", "Topological_Injection", "Decay_Lambda", "Variation"]
 
-def _write_csv2(sweep, rows, extra, seed=42):
+def _write_csv2(sweep, rows, extra, seed=42, hyper_cols=None):
+    if hyper_cols is None: hyper_cols = {}
     out = []
     for r in rows:
         # Cast to int to avoid float-key mismatch when extra dict uses int keys
         # but r["Tau"] may be float if it was re-read from a CSV.
         tau_key = int(r["Tau"])
         e = extra.get(tau_key, {})
-        out.append({
+        row_dict = {
             "Sweep": sweep, "Seed": seed, "Tau": tau_key, "N_labeled": r["N_labeled"],
             "N_illicit": r["N_illicit"], "N_licit": r["N_licit"],
             "Low_Confidence": r["Low_Confidence"], "Regime": r["Regime"],
@@ -33,10 +35,14 @@ def _write_csv2(sweep, rows, extra, seed=42):
             "Calib_Fallback": e.get("Calib_Fallback", "N/A"),
             "F1": r["F1"], "PRAUC": r["PRAUC"], "Precision": r["Precision"], "Recall": r["Recall"],
             "Selfcond_Bug": "fixed",
-        })
+        }
+        for k in ["Feature_Set", "SGC_K", "Multiscale_Prop", "Directionality", "Topological_Injection", "Decay_Lambda", "Variation"]:
+            row_dict[k] = hyper_cols.get(k, "N/A")
+        out.append(row_dict)
     df_new = pd.DataFrame(out, columns=CSV2_COLS)
     df = pd.concat([pd.read_csv(TS_CSV, keep_default_na=False), df_new], ignore_index=True) \
         if os.path.exists(TS_CSV) else df_new
+    df = df.drop_duplicates(subset=["Sweep", "Seed", "Tau"], keep="last")
     df.to_csv(TS_CSV, index=False)
 
 # ==========================================

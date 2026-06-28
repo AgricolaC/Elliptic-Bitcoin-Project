@@ -68,6 +68,14 @@ def aggregate_sweeps():
     agg_df.columns = ['_'.join(col).strip('_') for col in agg_df.columns.values]
     agg_df.rename(columns={'Base_Sweep': 'Sweep'}, inplace=True)
     
+    # Carry over hyperparameter columns
+    hyper_cols = ["Feature_Set", "SGC_K", "Multiscale_Prop", "Directionality", "Topological_Injection", "Decay_Lambda", "Threshold_Method"]
+    hyper_cols = [c for c in hyper_cols if c in df.columns]
+    if hyper_cols:
+        hyper_df = df.groupby(["Base_Sweep", "Variation"])[hyper_cols].first().reset_index()
+        hyper_df.rename(columns={'Base_Sweep': 'Sweep'}, inplace=True)
+        agg_df = agg_df.merge(hyper_df, on=["Sweep", "Variation"], how="left")
+    
     out_path = os.path.join(OUTPUT_DIR, "final_aggregated_results.csv")
     agg_df.to_csv(out_path, index=False)
     print(f"Aggregated {len(agg_df)} sweeps across {df['Seed'].nunique()} seeds.")

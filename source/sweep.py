@@ -31,6 +31,11 @@ _RESULT_KEYS = (
     "Variation",
     "Sweep",
     "Feature_Set",
+    "SGC_K",
+    "Multiscale_Prop",
+    "Directionality",
+    "Topological_Injection",
+    "Decay_Lambda",
     "Threshold_Method",
     "Static_Time_s",
     "Static_Mem_MB",
@@ -138,7 +143,21 @@ def _make_result(
     wf_recovery_prauc: float | str = "N/A",
     selfcond_bug: str = "fixed",
     notes: str = "",
+    sgc_k: int | str = "N/A",
+    multiscale_prop: str | bool = "N/A",
+    directionality: str | bool = "N/A",
+    topological_injection: str | bool = "N/A",
+    decay_lambda: float | str = "N/A",
+    cfg = None,
 ) -> dict:
+    if cfg is not None:
+        sgc_k = cfg.sgc_k if hasattr(cfg, 'sgc_k') else "N/A"
+        multiscale_prop = cfg.use_multiscale_prop
+        directionality = cfg.use_directional_prop
+        if cfg.use_graph_structural:
+            topological_injection = cfg.topo_injection_mode
+        else:
+            topological_injection = "None"
     """
     Construct a result dict with the standardized v2 key schema (CSV-1).
 
@@ -153,6 +172,11 @@ def _make_result(
         "Variation":             variation,
         "Sweep":                 sweep,
         "Feature_Set":           feature_set,
+        "SGC_K":                 sgc_k,
+        "Multiscale_Prop":       multiscale_prop,
+        "Directionality":        directionality,
+        "Topological_Injection": topological_injection,
+        "Decay_Lambda":          decay_lambda,
         "Threshold_Method":      threshold_method if threshold_method is not None else threshold,
         "Static_Time_s":         static_time,
         "Static_Mem_MB":         static_mem,
@@ -315,8 +339,7 @@ def build_mlp_variation_specs(
     variations: list[tuple] | tuple[tuple, ...],
     seed: int,
     var: str,
-    mode: str,
-) -> list[tuple[str, str, Config]]:
+) -> list[tuple[str, Config]]:
     """Expand every selected target across every Phase 2.5 MLP variant."""
     from dataclasses import replace
 
@@ -335,8 +358,7 @@ def build_mlp_variation_specs(
             forced.update(overrides)
             cfg = replace(base_cfg, **forced)
             name = f"Phase 2.5: {base_name} + {variant_name}"
-            sweep_key = f"{name} (Seed {seed}, Var {var})" if mode in {"mega", "mega_k5"} else name
-            specs.append((sweep_key, name, cfg))
+            specs.append((name, cfg))
     return specs
 
 
@@ -415,6 +437,7 @@ def run_single_sweep(
         joblib.dump(wf_records, os.path.join(model_dir, f"{safe_name}_wf_records.pkl"))
 
     return _make_result(
+        cfg=cfg,
         seed=cfg.seed,
         variation=variation,
         sweep=name,
@@ -503,6 +526,7 @@ def run_static_only_sweep(
     torch.save(model.state_dict(), os.path.join(model_dir, f"{safe_name}_model.pt"))
 
     return _make_result(
+        cfg=cfg,
         seed=cfg.seed,
         variation=variation,
         sweep=name,
@@ -726,7 +750,10 @@ def main():
     if os.path.exists(out_file):
         try:
             df_res = pd.read_csv(out_file, keep_default_na=False)
-            completed_sweeps = set(df_res["Sweep"].tolist())
+            completed_sweeps = set(
+                (str(r["Sweep"]), str(r["Seed"]), str(r["Variation"]))
+                for _, r in df_res.iterrows()
+            )
             results = df_res.to_dict('records')
             print(f"Loaded {len(completed_sweeps)} completed sweeps from {out_file}")
         except Exception as e:
@@ -737,346 +764,343 @@ def main():
     # Hoist dm_base init outside try so GCN block can also access it
     from xgboost import XGBClassifier
     from sklearn.ensemble import RandomForestClassifier
-    cfg_tabular = Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=cfg_default.seed)
-    dm_base = EllipticDataModule(df, df_edge, feature_cols, cfg_tabular)
-    dm_base.setup()
-    try:
-        Xs_tr, ys_tr = [], []
-        for t in cfg_tabular.train_steps:
-            g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
-            Xs_tr.append(g["x"].numpy()[:, :166][m])
-            ys_tr.append(g["y"].numpy()[m])
-        Xtr_b, ytr_b = np.concatenate(Xs_tr), np.concatenate(ys_tr)
-        spw_b = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
-
-        Xs_te, ys_te = [], []
-        for t in cfg_tabular.test_steps:
-            g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
-            Xs_te.append(g["x"].numpy()[:, :166][m])
-            ys_te.append(g["y"].numpy()[m])
-        Xte_b, yte_b = np.concatenate(Xs_te), np.concatenate(ys_te)
-
-        if args.mode != "temporal" and "Baseline: IsolationForest (166)" not in completed_sweeps:
-            from sklearn.ensemble import IsolationForest
-            stat_iso, static_iso_f1, static_iso_prauc = {}, 0.0, 0.0
-            if not args.only_wf:
-                with profile_resources() as stat_iso:
-                    Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.train_steps])
-                Xte_iso = Xte_b
-                iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_tabular.seed, n_jobs=1)
-                iso.fit(Xtr_iso)
-                scores = -iso.score_samples(Xte_iso)
-                actual_illicit_rate = (yte_b == 1).mean()
-                thresh_pct = (1 - actual_illicit_rate) * 100
-                iso_thresh = np.percentile(scores, thresh_pct)
-                static_iso_f1 = f1_score(yte_b, (scores >= iso_thresh).astype(int), pos_label=1, zero_division=0)
-                static_iso_prauc = average_precision_score(yte_b, scores)
-                
-                def predict_iso(g_t, m_t):
-                    return -iso.score_samples(g_t["x"][m_t, :166].numpy())
-                def _iso_thresh(g_t, m_t):
-                    return np.percentile(-iso.score_samples(g_t["x"][m_t, :166].numpy()), thresh_pct)
-                # ISO macro needs custom threshold logic, we will skip macro for ISO forest since it's unsupervised
-                iso_oot_macro_f1, iso_oot_macro_prauc = "N/A", "N/A"
-                iso_val_pooled_f1, iso_val_pooled_prauc = "N/A", "N/A"
-                iso_val_macro_f1, iso_val_macro_prauc = "N/A", "N/A"
-                
-            results.append(_make_result(
-                seed=cfg_tabular.seed,
-                variation="Base",
-                sweep="Baseline: IsolationForest (166)",
-                static_time=round(stat_iso.get("time", 0.0), 3),
-                static_mem=round(stat_iso.get("peak_mem", 0.0), 2),
-                static_val_pooled_f1=iso_val_pooled_f1,
-                static_val_pooled_prauc=iso_val_pooled_prauc,
-                static_val_macro_f1=iso_val_macro_f1,
-                static_val_macro_prauc=iso_val_macro_prauc,
-                static_oot_pooled_f1=round(static_iso_f1, 3),
-                static_oot_pooled_prauc=round(static_iso_prauc, 3),
-                static_oot_macro_f1=iso_oot_macro_f1,
-                static_oot_macro_prauc=iso_oot_macro_prauc,
-                wf_time="N/A",
-                wf_mem="N/A",
-                wf_f1="N/A",
-                wf_prauc="N/A",
-            ))
-            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
-        else:
-            if args.mode != "temporal": print("Already completed Baseline: IsolationForest (166), skipping.")
-
-
-
-        if args.mode != "temporal" and "Baseline: XGBoost WF (epsilon-fallback)" not in completed_sweeps:
-            stat_xgb, static_xgb_f1, static_xgb_prauc = {}, 0.0, 0.0
-            if not args.only_wf:
-                with profile_resources() as stat_xgb:
-                    xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
-                                     scale_pos_weight=spw_b, eval_metric="aucpr",
-                                     random_state=cfg_tabular.seed, n_jobs=1).fit(Xtr_b, ytr_b)
-                s_xgb = xgb.predict_proba(Xte_b)[:, 1]
-                static_xgb_f1 = f1_score(yte_b, (s_xgb >= 0.5).astype(int), pos_label=1)
-                static_xgb_prauc = average_precision_score(yte_b, s_xgb)
-                
-                def predict_xgb(g_t, m_t):
-                    return xgb.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
-                xgb_oot_macro_f1, xgb_oot_macro_prauc = _evaluate_static_macro(predict_xgb, dm_base, cfg_tabular.test_steps)
-                if len(cfg_tabular.val_steps) > 0:
-                    xgb_val_macro_f1, xgb_val_macro_prauc = _evaluate_static_macro(predict_xgb, dm_base, cfg_tabular.val_steps)
-                    Xval_b = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.val_steps])
-                    yval_b = np.concatenate([dm_base.graphs[t]["y"].numpy() for t in cfg_tabular.val_steps])
-                    m_val_b = yval_b != -1
-                    if m_val_b.sum() > 0:
-                        s_val_xgb = xgb.predict_proba(Xval_b[m_val_b])[:, 1]
-                        xgb_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_xgb >= 0.5).astype(int), pos_label=1)
-                        xgb_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_xgb)
-                    else:
-                        xgb_val_pooled_f1, xgb_val_pooled_prauc = 0.0, 0.0
-                else:
-                    xgb_val_macro_f1, xgb_val_macro_prauc = "N/A", "N/A"
-                    xgb_val_pooled_f1, xgb_val_pooled_prauc = "N/A", "N/A"
-                
-                from evaluation.ablation_validation import evaluate_xgboost_wf as _evaluate_xgboost_wf
-                wf_xgb, wf_xgb_agg = {}, None
-            if not args.only_static:
-                wf_xgb_agg = _evaluate_xgboost_wf(dm_base, cfg_tabular)
-            
-            os.makedirs(os.path.join(OUTPUT_DIR, "models"), exist_ok=True)
-            if not args.only_wf:
-                joblib.dump(xgb, os.path.join(OUTPUT_DIR, "models", "xgb_baseline.pkl"))
-
-            results.append(_make_result(
-                seed=cfg_tabular.seed,
-                variation="Base",
-                sweep="Baseline: XGBoost WF (epsilon-fallback)",
-                static_time=round(stat_xgb.get("time", 0.0), 3),
-                static_mem=round(stat_xgb.get("peak_mem", 0.0), 2),
-                static_val_pooled_f1=round(xgb_val_pooled_f1, 3) if isinstance(xgb_val_pooled_f1, float) else xgb_val_pooled_f1,
-                static_val_pooled_prauc=round(xgb_val_pooled_prauc, 3) if isinstance(xgb_val_pooled_prauc, float) else xgb_val_pooled_prauc,
-                static_val_macro_f1=round(xgb_val_macro_f1, 3) if isinstance(xgb_val_macro_f1, float) else xgb_val_macro_f1,
-                static_val_macro_prauc=round(xgb_val_macro_prauc, 3) if isinstance(xgb_val_macro_prauc, float) else xgb_val_macro_prauc,
-                static_oot_pooled_f1=round(static_xgb_f1, 3),
-                static_oot_pooled_prauc=round(static_xgb_prauc, 3),
-                static_oot_macro_f1=round(xgb_oot_macro_f1, 3) if isinstance(xgb_oot_macro_f1, float) else xgb_oot_macro_f1,
-                static_oot_macro_prauc=round(xgb_oot_macro_prauc, 3) if isinstance(xgb_oot_macro_prauc, float) else xgb_oot_macro_prauc,
-                wf_time="N/A",
-                wf_mem="N/A",
-                wf_f1=round(wf_xgb_agg["WF_Macro_F1"], 3) if wf_xgb_agg else "N/A",
-                wf_prauc=round(wf_xgb_agg["WF_Macro_PRAUC"], 3) if wf_xgb_agg else "N/A",
-                wf_pooled_f1=round(wf_xgb_agg["WF_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
-                wf_pooled_prauc=round(wf_xgb_agg["WF_Pooled_PRAUC"], 3) if wf_xgb_agg else "N/A",
-                wf_pre43_pooled_f1=round(wf_xgb_agg["WF_Pre43_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
-                wf_pre43_prauc=round(wf_xgb_agg["WF_Pre43_PRAUC"], 3) if wf_xgb_agg else "N/A",
-                wf_shock_f1=round(wf_xgb_agg["WF_Shock_F1"], 3) if wf_xgb_agg else "N/A",
-                wf_shock_prauc=round(wf_xgb_agg["WF_Shock_PRAUC"], 3) if wf_xgb_agg else "N/A",
-                wf_recovery_pooled_f1=round(wf_xgb_agg["WF_Recovery_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
-                wf_recovery_prauc=round(wf_xgb_agg["WF_Recovery_PRAUC"], 3) if wf_xgb_agg else "N/A",
-                feature_set="Raw-165 (no ts)", threshold="local-quantile",
-            ))
-            pd.DataFrame(results).to_csv(out_file, index=False)
-        else:
-            if args.mode != "temporal": print("Already completed Baseline: XGBoost WF (epsilon-fallback), skipping.")
-
-        if args.mode != "temporal" and "Baseline: RandomForest (166)" not in completed_sweeps:
-            stat_rf, static_rf_f1, static_rf_prauc = {}, 0.0, 0.0
-            if not args.only_wf:
-                with profile_resources() as stat_rf:
-                    rf = RandomForestClassifier(n_estimators=200, class_weight="balanced",
-                                            n_jobs=1, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
-                s_rf = rf.predict_proba(Xte_b)[:, 1]
-                static_rf_f1 = f1_score(yte_b, (s_rf >= 0.5).astype(int), pos_label=1)
-                static_rf_prauc = average_precision_score(yte_b, s_rf)
-                
-                def predict_rf(g_t, m_t):
-                    return rf.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
-                rf_oot_macro_f1, rf_oot_macro_prauc = _evaluate_static_macro(predict_rf, dm_base, cfg_tabular.test_steps)
-                if len(cfg_tabular.val_steps) > 0:
-                    rf_val_macro_f1, rf_val_macro_prauc = _evaluate_static_macro(predict_rf, dm_base, cfg_tabular.val_steps)
-                    if m_val_b.sum() > 0:
-                        s_val_rf = rf.predict_proba(Xval_b[m_val_b])[:, 1]
-                        rf_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_rf >= 0.5).astype(int), pos_label=1)
-                        rf_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_rf)
-                    else:
-                        rf_val_pooled_f1, rf_val_pooled_prauc = 0.0, 0.0
-                else:
-                    rf_val_macro_f1, rf_val_macro_prauc = "N/A", "N/A"
-                    rf_val_pooled_f1, rf_val_pooled_prauc = "N/A", "N/A"
-                
-            results.append(_make_result(
-                seed=cfg_tabular.seed,
-                variation="Base",
-                sweep="Baseline: RandomForest (166)",
-                static_time=round(stat_rf.get("time", 0.0), 3),
-                static_mem=round(stat_rf.get("peak_mem", 0.0), 2),
-                static_val_pooled_f1=round(rf_val_pooled_f1, 3) if isinstance(rf_val_pooled_f1, float) else rf_val_pooled_f1,
-                static_val_pooled_prauc=round(rf_val_pooled_prauc, 3) if isinstance(rf_val_pooled_prauc, float) else rf_val_pooled_prauc,
-                static_val_macro_f1=round(rf_val_macro_f1, 3) if isinstance(rf_val_macro_f1, float) else rf_val_macro_f1,
-                static_val_macro_prauc=round(rf_val_macro_prauc, 3) if isinstance(rf_val_macro_prauc, float) else rf_val_macro_prauc,
-                static_oot_pooled_f1=round(static_rf_f1, 3),
-                static_oot_pooled_prauc=round(static_rf_prauc, 3),
-                static_oot_macro_f1=round(rf_oot_macro_f1, 3) if isinstance(rf_oot_macro_f1, float) else rf_oot_macro_f1,
-                static_oot_macro_prauc=round(rf_oot_macro_prauc, 3) if isinstance(rf_oot_macro_prauc, float) else rf_oot_macro_prauc,
-                wf_time="N/A",
-                wf_mem="N/A",
-                wf_f1="N/A",
-                wf_prauc="N/A",
-            ))
-            pd.DataFrame(results).to_csv(out_file, index=False)
-        else:
-            if args.mode != "temporal": print("Already completed Baseline: RandomForest (166), skipping.")
-
-        if args.mode != "temporal" and "Baseline: Logistic Regression (166)" not in completed_sweeps:
-            from sklearn.linear_model import LogisticRegression
-            stat_lr, static_lr_f1, static_lr_prauc = {}, 0.0, 0.0
-            if not args.only_wf:
-                with profile_resources() as stat_lr:
-                    lr = LogisticRegression(class_weight="balanced", max_iter=1000, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
-                s_lr = lr.predict_proba(Xte_b)[:, 1]
-                static_lr_f1 = f1_score(yte_b, (s_lr >= 0.5).astype(int), pos_label=1)
-                static_lr_prauc = average_precision_score(yte_b, s_lr)
-                def predict_lr(g_t, m_t):
-                    return lr.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
-                lr_oot_macro_f1, lr_oot_macro_prauc = _evaluate_static_macro(predict_lr, dm_base, cfg_tabular.test_steps)
-                if len(cfg_tabular.val_steps) > 0:
-                    lr_val_macro_f1, lr_val_macro_prauc = _evaluate_static_macro(predict_lr, dm_base, cfg_tabular.val_steps)
-                    if 'Xval_b' not in locals():
+    for baseline_seed in [42, 43, 44]:
+        print(f"\n--- Baseline Tabular Models (Seed {baseline_seed}) ---")
+        cfg_tabular = Config(use_graph_structural=False, sgc_k=0, use_multiscale_prop=False, seed=baseline_seed)
+        dm_base = EllipticDataModule(df, df_edge, feature_cols, cfg_tabular)
+        dm_base.setup()
+        try:
+            Xs_tr, ys_tr = [], []
+            for t in cfg_tabular.train_steps:
+                g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
+                Xs_tr.append(g["x"].numpy()[:, :166][m])
+                ys_tr.append(g["y"].numpy()[m])
+            Xtr_b, ytr_b = np.concatenate(Xs_tr), np.concatenate(ys_tr)
+            spw_b = (ytr_b == 0).sum() / max((ytr_b == 1).sum(), 1)
+    
+            Xs_te, ys_te = [], []
+            for t in cfg_tabular.test_steps:
+                g = dm_base.graphs[t]; m = g["labeled_mask"].numpy()
+                Xs_te.append(g["x"].numpy()[:, :166][m])
+                ys_te.append(g["y"].numpy()[m])
+            Xte_b, yte_b = np.concatenate(Xs_te), np.concatenate(ys_te)
+    
+            if args.mode != "temporal" and ("Baseline: IsolationForest (166)", str(cfg_tabular.seed), "Base") not in completed_sweeps:
+                from sklearn.ensemble import IsolationForest
+                stat_iso, static_iso_f1, static_iso_prauc = {}, 0.0, 0.0
+                if not args.only_wf:
+                    with profile_resources() as stat_iso:
+                        Xtr_iso = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.train_steps])
+                    Xte_iso = Xte_b
+                    iso = IsolationForest(n_estimators=100, contamination='auto', random_state=cfg_tabular.seed, n_jobs=1)
+                    iso.fit(Xtr_iso)
+                    scores = -iso.score_samples(Xte_iso)
+                    actual_illicit_rate = (yte_b == 1).mean()
+                    thresh_pct = (1 - actual_illicit_rate) * 100
+                    iso_thresh = np.percentile(scores, thresh_pct)
+                    static_iso_f1 = f1_score(yte_b, (scores >= iso_thresh).astype(int), pos_label=1, zero_division=0)
+                    static_iso_prauc = average_precision_score(yte_b, scores)
+                    def predict_iso(g_t, m_t):
+                        return -iso.score_samples(g_t["x"][m_t, :166].numpy())
+                    def _iso_thresh(g_t, m_t):
+                        return np.percentile(-iso.score_samples(g_t["x"][m_t, :166].numpy()), thresh_pct)
+                    # ISO macro needs custom threshold logic, we will skip macro for ISO forest since it's unsupervised
+                    iso_oot_macro_f1, iso_oot_macro_prauc = "N/A", "N/A"
+                    iso_val_pooled_f1, iso_val_pooled_prauc = "N/A", "N/A"
+                    iso_val_macro_f1, iso_val_macro_prauc = "N/A", "N/A"
+                results.append(_make_result(
+                    seed=cfg_tabular.seed,
+                    variation="Base",
+                    sweep="Baseline: IsolationForest (166)",
+                    cfg=cfg_tabular,
+                    static_time=round(stat_iso.get("time", 0.0), 3),
+                    static_mem=round(stat_iso.get("peak_mem", 0.0), 2),
+                    static_val_pooled_f1=iso_val_pooled_f1,
+                    static_val_pooled_prauc=iso_val_pooled_prauc,
+                    static_val_macro_f1=iso_val_macro_f1,
+                    static_val_macro_prauc=iso_val_macro_prauc,
+                    static_oot_pooled_f1=round(static_iso_f1, 3),
+                    static_oot_pooled_prauc=round(static_iso_prauc, 3),
+                    static_oot_macro_f1=iso_oot_macro_f1,
+                    static_oot_macro_prauc=iso_oot_macro_prauc,
+                    wf_time="N/A",
+                    wf_mem="N/A",
+                    wf_f1="N/A",
+                    wf_prauc="N/A",
+                ))
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+            else:
+                if args.mode != "temporal": print("Already completed Baseline: IsolationForest (166), skipping.")
+    
+    
+    
+            if args.mode != "temporal" and ("Baseline: XGBoost WF (epsilon-fallback)", str(cfg_tabular.seed), "Base") not in completed_sweeps:
+                stat_xgb, static_xgb_f1, static_xgb_prauc = {}, 0.0, 0.0
+                if not args.only_wf:
+                    with profile_resources() as stat_xgb:
+                        xgb = XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1,
+                                         scale_pos_weight=spw_b, eval_metric="aucpr",
+                                         random_state=cfg_tabular.seed, n_jobs=1).fit(Xtr_b, ytr_b)
+                    s_xgb = xgb.predict_proba(Xte_b)[:, 1]
+                    static_xgb_f1 = f1_score(yte_b, (s_xgb >= 0.5).astype(int), pos_label=1)
+                    static_xgb_prauc = average_precision_score(yte_b, s_xgb)
+                    def predict_xgb(g_t, m_t):
+                        return xgb.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
+                    xgb_oot_macro_f1, xgb_oot_macro_prauc = _evaluate_static_macro(predict_xgb, dm_base, cfg_tabular.test_steps)
+                    if len(cfg_tabular.val_steps) > 0:
+                        xgb_val_macro_f1, xgb_val_macro_prauc = _evaluate_static_macro(predict_xgb, dm_base, cfg_tabular.val_steps)
                         Xval_b = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.val_steps])
                         yval_b = np.concatenate([dm_base.graphs[t]["y"].numpy() for t in cfg_tabular.val_steps])
                         m_val_b = yval_b != -1
-                    if m_val_b.sum() > 0:
-                        s_val_lr = lr.predict_proba(Xval_b[m_val_b])[:, 1]
-                        lr_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_lr >= 0.5).astype(int), pos_label=1)
-                        lr_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_lr)
+                        if m_val_b.sum() > 0:
+                            s_val_xgb = xgb.predict_proba(Xval_b[m_val_b])[:, 1]
+                            xgb_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_xgb >= 0.5).astype(int), pos_label=1)
+                            xgb_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_xgb)
+                        else:
+                            xgb_val_pooled_f1, xgb_val_pooled_prauc = 0.0, 0.0
                     else:
-                        lr_val_pooled_f1, lr_val_pooled_prauc = 0.0, 0.0
-                else:
-                    lr_val_macro_f1, lr_val_macro_prauc = "N/A", "N/A"
-                    lr_val_pooled_f1, lr_val_pooled_prauc = "N/A", "N/A"
-                
-            results.append(_make_result(
-                seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Logistic Regression (166)",
-                static_time=round(stat_lr.get("time", 0.0), 3), static_mem=round(stat_lr.get("peak_mem", 0.0), 2),
-                static_val_pooled_f1=round(lr_val_pooled_f1, 3) if isinstance(lr_val_pooled_f1, float) else lr_val_pooled_f1,
-                static_val_pooled_prauc=round(lr_val_pooled_prauc, 3) if isinstance(lr_val_pooled_prauc, float) else lr_val_pooled_prauc,
-                static_val_macro_f1=round(lr_val_macro_f1, 3) if isinstance(lr_val_macro_f1, float) else lr_val_macro_f1,
-                static_val_macro_prauc=round(lr_val_macro_prauc, 3) if isinstance(lr_val_macro_prauc, float) else lr_val_macro_prauc,
-                static_oot_pooled_f1=round(static_lr_f1, 3), static_oot_pooled_prauc=round(static_lr_prauc, 3),
-                static_oot_macro_f1=round(lr_oot_macro_f1, 3) if isinstance(lr_oot_macro_f1, float) else lr_oot_macro_f1,
-                static_oot_macro_prauc=round(lr_oot_macro_prauc, 3) if isinstance(lr_oot_macro_prauc, float) else lr_oot_macro_prauc,
-                wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
-            ))
-            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
-        else:
-            if args.mode != "temporal": print("Already completed Baseline: Logistic Regression (166), skipping.")
-
-    except Exception as e:
-        print(f"  Baselines (tabular) skipped: {e}")
-
-    # ── PyG GCN Baseline (separate try block for visibility) ─────────────────
-    try:
-        if args.mode != "temporal" and "Baseline: PyG GCN (2-layer)" not in completed_sweeps:
-            import torch.nn as nn
-            from torch_geometric.nn import GCNConv
-            from torch_geometric.utils import to_undirected
-            
-            class GCN2(nn.Module):
-                def __init__(self, in_dim, hidden, n_classes=2):
-                    super().__init__()
-                    self.c1 = GCNConv(in_dim, hidden)
-                    self.c2 = GCNConv(hidden, n_classes)
-                def forward(self, x, edge_index):
-                    return self.c2(torch.relu(self.c1(x, edge_index)), edge_index)
-
-            stat_gcn, static_gcn_f1, static_gcn_prauc = {}, 0.0, 0.0
-            if not args.only_wf:
-                with profile_resources() as stat_gcn:
-                    gcn_device = torch.device("cpu")
-                    in_dim = dm_base.graphs[min(dm_base.graphs)]["x"].shape[1]
-                    model = GCN2(in_dim, 100).to(gcn_device)
-                    ytr = torch.cat([dm_base.graphs[t]["y"][dm_base.graphs[t]["labeled_mask"]] for t in cfg_tabular.train_steps if t in dm_base.graphs])
-                    cls_w = torch.tensor([0.3, 0.7], dtype=torch.float32, device=gcn_device)
-                    loss_fn = nn.CrossEntropyLoss(weight=cls_w)
-                    opt = torch.optim.Adam(model.parameters(), lr=0.001)
-
-                    edges = {t: to_undirected(dm_base.graphs[t]["edge_index"]).to(gcn_device) for t in dm_base.graphs}
-                    for _ in range(1000):
-                        opt.zero_grad()
-                        total = 0.0
-                        for t in cfg_tabular.train_steps:
-                            if t not in dm_base.graphs: continue
-                            g = dm_base.graphs[t]; m = g["labeled_mask"]
-                            if m.sum() == 0: continue
-                            logits = model(g["x"].to(gcn_device), edges[t])
-                            total = total + loss_fn(logits[m], g["y"][m].to(gcn_device))
-                        total.backward()
-                        opt.step()
-
-                    model.eval()
-                    s_all, y_all = [], []
-                    with torch.no_grad():
-                        for t in cfg_tabular.test_steps:
-                            if t not in dm_base.graphs: continue
-                            g = dm_base.graphs[t]; m = g["labeled_mask"]
-                            if m.sum() == 0: continue
-                            logits = model(g["x"].to(gcn_device), edges[t])
-                            s_all.append(torch.softmax(logits[m], dim=1)[:, 1].cpu().numpy())
-                            y_all.append(g["y"][m].numpy())
-                    if len(s_all) > 0:
-                        y_all_cat = np.concatenate(y_all)
-                        s_all_cat = np.concatenate(s_all)
-                        static_gcn_f1 = f1_score(y_all_cat, (s_all_cat >= 0.5).astype(int), pos_label=1)
-                        static_gcn_prauc = average_precision_score(y_all_cat, s_all_cat)
-                        
-                    def predict_gcn(g_t, m_t):
-                        with torch.no_grad():
-                            logits = model(g_t["x"].to(gcn_device), edges[g_t.get("ts_override", min(edges.keys()))])
-                        return torch.softmax(logits[m_t], dim=1)[:, 1].cpu().numpy()
-                    gcn_oot_macro_f1, gcn_oot_macro_prauc = _evaluate_static_macro(predict_gcn, dm_base, cfg_tabular.test_steps)
+                        xgb_val_macro_f1, xgb_val_macro_prauc = "N/A", "N/A"
+                        xgb_val_pooled_f1, xgb_val_pooled_prauc = "N/A", "N/A"
+                    from evaluation.ablation_validation import evaluate_xgboost_wf as _evaluate_xgboost_wf
+                    wf_xgb, wf_xgb_agg = {}, None
+                if not args.only_static:
+                    wf_xgb_agg = _evaluate_xgboost_wf(dm_base, cfg_tabular)
+                os.makedirs(os.path.join(OUTPUT_DIR, "models"), exist_ok=True)
+                if not args.only_wf:
+                    joblib.dump(xgb, os.path.join(OUTPUT_DIR, "models", "xgb_baseline.pkl"))
+    
+                results.append(_make_result(
+                    seed=cfg_tabular.seed,
+                    variation="Base",
+                    sweep="Baseline: XGBoost WF (epsilon-fallback)",
+                    cfg=cfg_tabular,
+                    static_time=round(stat_xgb.get("time", 0.0), 3),
+                    static_mem=round(stat_xgb.get("peak_mem", 0.0), 2),
+                    static_val_pooled_f1=round(xgb_val_pooled_f1, 3) if isinstance(xgb_val_pooled_f1, float) else xgb_val_pooled_f1,
+                    static_val_pooled_prauc=round(xgb_val_pooled_prauc, 3) if isinstance(xgb_val_pooled_prauc, float) else xgb_val_pooled_prauc,
+                    static_val_macro_f1=round(xgb_val_macro_f1, 3) if isinstance(xgb_val_macro_f1, float) else xgb_val_macro_f1,
+                    static_val_macro_prauc=round(xgb_val_macro_prauc, 3) if isinstance(xgb_val_macro_prauc, float) else xgb_val_macro_prauc,
+                    static_oot_pooled_f1=round(static_xgb_f1, 3),
+                    static_oot_pooled_prauc=round(static_xgb_prauc, 3),
+                    static_oot_macro_f1=round(xgb_oot_macro_f1, 3) if isinstance(xgb_oot_macro_f1, float) else xgb_oot_macro_f1,
+                    static_oot_macro_prauc=round(xgb_oot_macro_prauc, 3) if isinstance(xgb_oot_macro_prauc, float) else xgb_oot_macro_prauc,
+                    wf_time="N/A",
+                    wf_mem="N/A",
+                    wf_f1=round(wf_xgb_agg["WF_Macro_F1"], 3) if wf_xgb_agg else "N/A",
+                    wf_prauc=round(wf_xgb_agg["WF_Macro_PRAUC"], 3) if wf_xgb_agg else "N/A",
+                    wf_pooled_f1=round(wf_xgb_agg["WF_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
+                    wf_pooled_prauc=round(wf_xgb_agg["WF_Pooled_PRAUC"], 3) if wf_xgb_agg else "N/A",
+                    wf_pre43_pooled_f1=round(wf_xgb_agg["WF_Pre43_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
+                    wf_pre43_prauc=round(wf_xgb_agg["WF_Pre43_PRAUC"], 3) if wf_xgb_agg else "N/A",
+                    wf_shock_f1=round(wf_xgb_agg["WF_Shock_F1"], 3) if wf_xgb_agg else "N/A",
+                    wf_shock_prauc=round(wf_xgb_agg["WF_Shock_PRAUC"], 3) if wf_xgb_agg else "N/A",
+                    wf_recovery_pooled_f1=round(wf_xgb_agg["WF_Recovery_Pooled_F1"], 3) if wf_xgb_agg else "N/A",
+                    wf_recovery_prauc=round(wf_xgb_agg["WF_Recovery_PRAUC"], 3) if wf_xgb_agg else "N/A",
+                    feature_set="Raw-165 (no ts)", threshold="local-quantile",
+                ))
+                pd.DataFrame(results).to_csv(out_file, index=False)
+            else:
+                if args.mode != "temporal": print("Already completed Baseline: XGBoost WF (epsilon-fallback), skipping.")
+    
+            if args.mode != "temporal" and ("Baseline: RandomForest (166)", str(cfg_tabular.seed), "Base") not in completed_sweeps:
+                stat_rf, static_rf_f1, static_rf_prauc = {}, 0.0, 0.0
+                if not args.only_wf:
+                    with profile_resources() as stat_rf:
+                        rf = RandomForestClassifier(n_estimators=200, class_weight="balanced",
+                                                n_jobs=1, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
+                    s_rf = rf.predict_proba(Xte_b)[:, 1]
+                    static_rf_f1 = f1_score(yte_b, (s_rf >= 0.5).astype(int), pos_label=1)
+                    static_rf_prauc = average_precision_score(yte_b, s_rf)
+                    def predict_rf(g_t, m_t):
+                        return rf.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
+                    rf_oot_macro_f1, rf_oot_macro_prauc = _evaluate_static_macro(predict_rf, dm_base, cfg_tabular.test_steps)
                     if len(cfg_tabular.val_steps) > 0:
-                        gcn_val_macro_f1, gcn_val_macro_prauc = _evaluate_static_macro(predict_gcn, dm_base, cfg_tabular.val_steps)
+                        rf_val_macro_f1, rf_val_macro_prauc = _evaluate_static_macro(predict_rf, dm_base, cfg_tabular.val_steps)
+                        if m_val_b.sum() > 0:
+                            s_val_rf = rf.predict_proba(Xval_b[m_val_b])[:, 1]
+                            rf_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_rf >= 0.5).astype(int), pos_label=1)
+                            rf_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_rf)
+                        else:
+                            rf_val_pooled_f1, rf_val_pooled_prauc = 0.0, 0.0
+                    else:
+                        rf_val_macro_f1, rf_val_macro_prauc = "N/A", "N/A"
+                        rf_val_pooled_f1, rf_val_pooled_prauc = "N/A", "N/A"
+                results.append(_make_result(
+                    seed=cfg_tabular.seed,
+                    variation="Base",
+                    sweep="Baseline: RandomForest (166)",
+                    cfg=cfg_tabular,
+                    static_time=round(stat_rf.get("time", 0.0), 3),
+                    static_mem=round(stat_rf.get("peak_mem", 0.0), 2),
+                    static_val_pooled_f1=round(rf_val_pooled_f1, 3) if isinstance(rf_val_pooled_f1, float) else rf_val_pooled_f1,
+                    static_val_pooled_prauc=round(rf_val_pooled_prauc, 3) if isinstance(rf_val_pooled_prauc, float) else rf_val_pooled_prauc,
+                    static_val_macro_f1=round(rf_val_macro_f1, 3) if isinstance(rf_val_macro_f1, float) else rf_val_macro_f1,
+                    static_val_macro_prauc=round(rf_val_macro_prauc, 3) if isinstance(rf_val_macro_prauc, float) else rf_val_macro_prauc,
+                    static_oot_pooled_f1=round(static_rf_f1, 3),
+                    static_oot_pooled_prauc=round(static_rf_prauc, 3),
+                    static_oot_macro_f1=round(rf_oot_macro_f1, 3) if isinstance(rf_oot_macro_f1, float) else rf_oot_macro_f1,
+                    static_oot_macro_prauc=round(rf_oot_macro_prauc, 3) if isinstance(rf_oot_macro_prauc, float) else rf_oot_macro_prauc,
+                    wf_time="N/A",
+                    wf_mem="N/A",
+                    wf_f1="N/A",
+                    wf_prauc="N/A",
+                ))
+                pd.DataFrame(results).to_csv(out_file, index=False)
+            else:
+                if args.mode != "temporal": print("Already completed Baseline: RandomForest (166), skipping.")
+    
+            if args.mode != "temporal" and ("Baseline: Logistic Regression (166)", str(cfg_tabular.seed), "Base") not in completed_sweeps:
+                from sklearn.linear_model import LogisticRegression
+                stat_lr, static_lr_f1, static_lr_prauc = {}, 0.0, 0.0
+                if not args.only_wf:
+                    with profile_resources() as stat_lr:
+                        lr = LogisticRegression(class_weight="balanced", max_iter=1000, random_state=cfg_tabular.seed).fit(Xtr_b, ytr_b)
+                    s_lr = lr.predict_proba(Xte_b)[:, 1]
+                    static_lr_f1 = f1_score(yte_b, (s_lr >= 0.5).astype(int), pos_label=1)
+                    static_lr_prauc = average_precision_score(yte_b, s_lr)
+                    def predict_lr(g_t, m_t):
+                        return lr.predict_proba(g_t["x"][m_t, :166].numpy())[:, 1]
+                    lr_oot_macro_f1, lr_oot_macro_prauc = _evaluate_static_macro(predict_lr, dm_base, cfg_tabular.test_steps)
+                    if len(cfg_tabular.val_steps) > 0:
+                        lr_val_macro_f1, lr_val_macro_prauc = _evaluate_static_macro(predict_lr, dm_base, cfg_tabular.val_steps)
                         if 'Xval_b' not in locals():
+                            Xval_b = np.concatenate([dm_base.graphs[t]["x"].numpy()[:, :166] for t in cfg_tabular.val_steps])
                             yval_b = np.concatenate([dm_base.graphs[t]["y"].numpy() for t in cfg_tabular.val_steps])
                             m_val_b = yval_b != -1
                         if m_val_b.sum() > 0:
-                            s_val_gcn_all = []
-                            y_val_gcn_all = []
+                            s_val_lr = lr.predict_proba(Xval_b[m_val_b])[:, 1]
+                            lr_val_pooled_f1 = f1_score(yval_b[m_val_b], (s_val_lr >= 0.5).astype(int), pos_label=1)
+                            lr_val_pooled_prauc = average_precision_score(yval_b[m_val_b], s_val_lr)
+                        else:
+                            lr_val_pooled_f1, lr_val_pooled_prauc = 0.0, 0.0
+                    else:
+                        lr_val_macro_f1, lr_val_macro_prauc = "N/A", "N/A"
+                        lr_val_pooled_f1, lr_val_pooled_prauc = "N/A", "N/A"
+                results.append(_make_result(
+                    seed=cfg_tabular.seed, variation="Base", sweep="Baseline: Logistic Regression (166)",
+                    cfg=cfg_tabular,
+                    static_time=round(stat_lr.get("time", 0.0), 3), static_mem=round(stat_lr.get("peak_mem", 0.0), 2),
+                    static_val_pooled_f1=round(lr_val_pooled_f1, 3) if isinstance(lr_val_pooled_f1, float) else lr_val_pooled_f1,
+                    static_val_pooled_prauc=round(lr_val_pooled_prauc, 3) if isinstance(lr_val_pooled_prauc, float) else lr_val_pooled_prauc,
+                    static_val_macro_f1=round(lr_val_macro_f1, 3) if isinstance(lr_val_macro_f1, float) else lr_val_macro_f1,
+                    static_val_macro_prauc=round(lr_val_macro_prauc, 3) if isinstance(lr_val_macro_prauc, float) else lr_val_macro_prauc,
+                    static_oot_pooled_f1=round(static_lr_f1, 3), static_oot_pooled_prauc=round(static_lr_prauc, 3),
+                    static_oot_macro_f1=round(lr_oot_macro_f1, 3) if isinstance(lr_oot_macro_f1, float) else lr_oot_macro_f1,
+                    static_oot_macro_prauc=round(lr_oot_macro_prauc, 3) if isinstance(lr_oot_macro_prauc, float) else lr_oot_macro_prauc,
+                    wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
+                ))
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+            else:
+                if args.mode != "temporal": print("Already completed Baseline: Logistic Regression (166), skipping.")
+    
+        except Exception as e:
+            print(f"  Baselines (tabular) skipped: {e}")
+    
+        # ── PyG GCN Baseline (separate try block for visibility) ─────────────────
+        try:
+            if args.mode != "temporal" and ("Baseline: PyG GCN (2-layer)", str(cfg_tabular.seed), "Base") not in completed_sweeps:
+                import torch.nn as nn
+                from torch_geometric.nn import GCNConv
+                from torch_geometric.utils import to_undirected
+                class GCN2(nn.Module):
+                    def __init__(self, in_dim, hidden, n_classes=2):
+                        super().__init__()
+                        self.c1 = GCNConv(in_dim, hidden)
+                        self.c2 = GCNConv(hidden, n_classes)
+                    def forward(self, x, edge_index):
+                        return self.c2(torch.relu(self.c1(x, edge_index)), edge_index)
+    
+                stat_gcn, static_gcn_f1, static_gcn_prauc = {}, 0.0, 0.0
+                if not args.only_wf:
+                    with profile_resources() as stat_gcn:
+                        gcn_device = torch.device("cpu")
+                        in_dim = dm_base.graphs[min(dm_base.graphs)]["x"].shape[1]
+                        model = GCN2(in_dim, 100).to(gcn_device)
+                        ytr = torch.cat([dm_base.graphs[t]["y"][dm_base.graphs[t]["labeled_mask"]] for t in cfg_tabular.train_steps if t in dm_base.graphs])
+                        cls_w = torch.tensor([0.3, 0.7], dtype=torch.float32, device=gcn_device)
+                        loss_fn = nn.CrossEntropyLoss(weight=cls_w)
+                        opt = torch.optim.Adam(model.parameters(), lr=0.001)
+    
+                        edges = {t: to_undirected(dm_base.graphs[t]["edge_index"]).to(gcn_device) for t in dm_base.graphs}
+                        for _ in range(1000):
+                            opt.zero_grad()
+                            total = 0.0
+                            for t in cfg_tabular.train_steps:
+                                if t not in dm_base.graphs: continue
+                                g = dm_base.graphs[t]; m = g["labeled_mask"]
+                                if m.sum() == 0: continue
+                                logits = model(g["x"].to(gcn_device), edges[t])
+                                total = total + loss_fn(logits[m], g["y"][m].to(gcn_device))
+                            total.backward()
+                            opt.step()
+    
+                        model.eval()
+                        s_all, y_all = [], []
+                        with torch.no_grad():
+                            for t in cfg_tabular.test_steps:
+                                if t not in dm_base.graphs: continue
+                                g = dm_base.graphs[t]; m = g["labeled_mask"]
+                                if m.sum() == 0: continue
+                                logits = model(g["x"].to(gcn_device), edges[t])
+                                s_all.append(torch.softmax(logits[m], dim=1)[:, 1].cpu().numpy())
+                                y_all.append(g["y"][m].numpy())
+                        if len(s_all) > 0:
+                            y_all_cat = np.concatenate(y_all)
+                            s_all_cat = np.concatenate(s_all)
+                            static_gcn_f1 = f1_score(y_all_cat, (s_all_cat >= 0.5).astype(int), pos_label=1)
+                            static_gcn_prauc = average_precision_score(y_all_cat, s_all_cat)
+                        def predict_gcn(g_t, m_t):
                             with torch.no_grad():
-                                for t in cfg_tabular.val_steps:
-                                    if t not in dm_base.graphs: continue
-                                    g = dm_base.graphs[t]; m = g["labeled_mask"]
-                                    if m.sum() == 0: continue
-                                    logits = model(g["x"].to(gcn_device), edges[t])
-                                    s_val_gcn_all.append(torch.softmax(logits[m], dim=1)[:, 1].cpu().numpy())
-                                    y_val_gcn_all.append(g["y"][m].numpy())
-                            if len(s_val_gcn_all) > 0:
-                                gcn_val_pooled_f1 = f1_score(np.concatenate(y_val_gcn_all), (np.concatenate(s_val_gcn_all) >= 0.5).astype(int), pos_label=1)
-                                gcn_val_pooled_prauc = average_precision_score(np.concatenate(y_val_gcn_all), np.concatenate(s_val_gcn_all))
+                                logits = model(g_t["x"].to(gcn_device), edges[g_t.get("ts_override", min(edges.keys()))])
+                            return torch.softmax(logits[m_t], dim=1)[:, 1].cpu().numpy()
+                        gcn_oot_macro_f1, gcn_oot_macro_prauc = _evaluate_static_macro(predict_gcn, dm_base, cfg_tabular.test_steps)
+                        if len(cfg_tabular.val_steps) > 0:
+                            gcn_val_macro_f1, gcn_val_macro_prauc = _evaluate_static_macro(predict_gcn, dm_base, cfg_tabular.val_steps)
+                            if 'Xval_b' not in locals():
+                                yval_b = np.concatenate([dm_base.graphs[t]["y"].numpy() for t in cfg_tabular.val_steps])
+                                m_val_b = yval_b != -1
+                            if m_val_b.sum() > 0:
+                                s_val_gcn_all = []
+                                y_val_gcn_all = []
+                                with torch.no_grad():
+                                    for t in cfg_tabular.val_steps:
+                                        if t not in dm_base.graphs: continue
+                                        g = dm_base.graphs[t]; m = g["labeled_mask"]
+                                        if m.sum() == 0: continue
+                                        logits = model(g["x"].to(gcn_device), edges[t])
+                                        s_val_gcn_all.append(torch.softmax(logits[m], dim=1)[:, 1].cpu().numpy())
+                                        y_val_gcn_all.append(g["y"][m].numpy())
+                                if len(s_val_gcn_all) > 0:
+                                    gcn_val_pooled_f1 = f1_score(np.concatenate(y_val_gcn_all), (np.concatenate(s_val_gcn_all) >= 0.5).astype(int), pos_label=1)
+                                    gcn_val_pooled_prauc = average_precision_score(np.concatenate(y_val_gcn_all), np.concatenate(s_val_gcn_all))
+                                else:
+                                    gcn_val_pooled_f1, gcn_val_pooled_prauc = 0.0, 0.0
                             else:
                                 gcn_val_pooled_f1, gcn_val_pooled_prauc = 0.0, 0.0
                         else:
-                            gcn_val_pooled_f1, gcn_val_pooled_prauc = 0.0, 0.0
-                    else:
-                        gcn_val_macro_f1, gcn_val_macro_prauc = "N/A", "N/A"
-                        gcn_val_pooled_f1, gcn_val_pooled_prauc = "N/A", "N/A"
-                        
-            results.append(_make_result(
-                seed=cfg_tabular.seed, variation="Base", sweep="Baseline: PyG GCN (2-layer)",
-                static_time=round(stat_gcn.get("time", 0.0), 3), static_mem=round(stat_gcn.get("peak_mem", 0.0), 2),
-                static_val_pooled_f1=round(gcn_val_pooled_f1, 3) if isinstance(gcn_val_pooled_f1, float) else gcn_val_pooled_f1,
-                static_val_pooled_prauc=round(gcn_val_pooled_prauc, 3) if isinstance(gcn_val_pooled_prauc, float) else gcn_val_pooled_prauc,
-                static_val_macro_f1=round(gcn_val_macro_f1, 3) if isinstance(gcn_val_macro_f1, float) else gcn_val_macro_f1,
-                static_val_macro_prauc=round(gcn_val_macro_prauc, 3) if isinstance(gcn_val_macro_prauc, float) else gcn_val_macro_prauc,
-                static_oot_pooled_f1=round(static_gcn_f1, 3), static_oot_pooled_prauc=round(static_gcn_prauc, 3),
-                static_oot_macro_f1=round(gcn_oot_macro_f1, 3) if isinstance(gcn_oot_macro_f1, float) else gcn_oot_macro_f1,
-                static_oot_macro_prauc=round(gcn_oot_macro_prauc, 3) if isinstance(gcn_oot_macro_prauc, float) else gcn_oot_macro_prauc,
-                wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
-            ))
-            pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
-        else:
-            if args.mode != "temporal": print("Already completed Baseline: PyG GCN (2-layer), skipping.")
-    except Exception as e:
-        print(f"  Baseline: PyG GCN (2-layer) failed: {e}")
-        raise e
-
+                            gcn_val_macro_f1, gcn_val_macro_prauc = "N/A", "N/A"
+                            gcn_val_pooled_f1, gcn_val_pooled_prauc = "N/A", "N/A"
+                results.append(_make_result(
+                    seed=cfg_tabular.seed, variation="Base", sweep="Baseline: PyG GCN (2-layer)",
+                    cfg=cfg_tabular,
+                    static_time=round(stat_gcn.get("time", 0.0), 3), static_mem=round(stat_gcn.get("peak_mem", 0.0), 2),
+                    static_val_pooled_f1=round(gcn_val_pooled_f1, 3) if isinstance(gcn_val_pooled_f1, float) else gcn_val_pooled_f1,
+                    static_val_pooled_prauc=round(gcn_val_pooled_prauc, 3) if isinstance(gcn_val_pooled_prauc, float) else gcn_val_pooled_prauc,
+                    static_val_macro_f1=round(gcn_val_macro_f1, 3) if isinstance(gcn_val_macro_f1, float) else gcn_val_macro_f1,
+                    static_val_macro_prauc=round(gcn_val_macro_prauc, 3) if isinstance(gcn_val_macro_prauc, float) else gcn_val_macro_prauc,
+                    static_oot_pooled_f1=round(static_gcn_f1, 3), static_oot_pooled_prauc=round(static_gcn_prauc, 3),
+                    static_oot_macro_f1=round(gcn_oot_macro_f1, 3) if isinstance(gcn_oot_macro_f1, float) else gcn_oot_macro_f1,
+                    static_oot_macro_prauc=round(gcn_oot_macro_prauc, 3) if isinstance(gcn_oot_macro_prauc, float) else gcn_oot_macro_prauc,
+                    wf_time="N/A", wf_mem="N/A", wf_f1="N/A", wf_prauc="N/A",
+                ))
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+            else:
+                if args.mode != "temporal": print("Already completed Baseline: PyG GCN (2-layer), skipping.")
+        except Exception as e:
+            print(f"  Baseline: PyG GCN (2-layer) failed: {e}")
+            raise e
+    
+    
     # ── W4 FIX: Phased Grid Search Matrix ──────────────────────────────────────
     import itertools
     if args.mode == "temporal":
@@ -1105,14 +1129,15 @@ def main():
         topo_vals = [None, 'late', 'early']
 
     # Helper to execute and record a single sweep configuration
-    def execute_sweep(sweep_key, name, cfg, var):
-        if sweep_key in completed_sweeps:
-            print(f"Already completed {sweep_key}, skipping.")
+    def execute_sweep(name, cfg, var, seed):
+        sweep_tuple = (name, str(seed), var)
+        if sweep_tuple in completed_sweeps:
+            print(f"Already completed {name} (Seed {seed}, Var {var}), skipping.")
             for r in results:
-                if r["Sweep"] == sweep_key: return r
+                if r["Sweep"] == name and str(r["Seed"]) == str(seed) and str(r["Variation"]) == var: return r
             return None
             
-        print(f"\n{'='*55}\nRunning: {sweep_key}\n{'='*55}")
+        print(f"\n{'='*55}\nRunning: {name}\n{'='*55}")
         
         if var == "PCA":
             from dataclasses import replace
@@ -1120,35 +1145,68 @@ def main():
         
         if args.only_static:
             res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
+            res["Multiscale_Prop"] = cfg.use_multiscale_prop
+            res["Directionality"] = cfg.use_directional_prop
+            res["Topological_Injection"] = cfg.topo_injection_mode if cfg.use_graph_structural else "None"
+
         elif args.only_wf:
             res = run_single_sweep(name, cfg, df, df_edge, feature_cols, variation=var, only_wf=True)
         else:
             # During Phase 1 and Phase 2, we ONLY want to evaluate statically, regardless of mode.
             res = run_static_only_sweep(name, cfg, df, df_edge, feature_cols, variation=var)
+            res["Multiscale_Prop"] = cfg.use_multiscale_prop
+            res["Directionality"] = cfg.use_directional_prop
+            res["Topological_Injection"] = cfg.topo_injection_mode if cfg.use_graph_structural else "None"
+
                 
-        res["Sweep"] = sweep_key
+        res["Sweep"] = name
         results.append(res)
         pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(os.path.join(OUTPUT_DIR, "sweep_results.csv"), index=False)
         print(f"--> {res}\n")
-        completed_sweeps.add(sweep_key)
+        completed_sweeps.add((name, str(seed), var))
         return res
 
     all_configs_run = {}
+
+    print("\n--- PHASE 1: Sweep 1 (SGC no-MLP) ---")
+    for s_seed in [42, 43, 44]:
+        for k in [1, 2, 3]:
+            name = f"Sweep 1: SGC (baseline) K={k}"
+            cfg = Config(use_mlp_head=False, use_multiscale_prop=False, sgc_k=k, use_graph_structural=False, seed=s_seed)
+            execute_sweep(name, cfg, "Base", s_seed)
+            all_configs_run[(name, str(s_seed), "Base")] = cfg
 
     for seed in seeds:
         for var in variations:
             print(f"\n{'#'*60}\nRunning Sequence for Seed {seed}, Var {var}\n{'#'*60}")
             
-            # --- PHASE 1: Baselines ---
-            phase1_sweeps = [
-                ("Sweep 1: SGC (baseline)", Config(use_mlp_head=False, use_multiscale_prop=False, use_graph_structural=False, seed=seed)),
-                ("Sweep 2: + MLP Head", Config(use_mlp_head=True, use_multiscale_prop=False, use_graph_structural=False, seed=seed))
-            ]
-            for name, cfg in phase1_sweeps:
-                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
-                execute_sweep(sweep_key, name, cfg, var)
-                all_configs_run[sweep_key] = cfg
+            # --- PHASE 1.5: No-MP Ablation ---
+            for k, topo, injection in itertools.product(k_vals, [False, True], ['late', 'early']):
+                if not topo and injection == 'early':
+                    continue # Avoid duplicates
+                    
+                cfg = Config(
+                    use_mlp_head=True,
+                    use_multiscale_prop=False,
+                    sgc_k=k,
+                    use_directional_prop=False,
+                    use_graph_structural=topo,
+                    topo_injection_mode=injection,
+                    seed=seed
+                )
                 
+                name_parts = [f"K={k}"]
+                name_parts.append("Dir=F")
+                if topo:
+                    name_parts.append(f"Topo={injection}")
+                else:
+                    name_parts.append("Topo=None")
+                    
+                name = f"NoMP Grid: {', '.join(name_parts)}"
+                
+                res = execute_sweep(name, cfg, var, seed)
+                all_configs_run[(name, str(seed), var)] = cfg
+
             # --- PHASE 2: Grid Search ---
             best_grid_key = None
             best_grid_f1 = -1.0
@@ -1175,21 +1233,63 @@ def main():
                     name_parts.append("Topo=None")
                     
                 name = f"Grid: {', '.join(name_parts)}"
-                sweep_key = f"{name} (Seed {seed}, Var {var})" if args.mode == "mega" else name
                 
-                res = execute_sweep(sweep_key, name, cfg, var)
-                all_configs_run[sweep_key] = cfg
+                res = execute_sweep(name, cfg, var, seed)
+                all_configs_run[(name, str(seed), var)] = cfg
                 if res and not args.only_wf:
                     # P0-C: Select on val F1, NOT test OOT F1
                     f1_val = res.get("Static_Val_Pooled_F1", 0.0)
                     if pd.notna(f1_val) and isinstance(f1_val, (int, float)) and f1_val > best_grid_f1:
                         best_grid_f1 = f1_val
-                        best_grid_key = sweep_key
+                        best_grid_key = name
                         
             print(f"\n  [Phase 2 Winner] {best_grid_key} achieved highest Val F1: {best_grid_f1:.3f}.")
             
 
             
+
+
+    # ── PHASE 1.5: No-MP Champion Selection ───
+    nomp_champions = []
+    if args.mode == "temporal" or args.only_wf:
+        print("\n--- Phase 1.5 Champion Selection skipped (temporal/only-wf mode). ---")
+    else:
+        nomp_grouped = {}
+        for r in results:
+            sw_name = r.get("Sweep", "")
+            if not sw_name.startswith("NoMP Grid:"):
+                continue
+            
+            import re
+            base_match = re.match(r"^(NoMP Grid:.*?)(?: \(Seed.*)?$", sw_name)
+            if not base_match:
+                continue
+            base_name = base_match.group(1).strip()
+            var = r.get("Variation", "Base")
+            group_key = f"{base_name} (Var {var})"
+            
+            f1 = r.get("Static_Val_Macro_F1")
+            if pd.isna(f1):
+                f1 = r.get("Static_Val_Pooled_F1")
+            if pd.isna(f1):
+                continue
+            f1 = float(f1)
+            
+            if group_key not in nomp_grouped:
+                nomp_grouped[group_key] = []
+            nomp_grouped[group_key].append(f1)
+            
+        nomp_means = []
+        for g_key, f1s in nomp_grouped.items():
+            nomp_means.append((sum(f1s) / len(f1s), g_key))
+            
+        nomp_means.sort(key=lambda x: x[0], reverse=True)
+        top_3_nomp = nomp_means[:3]
+        
+        print("\n--- Phase 1.5 Targets Selected by Val Macro F1 ---")
+        for f1, champ in top_3_nomp:
+            print(f"  - {champ} (Mean F1: {f1:.3f})")
+            nomp_champions.append(champ)
 
     # ── PHASE 2.5: Validation-PR-AUC Champion Selection & Deep Residual MLP ───
     global_champions = []
@@ -1212,23 +1312,10 @@ def main():
         phase25_targets = select_phase25_targets(candidate_results, top_n=3)
         global_champions = [f"{target[1]} (Var {target[3]})" for target in phase25_targets]
 
-        if not phase25_targets:
-            print("\n--- Phase 2.5 skipped: no eligible Grid validation PR-AUC rows found. ---")
-        else:
-            print("\n--- Phase 2.5 Targets Selected by Validation PR-AUC ---")
+        if phase25_targets:
+            print("\n--- Phase 2.5 Targets (MLP variation sweeps skipped) ---")
             for champ in global_champions:
                 print(f"  - {champ}")
-
-            for seed in seeds:
-                for var in variations:
-                    var_targets = [target[:3] for target in phase25_targets if target[3] == var]
-                    if not var_targets:
-                        continue
-                    for sweep_key, name, cfg in build_mlp_variation_specs(
-                        var_targets, PHASE25_MLP_VARIATIONS, seed=seed, var=var, mode=args.mode
-                    ):
-                        res = execute_sweep(sweep_key, name, cfg, var)
-                        all_configs_run[sweep_key] = cfg
 
 
 
@@ -1238,11 +1325,10 @@ def main():
         
         # We define a helper to execute WF for a specific config
         def run_wf_for_config(best_cfg, k, directional, topo_str, var, seed, base_sweep_name):
-            best_sweep_name = f"{base_sweep_name} (Seed {seed}, Var {var})"
-            wf_name = f"Best WF: {best_sweep_name}"
+            wf_name = f"Best WF: {base_sweep_name}"
             
-            if wf_name not in completed_sweeps:
-                print(f"\nRunning WF on: {best_sweep_name}")
+            if (wf_name, str(seed), var) not in completed_sweeps:
+                print(f"\nRunning WF on: {base_sweep_name}")
                 with profile_resources() as wf_stat:
                     dm_best = EllipticDataModule(df, df_edge, feature_cols, best_cfg)
                     dm_best.setup()
@@ -1253,6 +1339,7 @@ def main():
                 agg, rows = stratified_wf_metrics(records_dict, threshold=0.5)
 
                 wf_res = _make_result(
+                    cfg=best_cfg,
                     seed=seed,
                     variation=var,
                     sweep=wf_name,
@@ -1278,7 +1365,7 @@ def main():
                 results.append(wf_res)
                 pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
                 print(f"--> {wf_res}\n")
-                completed_sweeps.add(wf_name)
+                completed_sweeps.add((wf_name, str(seed), var))
 
         # 1. Run baselines & explicit edge cases for Seed 42
         print("\n--- Running Baseline Sweeps & Edge Cases for Walk-Forward (Seed 42) ---")
@@ -1360,11 +1447,53 @@ def main():
         # 1. Decay on XGBoost
         for lam in [0.05, 0.25, 0.50]:
             sweep_name = f"Ablation: Decay λ={lam} on XGBoost"
-            if sweep_name in completed_sweeps:
+            if (sweep_name, '42', 'Base') in completed_sweeps:
                 print(f"Already completed {sweep_name}, skipping.")
                 continue
-            xgb_decay_res = evaluate_xgb_decay_wf(dm_base, cfg_tabular, lam, _make_result)
+            def _make_result_xgb(*args, _lam=lam, **kwargs):
+                kwargs['cfg'] = cfg_tabular
+                kwargs['decay_lambda'] = _lam
+                return _make_result(*args, **kwargs)
+            xgb_decay_res = evaluate_xgb_decay_wf(dm_base, cfg_tabular, lam, _make_result_xgb)
             results.append(xgb_decay_res)
+
+
+        # Phase 1.5 No-MP Champions
+        print("\n--- Running Exponential Decay for Top 3 No-MP Champions ---")
+        for champ in nomp_champions:
+            import re
+            match = re.match(r"^(NoMP Grid:.*?) \(Var (.*?)\)$", champ)
+            if not match:
+                continue
+            base_name = match.group(1)
+            var = match.group(2)
+            
+            seed42_key = (base_name, "42", var)
+            if seed42_key in all_configs_run:
+                cfg = all_configs_run[seed42_key]
+                topo_val = cfg.topo_injection_mode if cfg.use_graph_structural else 'None'
+                
+                # The evaluate_decay_wf function signature expects slightly different args than run_wf_for_config
+                # In sweep.py Phase 5, it is called directly.
+                cfg_decay = Config(use_mlp_head=True, use_multiscale_prop=False, sgc_k=cfg.sgc_k, use_directional_prop=False, use_graph_structural=cfg.use_graph_structural, topo_injection_mode=cfg.topo_injection_mode, seed=42)
+                from evaluation.ablation_validation import evaluate_decay_wf
+                decay_dm = EllipticDataModule(df, df_edge, feature_cols, cfg_decay)
+                decay_dm.setup()
+                
+                w_name = f"Ablation: Decay λ={lam} on {base_name}"
+                if (w_name, '42', var) in completed_sweeps:
+                    print(f"Already completed {w_name}, skipping.")
+                    continue
+                print(f"\nRunning Decay on: {w_name}")
+                # We can't easily pass cfg via evaluate_decay_wf signature without changing it, so we'll wrap _make_result
+                def _make_result_wrapped(*args, _lam=lam, **kwargs):
+                    kwargs['cfg'] = cfg_decay
+                    kwargs['decay_lambda'] = _lam
+                    return _make_result(*args, **kwargs)
+                res = evaluate_decay_wf(decay_dm, cfg_decay, lam, w_name, _make_result_wrapped)
+                results.append(res)
+                pd.DataFrame(results, columns=list(_RESULT_KEYS)).to_csv(out_file, index=False)
+                print(f"--> {res}\n")
 
         # 2. Decay on All Global Champions
         for champ in global_champions:
@@ -1386,11 +1515,16 @@ def main():
             decay_dm.setup()
             
             for lam in [0.05, 0.25, 0.50]:
-                w_name = f"Ablation: Decay λ={lam} on {k} {'T' if directional else 'F'} {topo_str} {var}"
-                if w_name in completed_sweeps:
+                w_name = f"Ablation: Decay λ={lam} on K={k}, Dir={'T' if directional else 'F'}, Topo={topo_str}"
+                if (w_name, '42', var) in completed_sweeps:
                     print(f"Already completed {w_name}, skipping.")
                     continue
-                res = evaluate_decay_wf(decay_dm, cfg_decay, lam, w_name, _make_result)
+                # We can't easily pass cfg via evaluate_decay_wf signature without changing it, so we'll wrap _make_result
+                def _make_result_wrapped(*args, _lam=lam, **kwargs):
+                    kwargs['cfg'] = cfg_decay
+                    kwargs['decay_lambda'] = _lam
+                    return _make_result(*args, **kwargs)
+                res = evaluate_decay_wf(decay_dm, cfg_decay, lam, w_name, _make_result_wrapped)
                 results.append(res)
                     
 

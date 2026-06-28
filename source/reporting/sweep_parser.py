@@ -87,7 +87,14 @@ def parse_sweep(s: str) -> SweepInfo:
             return _make(family="SGC", family_tag="Ablation",
                          K=int(m.group(1)), Dir=_dir(m.group(2)),
                          Topo=m.group(3), variation=m.group(4))
-        return _make(family="SGC", family_tag="Ablation")
+        # Fallback to K=N, Dir=X, Topo=Y explicit encoding
+        k_m = _K_EXPLICIT.search(s)
+        d_m = _DIR_EXPLICIT.search(s)
+        t_m = _TOPO_EXPLICIT.search(s)
+        return _make(family="SGC", family_tag="Ablation",
+                     K=int(k_m.group(1)) if k_m else None,
+                     Dir=_dir(d_m.group(1)) if d_m else None,
+                     Topo=t_m.group(1) if t_m else None)
 
     # Ablation: IPCA N Dir Topo
     if s.startswith("Ablation: IPCA"):
@@ -95,7 +102,14 @@ def parse_sweep(s: str) -> SweepInfo:
         if m:
             return _make(family="IPCA", family_tag="Ablation",
                          K=int(m.group(1)), Dir=_dir(m.group(2)), Topo=m.group(3))
-        return _make(family="IPCA", family_tag="Ablation")
+        # Fallback to K=N, Dir=X, Topo=Y explicit encoding
+        k_m = _K_EXPLICIT.search(s)
+        d_m = _DIR_EXPLICIT.search(s)
+        t_m = _TOPO_EXPLICIT.search(s)
+        return _make(family="IPCA", family_tag="Ablation",
+                     K=int(k_m.group(1)) if k_m else None,
+                     Dir=_dir(d_m.group(1)) if d_m else None,
+                     Topo=t_m.group(1) if t_m else None)
 
     # Baseline: Name
     if s.startswith("Baseline:"):
@@ -140,12 +154,28 @@ def family_config_id(s: str) -> str:
 _IGNORE = object()
 
 
+EXPLICIT_COL_MAP = {
+    "lam":  "Decay_Lambda",
+    "K":    "SGC_K",
+    "Dir":  "Directionality",    # bool in CSV; coerce to bool
+    "Topo": "Topological_Injection",
+}
+
 def add_parsed_columns(df, sweep_col: str = "Sweep", prefix: str = "_"):
     """Return copy of df with parsed SweepInfo fields as prefixed columns."""
+    import pandas as pd
     info = df[sweep_col].map(parse_sweep)
     out = df.copy()
     for field in ("family", "family_tag", "lam", "K", "Dir", "Topo", "seed", "variation"):
         out[f"{prefix}{field}"] = info.map(lambda i, f=field: getattr(i, f))
+        
+    # Column-first override
+    for field, col in EXPLICIT_COL_MAP.items():
+        if col in df.columns:
+            vals = pd.to_numeric(df[col], errors="coerce") if field in ("lam", "K") else df[col]
+            mask = vals.notna() & (vals != "") & (vals != "N/A")
+            out.loc[mask, f"{prefix}{field}"] = vals[mask]
+
     return out
 
 
