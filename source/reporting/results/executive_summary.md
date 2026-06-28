@@ -26,4 +26,4 @@ $$
 
 where labels correspond to **licit ($0$)**, **illicit ($1$)**, or **unknown ($-1$)**. Unknown labels are excluded from the loss calculation and evaluation metrics.
 
-The supervised learning task is highly imbalanced: the positive (illicit) class represents a very small minority of the global distribution (typically $<10\%$ pre-shock, and $<1\%$ post-shock). Because the negative class vastly outnumbers the positive class, **OOT Macro PR-AUC** (for static comparisons) and **Walk-Forward Macro Illicit-F1** (for regime tracking) are the primary metrics for evaluating model performance.
+The supervised learning task is highly imbalanced: the positive (illicit) class represents a very small minority of the global distribution (typically $<10\%$ pre-shock, and $<1\%$ post-shock). Because the negative class vastly outnumbers the positive class, the presentation uses **Macro PR-AUC** as the primary model-comparison metric: **OOT Macro PR-AUC** for static comparisons and **WF Macro PR-AUC** for walk-forward comparisons. Macro F1 is reported only as a secondary fixed-threshold diagnostic.

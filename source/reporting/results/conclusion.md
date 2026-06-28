@@ -14,7 +14,7 @@ Complex message-passing is incredibly slow and often counterproductive across te
 ### 4. The Winning Graph Strategy: Shallow & Continuous
 If graph neural networks must be utilized, deep and static is the wrong approach. We found that a scalable graph-based strategy is **shallow, undirected message passing paired with continuous Walk-Forward (WF) training and exponential decay**. 
 * **Undirected, shallow aggregation** generalizes better because it captures broad local context without overfitting to brittle, far-reaching routing paths.
-* **Walk-Forward training** continuously recalibrates the decision threshold and allows the model to absorb micro-shifts in topology smoothly, resulting in the highest overall Walk-Forward Macro F1 performance in our sweeps.
+* **Walk-Forward training** continuously recalibrates the decision threshold and allows the model to absorb micro-shifts in topology smoothly, improving overall Walk-Forward Macro PR-AUC in our sweeps.
 * **Exponential decay** is crucial for mitigating the temporal overfitting of GNNs during the post-shock recovery period. 
 
 ### 5. Future Research Directions: Beyond Discrete Snapshots

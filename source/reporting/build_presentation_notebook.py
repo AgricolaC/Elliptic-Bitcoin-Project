@@ -57,6 +57,8 @@ def read_csv(name: str) -> pd.DataFrame:
 def ensure_dirs() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     ASSETS.mkdir(parents=True, exist_ok=True)
+    for stale_asset in ASSETS.glob("*.png"):
+        stale_asset.unlink()
 
 
 def fmt(x, digits: int = 3) -> str:
@@ -392,18 +394,16 @@ def selected_static_rows(final: pd.DataFrame, phase_d: pd.DataFrame) -> pd.DataF
             rows.append(
                 {
                     "Model": label,
-                    "OOT Pooled F1": row.get("Static_OOT_Pooled_F1_mean"),
-                    "OOT Pooled PR-AUC": row.get("Static_OOT_Macro_PRAUC_mean"),
-                    "Val Macro PR-AUC": row.get("Static_Val_Macro_PRAUC_mean"),
+                    "OOT Macro F1": row.get("Static_OOT_Macro_F1_mean"),
+                    "OOT Macro PR-AUC": row.get("Static_OOT_Macro_PRAUC_mean"),
                 }
             )
-    phase_best = best_row(phase_d, "Val_Macro_PRAUC_mean")
+    phase_best = best_row(phase_d, "OOT_Macro_PRAUC_mean")
     rows.append(
         {
             "Model": "Final LN+SiLU MLP",
-            "OOT Pooled F1": phase_best["OOT_Pooled_F1_mean"],
-            "OOT Pooled PR-AUC": phase_best["OOT_Pooled_PRAUC_mean"],
-            "Val Macro PR-AUC": phase_best["Val_Macro_PRAUC_mean"],
+            "OOT Macro F1": phase_best["OOT_Macro_F1_mean"],
+            "OOT Macro PR-AUC": phase_best["OOT_Macro_PRAUC_mean"],
         }
     )
     return pd.DataFrame(rows)
@@ -416,9 +416,9 @@ def plot_wf_regimes(final: pd.DataFrame) -> str:
         ("SGC baseline", "Best WF: Sweep 1: SGC (baseline)", "Base"),
         ("SGC + MLP", "Best WF: Sweep 2: + MLP Head", "Base"),
         ("Best SGC WF", "Best WF: Grid: K=2, Dir=F, Topo=None", "Base"),
-        ("Best graph recovery", "Best WF: Grid: K=3, Dir=T, Topo=early", "PCA"),
+        ("Best graph + decay", "Ablation: Decay λ=0.25 on 2 T early Base", "Base"),
         ("XGBoost WF", "Baseline: XGBoost WF (epsilon-fallback)", "Base"),
-        ("XGBoost + decay", "Ablation: Decay λ=0.5 on XGBoost", "Base"),
+        ("XGBoost + decay", "Ablation: Decay λ=0.25 on XGBoost", "Base"),
     ]
     rows = []
     for label, sweep, variation in wanted:
@@ -428,23 +428,18 @@ def plot_wf_regimes(final: pd.DataFrame) -> str:
             rows.append(
                 {
                     "Model": label,
-                    "Pre-shock": r["WF_Pre43_Pooled_F1_mean"],
-                    "Shock": r["WF_Shock_F1_mean"],
-                    "Recovery": r["WF_Recovery_Pooled_F1_mean"],
+                    "WF Macro PR-AUC": r["WF_Macro_PRAUC_mean"],
                 }
             )
     df = pd.DataFrame(rows)
     x = np.arange(len(df))
-    width = 0.25
     fig, ax = plt.subplots(figsize=(12, 5.6))
-    ax.bar(x - width, df["Pre-shock"], width, label="Pre-shock", color="#4C72B0")
-    ax.bar(x, df["Shock"], width, label="Shock", color="#C44E52")
-    ax.bar(x + width, df["Recovery"], width, label="Recovery", color="#55A868")
+    ax.bar(x, df["WF Macro PR-AUC"], 0.6, label="WF Macro PR-AUC", color="#55A868")
     ax.set_xticks(x)
     ax.set_xticklabels(df["Model"], rotation=25, ha="right")
     ax.set_ylim(0, 1.0)
-    ax.set_ylabel("Phase F1")
-    ax.set_title("Walk-forward regime breakdown reveals the graph recovery trap")
+    ax.set_ylabel("WF Macro PR-AUC")
+    ax.set_title("Walk-forward performance standardized to Macro PR-AUC")
     ax.legend()
     return savefig("08_wf_regimes.png")
 
@@ -458,37 +453,37 @@ def plot_decay(final: pd.DataFrame) -> str:
     ]:
         if model_label == "XGBoost":
             base = final[final["Sweep"].eq("Baseline: XGBoost WF (epsilon-fallback)")].iloc[0]
-            rows.append({"Model": model_label, "lambda": 0.0, "Recovery F1": base["WF_Recovery_Pooled_F1_mean"]})
+            rows.append({"Model": model_label, "lambda": 0.0, "WF Macro PR-AUC": base["WF_Macro_PRAUC_mean"]})
         else:
             # no-decay walk-forward rows are named "Best WF: Grid: ..."
             topo = "early" if "early" in suffix else "late"
             base_sweep = f"Best WF: Grid: K=2, Dir=T, Topo={topo}"
             base = final[(final["Sweep"].eq(base_sweep)) & (final["Variation"].eq("Base"))]
             if not base.empty:
-                rows.append({"Model": model_label, "lambda": 0.0, "Recovery F1": base.iloc[0]["WF_Recovery_Pooled_F1_mean"]})
+                rows.append({"Model": model_label, "lambda": 0.0, "WF Macro PR-AUC": base.iloc[0]["WF_Macro_PRAUC_mean"]})
         for lam in [0.05, 0.25, 0.5]:
             sweep = f"Ablation: Decay λ={lam} on {suffix}"
             sub = final[final["Sweep"].eq(sweep)]
             if not sub.empty:
-                rows.append({"Model": model_label, "lambda": lam, "Recovery F1": sub.iloc[0]["WF_Recovery_Pooled_F1_mean"]})
+                rows.append({"Model": model_label, "lambda": lam, "WF Macro PR-AUC": sub.iloc[0]["WF_Macro_PRAUC_mean"]})
     df = pd.DataFrame(rows)
     fig, ax = plt.subplots(figsize=(10, 5.2))
     for model, color in zip(df["Model"].unique(), ["#4C72B0", "#C44E52", "#55A868"]):
         sub = df[df["Model"] == model].sort_values("lambda")
-        ax.plot(sub["lambda"], sub["Recovery F1"], marker="o", lw=2.6, label=model, color=color)
+        ax.plot(sub["lambda"], sub["WF Macro PR-AUC"], marker="o", lw=2.6, label=model, color=color)
     ax.set_xlabel("temporal decay $\\lambda$")
-    ax.set_ylabel("recovery pooled F1")
-    ax.set_title("Temporal decay improves recovery by forgetting stale topology")
+    ax.set_ylabel("WF Macro PR-AUC")
+    ax.set_title("Temporal decay under walk-forward Macro PR-AUC")
     ax.legend()
     return savefig("09_temporal_decay.png")
 
 
-def compute_deep_validation_table(data: dict[str, pd.DataFrame]) -> tuple[str, pd.DataFrame]:
+def compute_deep_oot_macro_table(data: dict[str, pd.DataFrame]) -> tuple[str, pd.DataFrame]:
     final = data["final"]
     grid = final[final["Sweep"].astype(str).str.startswith("Grid:")].copy()
     metrics = [
-        ("Val Macro F1", "Static_Val_Macro_F1_mean", "Val_Macro_F1"),
-        ("Val Macro PR-AUC", "Static_Val_Macro_PRAUC_mean", "Val_Macro_PRAUC"),
+        ("OOT Macro F1", "Static_OOT_Macro_F1_mean", "OOT_Macro_F1"),
+        ("OOT Macro PR-AUC", "Static_OOT_Macro_PRAUC_mean", "OOT_Macro_PRAUC"),
     ]
     rows = []
     values = []
@@ -557,12 +552,13 @@ def compute_deep_validation_table(data: dict[str, pd.DataFrame]) -> tuple[str, p
     return md, pd.DataFrame(values)
 
 
-def plot_deep_validation_heatmap(values: pd.DataFrame) -> str:
+def plot_deep_oot_macro_heatmap(values: pd.DataFrame) -> str:
+    values = values[values["Metric"].eq("OOT Macro PR-AUC")].reset_index(drop=True)
     metrics = values["Metric"].tolist()
     cols = ["run0", "run1", "run2", "run3", "sweepA", "sweepB", "sweepC", "sweepD"]
     deltas = np.array([[row[f"{col}_delta"] for col in cols] for _, row in values.iterrows()])
     vmax = max(abs(np.nanmin(deltas)), abs(np.nanmax(deltas)))
-    fig, ax = plt.subplots(figsize=(11, 4.8))
+    fig, ax = plt.subplots(figsize=(11, 2.6))
     im = ax.imshow(deltas, cmap="RdYlGn", vmin=-vmax, vmax=vmax, aspect="auto")
     ax.set_xticks(np.arange(len(cols)))
     ax.set_xticklabels(cols)
@@ -571,9 +567,9 @@ def plot_deep_validation_heatmap(values: pd.DataFrame) -> str:
     for i in range(deltas.shape[0]):
         for j in range(deltas.shape[1]):
             ax.text(j, i, f"{deltas[i, j]:+.3f}", ha="center", va="center", fontsize=8)
-    ax.set_title("Validation deltas versus the old Grid MLP benchmark")
+    ax.set_title("OOT Macro PR-AUC deltas versus the old Grid MLP benchmark")
     fig.colorbar(im, ax=ax, fraction=0.035, pad=0.02, label="new - old")
-    return savefig("10_deep_mlp_validation_deltas.png")
+    return savefig("10_deep_mlp_oot_macro_deltas.png")
 
 
 
@@ -627,25 +623,26 @@ def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
             static_rows.append(
                 [
                     model,
-                    r["Static_Val_Macro_PRAUC_mean"],
-                    r["Static_OOT_Pooled_F1_mean"],
-                    r["Static_OOT_Macro_PRAUC_mean"],
                     r["Static_OOT_Macro_F1_mean"],
+                    r["Static_OOT_Macro_PRAUC_mean"],
                 ]
             )
-    phase_d = data["phaseD"]
-    r = best_row(phase_d, "Val_Macro_PRAUC_mean")
+    deep_candidates = []
+    for phase in "ABCD":
+        df = data[f"phase{phase}"].copy()
+        df["Phase"] = phase
+        deep_candidates.append(df)
+    deep_sweeps = pd.concat(deep_candidates, ignore_index=True)
+    r = best_row(deep_sweeps, "OOT_Macro_PRAUC_mean")
     static_rows.append(
         [
-            "Final LN+SiLU MLP",
-            r["Val_Macro_PRAUC_mean"],
-            r["OOT_Pooled_F1_mean"],
-            r["OOT_Pooled_PRAUC_mean"],
+            f"Best LN+SiLU MLP (Phase {r['Phase']})",
             r["OOT_Macro_F1_mean"],
+            r["OOT_Macro_PRAUC_mean"],
         ]
     )
     static_table = markdown_table(
-        ["model", "Val Macro PR-AUC", "OOT pooled F1", "OOT pooled PR-AUC", "OOT macro F1"],
+        ["model", "OOT Macro F1", "OOT Macro PR-AUC"],
         static_rows,
     )
 
@@ -654,9 +651,9 @@ def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
         ("SGC baseline", "Best WF: Sweep 1: SGC (baseline)", "Base"),
         ("SGC + MLP", "Best WF: Sweep 2: + MLP Head", "Base"),
         ("Best SGC WF", "Best WF: Grid: K=2, Dir=F, Topo=None", "Base"),
-        ("Best graph recovery", "Best WF: Grid: K=3, Dir=T, Topo=early", "PCA"),
+        ("Best graph + decay", "Ablation: Decay λ=0.25 on 2 T early Base", "Base"),
         ("XGBoost WF", "Baseline: XGBoost WF (epsilon-fallback)", "Base"),
-        ("XGBoost + decay", "Ablation: Decay λ=0.5 on XGBoost", "Base"),
+        ("XGBoost + decay", "Ablation: Decay λ=0.25 on XGBoost", "Base"),
     ]:
         sub = final[(final["Sweep"] == sweep) & (final["Variation"] == variation)]
         if not sub.empty:
@@ -664,15 +661,12 @@ def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
             wf_rows.append(
                 [
                     model,
-                    r["WF_Pooled_F1_mean"],
                     r["WF_Macro_F1_mean"],
-                    r["WF_Pre43_Pooled_F1_mean"],
-                    r["WF_Shock_F1_mean"],
-                    r["WF_Recovery_Pooled_F1_mean"],
+                    r["WF_Macro_PRAUC_mean"],
                 ]
             )
     wf_table = markdown_table(
-        ["model", "WF pooled F1", "WF macro F1", "pre-shock F1", "shock F1", "recovery F1"], wf_rows
+        ["model", "WF Macro F1", "WF Macro PR-AUC"], wf_rows
     )
 
     return {
@@ -738,6 +732,66 @@ Generated from:
     if narrative:
         cells.append(md_cell(narrative))
 
+    cells.append(
+        md_cell(
+            """
+## Evaluation metrics
+
+Because illicit transactions are rare, accuracy is not informative. We track metrics for the positive class, where positive means **illicit**:
+
+$$
+\\mathrm{Precision}=\\frac{TP}{TP+FP},
+\\qquad
+\\mathrm{Recall}=\\frac{TP}{TP+FN},
+\\qquad
+F_1=\\frac{2\\,\\mathrm{Precision}\\,\\mathrm{Recall}}{\\mathrm{Precision}+\\mathrm{Recall}}.
+$$
+
+We also use **PR-AUC**, the area under the precision--recall curve. PR-AUC is threshold-free, so it measures ranking quality even when the fixed classification threshold is imperfect.
+
+The presentation reports **Macro** metrics in the main figures and tables: compute the metric separately at each timestep, then average across timesteps.
+
+This is the stricter convention for our data because a single large timestep cannot dominate the score. It is also the fairest way to discuss the post-shutdown snapshots, where the dataset becomes temporally uneven.
+"""
+        )
+    )
+
+    cells.append(
+        md_cell(
+            """
+## Experimental protocol and leakage guards
+
+The project uses two complementary evaluation protocols.
+
+### Static out-of-time protocol
+
+$$
+\\text{train}: \\tau=1\\ldots 26,
+\\qquad
+\\text{development}: \\tau=27\\ldots 34,
+\\qquad
+\\text{test/OOT}: \\tau=35\\ldots 49.
+$$
+
+The development split exists in the codebase, but the presentation does **not** use it as the main performance claim because it stops before the shutdown/recovery period. Main static comparisons use OOT Macro metrics on $\\tau=35\\ldots49$.
+
+### Walk-forward protocol
+
+At each test step $\\tau$:
+
+$$
+\\text{train on }[1,\\tau-2],
+\\qquad
+\\text{calibrate threshold on }\\tau-1,
+\\qquad
+\\text{test on }\\tau.
+$$
+
+This matters mathematically: the threshold is calibrated on a held-out previous snapshot, not on the test snapshot itself.
+"""
+        )
+    )
+
     if "eda_panel_b_volume" in assets:
         cells.append(md_cell(f"![Transaction Volume per Snapshot]({assets['eda_panel_b_volume']})"))
 
@@ -784,6 +838,7 @@ Generated from:
         cells.append(md_cell(f"---\n{narrative}"))
     if "cost_vs_perf" in assets:
         cells.append(md_cell(f"![Cost vs Performance]({assets['cost_vs_perf']})"))
+    cells.append(md_cell(f"### Static OOT Macro result table\n\n{tables['static_table']}"))
 
     narrative = read_narrative("sgc_grid_analysis.md")
     if narrative:
@@ -795,8 +850,8 @@ Generated from:
     narrative = read_narrative("deep_res_mlp_analysis.md")
     if narrative:
         cells.append(md_cell(f"---\n{narrative}"))
-        cells.append(md_cell(f"![MLP validation deltas]({assets['deep_heatmap']})"))
-        cells.append(md_cell(f"### Validation deltas versus the old Grid MLP benchmark\n\n{deep_table}"))
+        cells.append(md_cell(f"![MLP OOT Macro PR-AUC deltas]({assets['deep_heatmap']})"))
+        cells.append(md_cell(f"### OOT Macro deltas versus the old Grid MLP benchmark\n\n{deep_table}"))
 
     narrative = read_narrative("wf_temporal_analysis.md")
     if narrative:
@@ -804,6 +859,47 @@ Generated from:
     cells.append(md_cell(f"![WF regimes]({assets['wf_regimes']})"))
     cells.append(md_cell(f"### Walk-forward result table\n\n{tables['wf_table']}"))
     cells.append(md_cell(f"![Temporal decay]({assets['decay']})"))
+
+    cells.append(
+        md_cell(
+            """
+---
+## What won?
+
+| Question | Answer |
+|---|---|
+| Best overall model | XGBoost / XGBoost + temporal decay |
+| Best old SGC grid configuration | $K=3$, directional propagation, PCA, no explicit topology |
+| Best final graph head | $K=3$, directional propagation, PCA, late topology, LayerNorm + SiLU + `(64, 64)`, **no residual** |
+| Main diagnostic finding | $\\tau=43$ is prior shift, not representational collapse |
+| Main graph-learning failure mode | topological overfitting to pre-shock micro-motifs |
+| Most useful temporal fix | walk-forward training with exponential decay |
+
+The most important negative result is also important: the graph models improved substantially, but the best tabular models still dominate the global benchmark.
+"""
+        )
+    )
+
+    cells.append(
+        md_cell(
+            """
+---
+## Limitations
+
+1. **Unknown labels dominate the graph.** Unknown nodes are excluded from loss and metrics, but many illicit-adjacent edges pass through unknown intermediaries.
+2. **Static MLP-head sweeps are not full deployment simulations.** They are reported with OOT Macro metrics, but they were not fully rerun under the complete walk-forward regime.
+3. **PR-AUC and F1 answer different questions.** Some MLP variants improve ranking quality while worsening fixed-threshold F1.
+4. **Discrete snapshots simplify blockchain time.** A native temporal graph model may represent transaction time more faithfully than 49 snapshot graphs.
+5. **Causal attribution is limited.** The $\\tau=43$ interpretation is consistent with AlphaBay-era timing and label dynamics, but the dataset is anonymized.
+
+These limitations do not invalidate the results; they clarify exactly what the experiments prove.
+"""
+        )
+    )
+
+    narrative = read_narrative("conclusion.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
 
     cells.append(
         md_cell(
@@ -818,8 +914,8 @@ Important source files checked for this presentation:
 | `source/data/load_dataset.py` | loads Elliptic data and validates temporal edge integrity |
 | `source/data/build_graph.py` | builds per-timestep graphs, scales features, injects topology, applies PCA |
 | `source/models/layers.py` | SGC propagation, multiscale concatenation, directional channels |
-| `source/models/classifier.py` | MLP head, LayerNorm, SiLU/ReLU validation, residual projection |
-| `source/evaluation/validation.py` | static and walk-forward validation, threshold calibration |
+| `source/models/classifier.py` | MLP head, LayerNorm, SiLU/ReLU activation checks, residual projection |
+| `source/evaluation/validation.py` | static and walk-forward evaluation, threshold calibration |
 | `source/evaluation/ablation_validation.py` | temporal decay and additional walk-forward ablations |
 | `source/sweep.py` | experiment orchestration and result schema |
 | `source/reporting/results/*.md` | written analyses used to shape the presentation narrative |
@@ -845,10 +941,6 @@ Important source files checked for this presentation:
         )
     )
 
-    narrative = read_narrative("conclusion.md")
-    if narrative:
-        cells.append(md_cell(f"---\n{narrative}"))
-
     nb["cells"] = cells
     nbf.write(nb, NOTEBOOK)
 
@@ -871,8 +963,8 @@ def main() -> None:
         "cost_vs_perf": plot_cost_vs_performance(data["sweep"]),
     }
     assets.update(copied)
-    deep_table, deep_values = compute_deep_validation_table(data)
-    assets["deep_heatmap"] = plot_deep_validation_heatmap(deep_values)
+    deep_table, deep_values = compute_deep_oot_macro_table(data)
+    assets["deep_heatmap"] = plot_deep_oot_macro_heatmap(deep_values)
     tables = build_summary_tables(data)
 
     build_notebook(data, assets, tables, deep_table)
