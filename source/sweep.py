@@ -1371,10 +1371,13 @@ def main():
         for base_name, var in all_selected_champions:
             seed42_key = (base_name, "42", var)
             if seed42_key not in all_configs_run:
-                print(f"Skipping WF for {base_name}, no Config found.")
-                continue
-            
-            orig_cfg = all_configs_run[seed42_key]
+                fallback_key = (base_name, "42", "Base")
+                if fallback_key not in all_configs_run:
+                    print(f"Skipping WF for {base_name}, no Config found.")
+                    continue
+                orig_cfg = all_configs_run[fallback_key]
+            else:
+                orig_cfg = all_configs_run[seed42_key]
             from dataclasses import replace
             best_cfg = replace(orig_cfg, seed=42)
             if var == "PCA":
@@ -1408,16 +1411,18 @@ def main():
                 completed_sweeps.add((wf_name, "42", var))
                 print(f"--> {wf_res}\n")
 
-        print("\n=== IPCA Ablation on Global Champions ===")
-        pca_champs = [c for c in champs_global if c[1] == "PCA"]
-        if pca_champs:
-            # We just do IPCA on the top 1 PCA champion from champs_global for simplicity, or all of them? 
-            # The prompt says "Phase 5 will pick the WF champion for all 4 specific models". Doesn't mention Phase 4 IPCA. 
-            # I will just run IPCA on the top 1 PCA champ.
-            base_name, var = pca_champs[0]
+        print("\n=== IPCA Ablation on PCA Champions ===")
+        pca_champs = [c for c in all_selected_champions if c[1] == "PCA"]
+        for base_name, var in pca_champs:
             seed42_key = (base_name, "42", var)
+            orig_cfg = None
             if seed42_key in all_configs_run:
                 orig_cfg = all_configs_run[seed42_key]
+            else:
+                fallback_key = (base_name, "42", "Base")
+                if fallback_key in all_configs_run:
+                    orig_cfg = all_configs_run[fallback_key]
+            if orig_cfg is not None:
                 cfg_ipca = replace(orig_cfg, seed=42, use_ipca=True)
                 if var == "PCA":
                     cfg_ipca = replace(cfg_ipca, pca_variance=0.98)
@@ -1470,16 +1475,20 @@ def main():
         top_wf_nomp = get_best_wf_champion(champs_nomp)
         top_wf_global = get_best_wf_champion(champs_global)
         
-        wf_champions = [c for c in [top_wf_sgc, top_wf_nomp, top_wf_global] if c is not None]
+        wf_champions = all_selected_champions
         
-        # 2. Decay on Graph Champions (The Top 1 WF Champion from each family)
+        # 2. Decay on Graph Champions (All Walk-Forward champions)
         for base_name, var in wf_champions:
             seed42_key = (base_name, "42", var)
-            if seed42_key not in all_configs_run: continue
-            
+            if seed42_key not in all_configs_run:
+                fallback_key = (base_name, "42", "Base")
+                if fallback_key not in all_configs_run:
+                    continue
+                orig_cfg = all_configs_run[fallback_key]
+            else:
+                orig_cfg = all_configs_run[seed42_key]
+
             print(f"\nSelected WF Champion for Decay: {base_name} (Var {var})")
-            
-            orig_cfg = all_configs_run[seed42_key]
             for lam in [0.05, 0.25, 0.50]:
                 w_name = f"Ablation: Decay λ={lam} on {base_name}"
                 if (w_name, "42", var) in completed_sweeps: continue

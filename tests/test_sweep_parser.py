@@ -33,6 +33,12 @@ PARSE_CASES = [
     ("Ablation: Decay λ=0.5 on XGBoost",         "lam",        0.5),
     ("Ablation: Decay λ=0.05 on XGBoost",        "lam",        0.05),
     ("Ablation: Decay λ=0.25 on XGBoost",        "lam",        0.25),
+    # Ablation: Decay — NoMP Grid / Grid / Sweep explicit
+    ("Ablation: Decay λ=0.25 on NoMP Grid: K=2, Dir=F, Topo=early", "family", "NoMP Grid"),
+    ("Ablation: Decay λ=0.25 on NoMP Grid: K=2, Dir=F, Topo=early", "K", 2),
+    ("Ablation: Decay λ=0.25 on Grid: K=2, Dir=F, Topo=early", "family", "Grid"),
+    ("Ablation: Decay λ=0.05 on Sweep 1: SGC (baseline) K=2, Topo=None", "family", "SGC"),
+    ("Ablation: Decay λ=0.05 on Sweep 1: SGC (baseline) K=2, Topo=None", "K", 2),
     # Ablation: IPCA (positional encoding, no K=/Dir= tokens)
     ("Ablation: IPCA 3 F late",                  "family",     "IPCA"),
     ("Ablation: IPCA 3 F late",                  "family_tag", "Ablation"),
@@ -57,6 +63,8 @@ PARSE_CASES = [
     ("Sweep 2: + MLP Head",                      "family",     "SGC+MLP"),
     ("Sweep 2: + MLP Head (Seed 42, Var Base)",  "family",     "SGC+MLP"),
     ("Sweep 2: + MLP Head (Seed 42, Var PCA)",   "variation",  "PCA"),
+    # NoMP Grid
+    ("NoMP Grid: K=3, Dir=F, Topo=None", "family_tag", "NoMP Grid"),
     # Grid: explicit K=/Dir=/Topo= tokens
     ("Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)", "family_tag", "Grid"),
     ("Grid: K=2, Dir=F, Topo=None (Seed 42, Var Base)", "K",          2),
@@ -73,6 +81,11 @@ PARSE_CASES = [
     # Best WF: Sweep N: — family detection through "Best WF:" prefix
     ("Best WF: Sweep 1: SGC (baseline) (Seed 42, Var Base)", "family", "SGC"),
     ("Best WF: Sweep 2: + MLP Head (Seed 42, Var Base)",     "family", "SGC+MLP"),
+    # WF Champion
+    ("WF Champion: Sweep 1: SGC (baseline) K=2, Topo=early", "family", "SGC"),
+    ("WF Champion: Sweep 1: SGC (baseline) K=2, Topo=early", "K", 2),
+    ("WF Champion: Grid: K=2, Dir=F, Topo=early", "family_tag", "Grid"),
+    ("WF Champion: NoMP Grid: K=3, Dir=F, Topo=None", "family_tag", "NoMP Grid"),
     # Ensemble
     ("Ensemble: XGB(0.7) + 3 T late PCA(0.3)",  "family",     "Ensemble"),
     ("Ensemble: XGB(0.7) + 3 T late PCA(0.3)",  "family_tag", "Ensemble"),

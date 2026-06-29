@@ -161,7 +161,16 @@ def evaluate_ipca_wf(dm, cfg, w_name, make_result_fn):
         print(f"    [IPCA] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    _write_csv2(w_name, rows, extra, seed=cfg.seed)
+    hyper_cols = {
+        "Feature_Set": f"IPCA Multiscale ({dm.sgc_input_dim}-dim)",
+        "SGC_K": cfg.sgc_k if cfg.sgc_k != 0 else "N/A",
+        "Multiscale_Prop": cfg.use_multiscale_prop,
+        "Directionality": cfg.use_directional_prop,
+        "Topological_Injection": cfg.topo_injection_mode if cfg.use_graph_structural else "None",
+        "Decay_Lambda": "N/A",
+        "Variation": "PCA",
+    }
+    _write_csv2(w_name, rows, extra, seed=cfg.seed, hyper_cols=hyper_cols)
     
     res = make_result_fn(
         seed=cfg.seed, variation="PCA", sweep=w_name,
@@ -173,6 +182,7 @@ def evaluate_ipca_wf(dm, cfg, w_name, make_result_fn):
         wf_shock_f1=agg["WF_Shock_F1"], wf_shock_prauc=agg["WF_Shock_PRAUC"],
         wf_recovery_pooled_f1=agg["WF_Recovery_Pooled_F1"], wf_recovery_prauc=agg["WF_Recovery_PRAUC"],
         feature_set=f"IPCA Multiscale ({dm.sgc_input_dim}-dim)", threshold="epsilon-fallback",
+        cfg=cfg,
     )
     return res
 
@@ -238,7 +248,16 @@ def evaluate_xgb_decay_wf(dm, cfg, lambda_decay, make_result_fn):
             print(f"    [XGB Decay λ={lambda_decay}] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    _write_csv2(w_name, rows, extra, seed=cfg.seed)
+    hyper_cols = {
+        "Feature_Set": "Raw-165 (no ts) + exp-decay",
+        "SGC_K": "N/A",
+        "Multiscale_Prop": False,
+        "Directionality": False,
+        "Topological_Injection": "None",
+        "Decay_Lambda": lambda_decay,
+        "Variation": "Base",
+    }
+    _write_csv2(w_name, rows, extra, seed=cfg.seed, hyper_cols=hyper_cols)
 
     res = make_result_fn(
         seed=cfg.seed, variation="Base", sweep=w_name,
@@ -250,6 +269,7 @@ def evaluate_xgb_decay_wf(dm, cfg, lambda_decay, make_result_fn):
         wf_shock_f1=agg["WF_Shock_F1"], wf_shock_prauc=agg["WF_Shock_PRAUC"],
         wf_recovery_pooled_f1=agg["WF_Recovery_Pooled_F1"], wf_recovery_prauc=agg["WF_Recovery_PRAUC"],
         feature_set="Raw-165 (no ts) + exp-decay", threshold="epsilon-fallback",
+        cfg=cfg,
     )
     return res
 
@@ -335,7 +355,16 @@ def evaluate_decay_wf(dm, cfg, lambda_decay, w_name, make_result_fn):
             print(f"    [Decay λ={lambda_decay}] τ={tau} done", flush=True)
 
     agg, rows = stratified_wf_metrics(recs)
-    _write_csv2(w_name, rows, extra, seed=cfg.seed)
+    hyper_cols = {
+        "Feature_Set": f"Decay Multiscale ({dm.sgc_input_dim}-dim)",
+        "SGC_K": cfg.sgc_k if cfg.sgc_k != 0 else "N/A",
+        "Multiscale_Prop": cfg.use_multiscale_prop,
+        "Directionality": cfg.use_directional_prop,
+        "Topological_Injection": cfg.topo_injection_mode if cfg.use_graph_structural else "None",
+        "Decay_Lambda": lambda_decay,
+        "Variation": "PCA" if getattr(cfg, 'use_pca', False) else "Base",
+    }
+    _write_csv2(w_name, rows, extra, seed=cfg.seed, hyper_cols=hyper_cols)
 
     res = make_result_fn(
         seed=cfg.seed, variation="Base", sweep=w_name,
@@ -347,5 +376,6 @@ def evaluate_decay_wf(dm, cfg, lambda_decay, w_name, make_result_fn):
         wf_shock_f1=agg["WF_Shock_F1"], wf_shock_prauc=agg["WF_Shock_PRAUC"],
         wf_recovery_pooled_f1=agg["WF_Recovery_Pooled_F1"], wf_recovery_prauc=agg["WF_Recovery_PRAUC"],
         feature_set=f"Decay Multiscale ({dm.sgc_input_dim}-dim)", threshold="epsilon-fallback",
+        cfg=cfg,
     )
     return res

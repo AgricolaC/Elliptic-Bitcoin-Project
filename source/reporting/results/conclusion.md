@@ -8,14 +8,14 @@ Our initial hypothesis framed the catastrophic model failure at $\tau=43$ to a f
 ### 2. The Graph Memory Trap
 Deep, static Graph Neural Networks (and high-hop SGC variants) fall into a memory trap. In the stable pre-shock era ($\tau \le 42$), these models memorize deep, directed micro-motifs. When the regime shifts post-shock, the transaction network topology inevitably evolves. Models that hyper-fit to the deep, historical geometry fail to generalize out-of-time, resulting in catastrophic F1 degradation during the recovery phase.
 
-### 3. The Power of Tabular Robustness
-Complex message-passing is incredibly slow and often counterproductive across temporal shocks. Standard tree-based tabular models (XGBoost and RandomForest) operating purely on local node features train up to 60x faster than standard PyG GCNs and completely dominate the static Out-of-Time evaluation. Node-level tabular features survive the regime change much better than aggregated graph motifs.
+### 3. The Power of Tabular Robustness (Feature Selection)
+Complex, differentiable message-passing is incredibly slow and often counterproductive across temporal shocks. Standard tree-based tabular models (XGBoost and RandomForest) train up to 60x faster than standard PyG GCNs and completely dominate the static Out-of-Time evaluation. XGBoost succeeds where GCNs fail partly due to its **feature selection** capability. When the 72 aggregated features become corrupted by heterophily and subpopulation shift, XGBoost's decision trees dynamically assign them an importance of zero, relying entirely on the 94 purely *local* tabular features. A standard GCN structurally forces the blending of local and corrupted neighborhood features at every layer. The advantage of XGBoost is its ruthless ability to ignore toxic graph topology when the topology breaks.
 
-### 4. The Winning Graph Strategy: Shallow & Continuous
-If graph neural networks must be utilized, deep and static is the wrong approach. We found that a scalable graph-based strategy is **shallow, undirected message passing paired with continuous Walk-Forward (WF) training and exponential decay**. 
-* **Undirected, shallow aggregation** generalizes better because it captures broad local context without overfitting to brittle, far-reaching routing paths.
-* **Walk-Forward training** continuously recalibrates the decision threshold and allows the model to absorb micro-shifts in topology smoothly, resulting in the highest overall Walk-Forward Macro F1 performance in our sweeps.
-* **Exponential decay** is crucial for mitigating the temporal overfitting of GNNs during the post-shock recovery period. 
+### 4. The Winning Strategy: XGBoost + Decaying Topological Features
+Standard complex message-passing is incredibly slow and often counterproductive across temporal shocks. Standard tree-based tabular models (XGBoost) completely dominate the evaluation, peaking at **$0.674$ Macro F1** when augmented with exponentially decaying multiscale graph features ($\lambda=0.5$).
+If Graph Neural Networks must be utilized, deep and static is the wrong approach. Our current strategy pairs **Walk-Forward (WF) training** with **Exponential Decay**.
+* **Walk-Forward training** continuously recalibrates the model and absorbs micro-shifts in topology.
+* **Exponential Decay ($\lambda=0.25$)** acts as an explicit regularizer against structural overfitting. Strikingly, it allows highly complex graph architectures (e.g., `SGC K=2, Directed, Late Topology`) to overcome their previous brittleness. By explicitly forcing the model to "forget" the pre-shock AlphaBay topology, this complex directed model surges to **$0.527$ Macro F1**, becoming the champion among pure graph architectures we tested.
 
 ### 5. Future Research Directions: Beyond Discrete Snapshots
 Our findings expose the brittleness of discrete, static graph modeling when faced with financial regime shifts. Drawing on State-of-the-Art methodologies, future work should explore:

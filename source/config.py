@@ -56,7 +56,6 @@ class Config:
     sgc_lr: float = 0.01
     sgc_weight_decay: float = 5e-4
     sgc_l1_lambda: float = 1e-4        # ElasticNet L1 penalty for feature selection
-    focal_gamma: float = 2.0           # 0.0 == weighted CE
     mlp_hidden: tuple = (128, 64)
     mlp_dropout: float = 0.3
     use_layernorm: bool = False
@@ -67,6 +66,12 @@ class Config:
     use_pca: bool = False
     use_ipca: bool = False             # Walk-forward Incremental PCA
     pca_variance: float = 0.99         # % of variance to retain when use_pca=True
+
+    # Elliptic dataset: first 93 features are local (tx-level), last 72 are
+    # pre-aggregated neighbor statistics. When True, SGC propagation runs only
+    # on the local block; the agg block bypasses SGC and is concatenated after.
+    use_local_only_prop: bool = False
+    n_local_features: int = 93
 
     # Seed
     seed: int = RANDOM_SEED

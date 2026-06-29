@@ -15,8 +15,8 @@ Based on the statistical summary in `results/eda_pagerank_stats.csv`, we can ana
 | **Skewness** | 12.79 | 19.63 |
 | **Kurtosis** | 243.51 | 468.19 |
 
-#### Analytical Insights:
-* **Higher Median for Illicit Nodes**: Surprisingly, the median PageRank for Illicit nodes ($1.33 \times 10^{-4}$) is higher than for Licit nodes ($1.18 \times 10^{-4}$). The 25th percentile is also higher for Illicit nodes. This implies that the "typical" illicit node is slightly more central or receives more directed flow than the "typical" licit node. This could be due to the chain-like structure of money laundering (e.g., peel chains) where centrality is preserved along the path.
+#### Analytical Insights & The Mathematical Budget:
+* **The Median Inversion**: Surprisingly, the median PageRank for Illicit nodes ($1.33 \times 10^{-4}$) is higher than for Licit nodes ($1.18 \times 10^{-4}$). While it is tempting to attribute this to efficient criminal routing (like peel chains), this might actually be a mathematical consequence of the PageRank algorithm's zero-sum nature. Because the absolute sum of PageRank in a closed graph is bounded, and the Licit class is dominated by massive "whales" (exchanges) that hoard the vast majority of the PageRank mass, the median of the remaining Licit nodes is mathematically forced downward. The Illicit class, lacking these hyper-whales, has a more uniform distribution, naturally pulling its median higher.
 * **Higher Mean for Licit Nodes**: While the median is lower, the mean PageRank for Licit nodes is higher. This indicates that the right tail of the Licit distribution contains nodes with exceptionally high PageRank scores that pull the mean upward.
 
 ### 2. The Right Tail: Hubs of Influence
@@ -37,6 +37,6 @@ Let's look at the upper percentiles to understand the most influential nodes in 
 ### Conclusion
 
 PageRank reveals a nuanced structural difference between the two classes:
-1. **The "Average" Illicit Node**: Tends to have slightly higher centrality than an average licit node, likely due to funds being funneled through structured linear chains.
-2. **The "Elite" Licit Node**: The top 1-5% of the most influential nodes are overwhelmingly Licit. These are the major structural pillars of the network.
+1. **The "Average" Node Illusion**: The higher median centrality of illicit nodes is likely a mathematical artifact of the zero-sum PageRank budget, driven by the absence of extreme wealth concentration in the criminal sub-graph, rather than an intentional optimization strategy by bad actors.
+2. **The "Elite" Licit Node**: The top 1-5% of the most influential nodes are overwhelmingly Licit "whales". These are the major structural pillars of the network that hoard the topological mass.
 

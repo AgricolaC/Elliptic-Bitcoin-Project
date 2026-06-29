@@ -82,6 +82,28 @@ def parse_sweep(s: str) -> SweepInfo:
     if s.startswith("Ablation: Decay"):
         if "on XGBoost" in s:
             return _make(family="XGBoost", family_tag="Ablation")
+        if "on NoMP Grid:" in s:
+            k_m = _K_EXPLICIT.search(s)
+            d_m = _DIR_EXPLICIT.search(s)
+            t_m = _TOPO_EXPLICIT.search(s)
+            return _make(family="NoMP Grid", family_tag="Ablation",
+                         K=int(k_m.group(1)) if k_m else None,
+                         Dir=_dir(d_m.group(1)) if d_m else None,
+                         Topo=t_m.group(1) if t_m else None)
+        if "on Grid:" in s:
+            k_m = _K_EXPLICIT.search(s)
+            d_m = _DIR_EXPLICIT.search(s)
+            t_m = _TOPO_EXPLICIT.search(s)
+            return _make(family="Grid", family_tag="Ablation",
+                         K=int(k_m.group(1)) if k_m else None,
+                         Dir=_dir(d_m.group(1)) if d_m else None,
+                         Topo=t_m.group(1) if t_m else None)
+        if "on Sweep " in s:
+            k_m = _K_EXPLICIT.search(s)
+            t_m = _TOPO_EXPLICIT.search(s)
+            return _make(family="SGC", family_tag="Ablation",
+                         K=int(k_m.group(1)) if k_m else None,
+                         Topo=t_m.group(1) if t_m else None)
         m = _DECAY_SGC_RE.search(s)
         if m:
             return _make(family="SGC", family_tag="Ablation",
@@ -121,18 +143,23 @@ def parse_sweep(s: str) -> SweepInfo:
         elif "GCN" in s:                       fam = "GCN"
         return _make(family=fam, family_tag="Baseline")
 
-    # Sweep N: ... or Best WF: Sweep N: ...
-    if re.search(r"(?:^|Best WF:\s*)Sweep\s+\d+:", s):
+    # Sweep N: ... or Best WF: Sweep N: ... or WF Champion: Sweep N: ...
+    if re.search(r"(?:^|(?:Best WF|WF Champion):\s*)Sweep\s+\d+:", s):
         fam = "SGC+MLP" if ("+ MLP Head" in s or "MLP Head" in s) else "SGC"
-        return _make(family=fam)
+        k_m = _K_EXPLICIT.search(s)
+        t_m = _TOPO_EXPLICIT.search(s)
+        return _make(family=fam,
+                     K=int(k_m.group(1)) if k_m else None,
+                     Topo=t_m.group(1) if t_m else None)
 
-    # Grid: K=N, Dir=X, Topo=Y ... or Best WF: Grid: K=N ...
+    # Grid: K=N, Dir=X, Topo=Y ... or Best WF: Grid: K=N ... or NoMP Grid: K=N ...
     if "Grid:" in s:
         k_m = _K_EXPLICIT.search(s)
         d_m = _DIR_EXPLICIT.search(s)
         t_m = _TOPO_EXPLICIT.search(s)
+        family_tag = "NoMP Grid" if "NoMP Grid:" in s else "Grid"
         return _make(
-            family_tag="Grid",
+            family_tag=family_tag,
             K=int(k_m.group(1)) if k_m else None,
             Dir=_dir(d_m.group(1)) if d_m else None,
             Topo=t_m.group(1) if t_m else None,

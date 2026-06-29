@@ -4,14 +4,16 @@ The defining event in this dataset is the **$\tau=43$ shock**, which corresponds
 
 We analyze the macroscopic graph properties of the Bitcoin transaction network at each timestep ($\tau$). By tracking node volume, edge volume, mean degree, and graph density across the Pre-Shock ($\tau < 43$), Shock ($\tau = 43$), and Recovery ($\tau > 43$) phases, we aim to understand the physical impact of this shutdown on the network.
 
-### 1. Macroscopic Stability
+### 1. Structural Compaction(The Illusion of Macroscopic Stability)
 
-An immediate finding from the snapshot data is that **the AlphaBay shutdown did not break the macroscopic structure of the Bitcoin network**.
+At first glance, the snapshot metrics suggest that the AlphaBay shutdown did not break the macroscopic structure of the network:
 
-* **Mean Degree**: Throughout the Pre-Shock phase ($\tau=1..42$), the mean degree of nodes fluctuated in a tight band between $2.05$ and $2.87$. During the Shock ($\tau=43$), the mean degree was a perfectly normal $2.35$. In the immediate phases after the shock ($\tau=44..49$), it remained completely stable between $2.10$ and $2.38$.
-* **Graph Density**: The network is highly sparse. Density stayed tightly bounded between $0.0003$ and $0.0019$ across all 49 timesteps. The shock had no noticeable impact on global graph density.
+* **Mean Degree**: During the Shock ($\tau=43$), the mean degree was a perfectly normal $2.35$ (consistent with the $2.05$ to $2.87$ pre-shock band).
+* **Graph Density**: Density stayed tightly bounded between $0.0003$ and $0.0019$, showing no noticeable impact.
 
-This proves that the Bitcoin transaction network, as a whole, was unaffected by the darknet market shutdown. The regular licit economy continued processing transactions with the exact same structural volume and connectivity patterns.
+**The Reality Check**: Interpreting this as "stability" is a scaling artifact. Between $\tau=42$ and $\tau=43$, total nodes dropped from 7,140 to 5,063—a sudden **29% contraction of the entire network vertex set**. 
+
+In graph theory, if a network loses nearly a third of its nodes in a single timestep yet maintains an identical mean degree, it requires an equally strong structural re-wiring. The remaining nodes must have quickly formed tight, localized sub-components to preserve the average degree distribution. The network did not "continue processing transactions with the exact same structural volume"; it underwent a **structural compaction**.
 
 ### 2. The Illicit Volume Crash (Prior Shift Confirmation)
 

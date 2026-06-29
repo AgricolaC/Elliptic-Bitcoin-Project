@@ -98,89 +98,40 @@ def savefig(name: str) -> str:
 
 
 
-def plot_sgc_oversmoothing(df_fa: pd.DataFrame) -> str:
-    df_fa = add_parsed_columns(df_fa.copy())
 
-    # Grid rows only — explicit K=/Dir=/Topo= strings
-    grid = df_fa[
-        select(df_fa, family_tag='Grid')
-        & df_fa['_K'].notna()
-    ].copy()
-    grid['K'] = grid['_K'].astype(int)
-    grid['Var'] = grid['_variation'].fillna(grid['Variation'])
-
-    # Best PRAUC per (K, Var) combination
-    pivot = (
-        grid
-        .groupby(['K', 'Var'])['Static_OOT_Macro_PRAUC_mean']
-        .max()
-        .unstack('Var')
-    )
-
-    k_vals = [1, 2, 3]
-    width = 0.35
-    base_vals = [pivot.get('Base', pd.Series()).get(k, 0) for k in k_vals]
-    pca_vals  = [pivot.get('PCA',  pd.Series()).get(k, 0) for k in k_vals]
-
-    fig, ax = plt.subplots(figsize=(9, 6))
-    xs = list(range(len(k_vals)))
-    ax.bar([x - width/2 for x in xs], base_vals, width,
-           label='Raw (Base)', color='#e74c3c', alpha=0.85)
-    ax.bar([x + width/2 for x in xs], pca_vals,  width,
-           label='PCA',        color='#3498db', alpha=0.85)
-    ax.set_xlabel('Neighborhood Depth K')
-    ax.set_ylabel('Best OOT Macro PR-AUC  [primary metric]')
-    ax.set_title(
-        'PCA as Oversmoothing Regularizer\n'
-        'K=3 Raw → collapse; K=3 PCA → best graph-model OOT score'
-    )
-    ax.set_xticks(xs); ax.set_xticklabels(['K=1', 'K=2', 'K=3'])
-    ax.legend()
-    return savefig("13_sgc_oversmoothing.png")
 
 def plot_cost_vs_performance(sweep_df: pd.DataFrame) -> str:
-    df_sr = add_parsed_columns(sweep_df.copy())
-    agg = (
-        df_sr
-        .dropna(subset=['Static_Time_s', 'Static_OOT_Macro_PRAUC'])
-        .groupby('_family')
-        .agg(
-            time_mean=('Static_Time_s', 'mean'),
-            prauc_mean=('Static_OOT_Macro_PRAUC', 'mean'),
-            prauc_std=('Static_OOT_Macro_PRAUC', 'std'),
-        )
-        .reset_index()
-        .rename(columns={'_family': 'family'})
-        .dropna(subset=['prauc_mean'])
-    )
-    agg = agg[agg['family'] != 'IsolationForest']
+    # We plot the optimum configurations as found in the baseline analysis
+    data = [
+        {"family": "Logistic Regression", "time": 0.197, "f1": 0.241},
+        {"family": "PyG GCN", "time": 170.093, "f1": 0.208},
+        {"family": "SGC", "time": 1.010, "f1": 0.213},
+        {"family": "SGC+MLP", "time": 7.986, "f1": 0.244},
+        {"family": "SGC+MLP+MP", "time": 12.408, "f1": 0.322},
+        {"family": "XGBoost", "time": 2.877, "f1": 0.475},
+        {"family": "RandomForest", "time": 6.748, "f1": 0.479},
+    ]
+    agg = pd.DataFrame(data)
 
     palette = {
         'XGBoost': '#e74c3c', 'RandomForest': '#e67e22',
-        'SGC+MLP': '#3498db', 'SGC': '#9b59b6',
-        'LogisticRegression': '#1abc9c', 'GCN': '#34495e',
-    }
-    display_names = {
-        'LogisticRegression': 'Logistic Reg.', 'GCN': 'PyG GCN',
+        'SGC+MLP+MP': '#2ecc71', 'SGC+MLP': '#3498db', 'SGC': '#9b59b6',
+        'Logistic Regression': '#1abc9c', 'PyG GCN': '#34495e',
     }
 
     fig, ax = plt.subplots(figsize=(11, 6))
     for _, row in agg.iterrows():
         color = palette.get(row['family'], '#7f8c8d')
-        ax.scatter(row['time_mean'], row['prauc_mean'],
+        ax.scatter(row['time'], row['f1'],
                    color=color, s=180, zorder=5)
-        name = display_names.get(row['family'], row['family'])
-        ax.annotate(name, (row['time_mean'], row['prauc_mean']),
+        ax.annotate(row['family'], (row['time'], row['f1']),
                     textcoords='offset points', xytext=(8, 4), fontsize=10)
-        if pd.notna(row['prauc_std']) and row['prauc_std'] > 0:
-            ax.errorbar(row['time_mean'], row['prauc_mean'],
-                        yerr=row['prauc_std'], fmt='none',
-                        color='grey', capsize=4, alpha=0.6)
+
     ax.set_xscale('log')
     ax.set_xlabel('Training Time (seconds, log scale)')
-    ax.set_ylabel('OOT Macro PR-AUC  [primary metric]')
-    ax.set_title('Computational Cost vs. OOT Performance\n'
-                 'Error bars = ±1 std across 3 seeds (SGC/SGC+MLP)')
+    ax.set_ylabel('OOT Macro F1  [primary metric]')
+    ax.set_title('Computational Cost vs. Optimal OOT Performance\n'
+                 'SGC variants vs Baselines')
     ax.grid(True, alpha=0.3)
     return savefig("12_cost_vs_perf.png")
 
@@ -251,7 +202,6 @@ def plot_graph_stability(snapshot: pd.DataFrame) -> str:
     axes[0].plot(snapshot["Tau"], snapshot["Mean_Degree"], color="#4C72B0", lw=2.4)
     axes[0].axvline(43, ls="--", color="black")
     axes[0].set_ylabel("mean degree")
-    axes[0].set_title("Macroscopic graph structure remains stable through the shock")
 
     axes[1].plot(snapshot["Tau"], snapshot["Graph_Density"], color="#8172B3", lw=2.4)
     axes[1].axvline(43, ls="--", color="black")
@@ -413,10 +363,9 @@ def selected_static_rows(final: pd.DataFrame, phase_d: pd.DataFrame) -> pd.DataF
 
 def plot_wf_regimes(final: pd.DataFrame) -> str:
     wanted = [
-        ("SGC baseline", "Best WF: Sweep 1: SGC (baseline)", "Base"),
-        ("SGC + MLP", "Best WF: Sweep 2: + MLP Head", "Base"),
-        ("Best SGC WF", "Best WF: Grid: K=2, Dir=F, Topo=None", "Base"),
-        ("Best graph recovery", "Best WF: Grid: K=3, Dir=T, Topo=early", "PCA"),
+        ("SGC baseline", "WF Champion: Sweep 1: SGC (baseline) K=2, Topo=early", "Base"),
+        ("WF Champion SGC", "WF Champion: Grid: K=2, Dir=F, Topo=early", "Base"),
+        ("Decay Champion SGC", "Ablation: Decay λ=0.25 on Grid: K=2, Dir=T, Topo=late", "Base"),
         ("XGBoost WF", "Baseline: XGBoost WF (epsilon-fallback)", "Base"),
         ("XGBoost + decay", "Ablation: Decay λ=0.5 on XGBoost", "Base"),
     ]
@@ -453,17 +402,17 @@ def plot_decay(final: pd.DataFrame) -> str:
     rows = []
     for model_label, suffix in [
         ("XGBoost", "XGBoost"),
-        ("SGC K=2 Dir=T Topo=early", "2 T early Base"),
-        ("SGC K=2 Dir=T Topo=late", "2 T late Base"),
+        ("SGC K=2 Dir=F Topo=early", "Grid: K=2, Dir=F, Topo=early"),
+        ("SGC K=2 Dir=T Topo=late", "Grid: K=2, Dir=T, Topo=late"),
     ]:
         if model_label == "XGBoost":
             base = final[final["Sweep"].eq("Baseline: XGBoost WF (epsilon-fallback)")].iloc[0]
             rows.append({"Model": model_label, "lambda": 0.0, "Recovery F1": base["WF_Recovery_Pooled_F1_mean"]})
         else:
-            # no-decay walk-forward rows are named "Best WF: Grid: ..."
-            topo = "early" if "early" in suffix else "late"
-            base_sweep = f"Best WF: Grid: K=2, Dir=T, Topo={topo}"
-            base = final[(final["Sweep"].eq(base_sweep)) & (final["Variation"].eq("Base"))]
+            base_sweep = suffix
+            if suffix.startswith("Grid:"):
+                base_sweep = f"WF Champion: {suffix}"
+            base = final[final["Sweep"].eq(base_sweep)]
             if not base.empty:
                 rows.append({"Model": model_label, "lambda": 0.0, "Recovery F1": base.iloc[0]["WF_Recovery_Pooled_F1_mean"]})
         for lam in [0.05, 0.25, 0.5]:
@@ -651,10 +600,9 @@ def build_summary_tables(data: dict[str, pd.DataFrame]) -> dict[str, str]:
 
     wf_rows = []
     for model, sweep, variation in [
-        ("SGC baseline", "Best WF: Sweep 1: SGC (baseline)", "Base"),
-        ("SGC + MLP", "Best WF: Sweep 2: + MLP Head", "Base"),
-        ("Best SGC WF", "Best WF: Grid: K=2, Dir=F, Topo=None", "Base"),
-        ("Best graph recovery", "Best WF: Grid: K=3, Dir=T, Topo=early", "PCA"),
+        ("SGC baseline", "WF Champion: Sweep 1: SGC (baseline) K=2, Topo=early", "Base"),
+        ("WF Champion SGC", "WF Champion: Grid: K=2, Dir=F, Topo=early", "Base"),
+        ("Decay Champion SGC", "Ablation: Decay λ=0.25 on Grid: K=2, Dir=T, Topo=late", "Base"),
         ("XGBoost WF", "Baseline: XGBoost WF (epsilon-fallback)", "Base"),
         ("XGBoost + decay", "Ablation: Decay λ=0.5 on XGBoost", "Base"),
     ]:
@@ -696,7 +644,7 @@ def code_cell(code: str, slide_type: str = "fragment"):
     return cell
 
 
-def build_notebook(data: dict[str, pd.DataFrame], assets: dict[str, str], tables: dict[str, str], deep_table: str) -> None:
+def build_notebook(data: dict[str, pd.DataFrame], assets: dict[str, str], tables: dict[str, str]) -> None:
     nb = nbf.v4.new_notebook()
     nb["metadata"] = {
         "kernelspec": {
@@ -738,12 +686,12 @@ Generated from:
     if narrative:
         cells.append(md_cell(narrative))
 
-    if "eda_panel_b_volume" in assets:
-        cells.append(md_cell(f"![Transaction Volume per Snapshot]({assets['eda_panel_b_volume']})"))
-
     narrative = read_narrative("snapshot_topology_analysis.md")
     if narrative:
         cells.append(md_cell(f"---\n{narrative}"))
+
+    if "eda_panel_b_volume" in assets:
+        cells.append(md_cell(f"![Transaction Volume per Snapshot]({assets['eda_panel_b_volume']})"))
         
     if "panel1_ground_truth" in assets:
         cells.append(md_cell(f"![Ground truth timeline]({assets['panel1_ground_truth']})"))
@@ -779,26 +727,30 @@ Generated from:
     cells.append(md_cell(f"### Permutation separability tests\n\n{tables['sep_table']}"))
     cells.append(md_cell(f"![Drift and separability]({assets['drift_sep']})"))
 
-    narrative = read_narrative("baseline_performance_report.md")
+    narrative = read_narrative("sgc_and_baseline_analysis.md")
     if narrative:
         cells.append(md_cell(f"---\n{narrative}"))
     if "cost_vs_perf" in assets:
-        cells.append(md_cell(f"![Cost vs Performance]({assets['cost_vs_perf']})"))
+        cells.append(md_cell(f"![Computational Cost vs. Optimal OOT Performance]({assets['cost_vs_perf']})"))
 
-    narrative = read_narrative("sgc_grid_analysis.md")
-    if narrative:
-        cells.append(md_cell(f"---\n{narrative}"))
-    if "sgc_oversmoothing" in assets:
-        cells.append(md_cell(f"![PCA as Oversmoothing Regularizer]({assets['sgc_oversmoothing']})"))
-        cells.append(md_cell("> **NOTE**: PCA here = input-compression regularizer (reduces oversmoothing at K=3). This is distinct from the drift-diagnostic PCA in Section 2."))
-    
     narrative = read_narrative("deep_res_mlp_analysis.md")
     if narrative:
         cells.append(md_cell(f"---\n{narrative}"))
-        cells.append(md_cell(f"![MLP validation deltas]({assets['deep_heatmap']})"))
-        cells.append(md_cell(f"### Validation deltas versus the old Grid MLP benchmark\n\n{deep_table}"))
+    cells.append(md_cell(
+        "---\n"
+        "## From Static Optimization to Temporal Robustness\n\n"
+        "The Deep MLP sweeps pushed the static OOT ceiling to **Pooled F1 = 0.483** via aggressive "
+        "architecture search. However, static evaluation freezes the training set at $\\tau \\le 26$. "
+        "To understand how models behave under continuous, real-world deployment — especially across "
+        "the $\\tau=43$ shock — we now shift to **Walk-Forward (WF) cross-validation**, where the "
+        "optimal WF configuration differs from the static optimum."
+    ))
 
     narrative = read_narrative("wf_temporal_analysis.md")
+    if narrative:
+        cells.append(md_cell(f"---\n{narrative}"))
+
+    narrative = read_narrative("exponential_decay_analysis.md")
     if narrative:
         cells.append(md_cell(f"---\n{narrative}"))
     cells.append(md_cell(f"![WF regimes]({assets['wf_regimes']})"))
@@ -867,15 +819,13 @@ def main() -> None:
         "intrinsic": plot_intrinsic_dim(data["intrinsic"]),
         "wf_regimes": plot_wf_regimes(data["final"]),
         "decay": plot_decay(data["final"]),
-        "sgc_oversmoothing": plot_sgc_oversmoothing(data["final"]),
+
         "cost_vs_perf": plot_cost_vs_performance(data["sweep"]),
     }
     assets.update(copied)
-    deep_table, deep_values = compute_deep_validation_table(data)
-    assets["deep_heatmap"] = plot_deep_validation_heatmap(deep_values)
     tables = build_summary_tables(data)
 
-    build_notebook(data, assets, tables, deep_table)
+    build_notebook(data, assets, tables)
 
     manifest = {
         "notebook": str(NOTEBOOK.relative_to(ROOT)),

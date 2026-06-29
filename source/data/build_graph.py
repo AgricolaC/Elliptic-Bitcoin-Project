@@ -194,24 +194,38 @@ class EllipticDataModule:
         # Encapsulated here so callers never need to run the propagation loop
         # or assign dm.sgc_input_dim manually.
         if sgc_propagate is not None:
+            local_only = getattr(c, 'use_local_only_prop', False)
+            n_local = getattr(c, 'n_local_features', 93) if local_only else None
+
             for t in self.graphs:
                 g = self.graphs[t]
+                if n_local is not None:
+                    x_in  = g["x"][:, :n_local]
+                    x_agg = g["x"][:, n_local:]
+                else:
+                    x_in  = g["x"]
+                    x_agg = None
                 prop = sgc_propagate(
-                    g["x"], g["edge_index"], c.sgc_k, c.use_multiscale_prop, c.use_directional_prop
+                    x_in, g["edge_index"], c.sgc_k, c.use_multiscale_prop, c.use_directional_prop
                 )
+                if x_agg is not None:
+                    prop = torch.cat([prop, x_agg], dim=1)
                 if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                     prop = torch.cat([prop, g["topo"]], dim=1)
                 g["prop"] = prop
             # SHAPE GUARD: verify dim from actual tensor
             sample_prop = self.graphs[ts_min]["prop"]
-            
+
+            prop_in_dim = n_local if n_local is not None else self.feature_dim
             if c.use_directional_prop:
-                expected_dim = self.feature_dim * (1 + 3 * c.sgc_k)
+                expected_dim = prop_in_dim * (1 + 3 * c.sgc_k)
             elif c.use_multiscale_prop:
-                expected_dim = self.feature_dim * (c.sgc_k + 1)
+                expected_dim = prop_in_dim * (c.sgc_k + 1)
             else:
-                expected_dim = self.feature_dim
-                
+                expected_dim = prop_in_dim
+            if n_local is not None:
+                expected_dim += (self.feature_dim - n_local)
+
             if c.use_graph_structural and getattr(c, 'topo_injection_mode', 'late') == 'late':
                 expected_dim += 2
                 
