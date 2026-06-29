@@ -1,6 +1,6 @@
 ## Walk-Forward (WF) Temporal Analysis
 
-> **Why we did this**: To understand how models respond to the temporal shock at $\tau=43$ when trained continuously. Static Out-of-Time evaluation is rigid; Walk-Forward training mimics real-world deployment, allowing us to see if models can 'recover' by learning the post-shock regime.
+> **Why we did this**: Static OOT evaluation asks whether a model trained on early timesteps survives the future. Walk-forward evaluation asks a deployment-style question: if the model is repeatedly retrained with the newest available snapshot, can it adapt to the post-shutdown regime?
 
 We analyze the Walk-Forward (WF) cross-validation results purely in terms of **Macro F1**. We segment the evaluation into three distinct temporal phases:
 1. **Pre-Shock ($\tau \le 42$)**: The stable darknet market era.

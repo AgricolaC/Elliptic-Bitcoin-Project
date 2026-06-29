@@ -1,59 +1,98 @@
-## Deep Residual MLP Architecture Analysis
+## Deep MLP Head Ablation: Residuals vs LayerNorm-SiLU
 
-> **Why we did this**: To aggressively tune the classifier head of our optimal SGC framework. We sequentially ablated MLP depth, LayerNorm, SiLU vs ReLU activations, and residual connections to extract maximum performance.
+> **Why we did this**: We wanted to test whether a stronger classifier head on top of multiscale SGC propagation could improve graph-model performance. The original hypothesis emphasized a deep residual MLP, but the experiments show a more nuanced result: **residual connections did not help**. The useful head was small, normalized, and non-residual.
 
-This report analyzes the four experimental sweep phases (A through D) conducted in the `results/deep_res_mlp_results` directory. This architecture extends the baseline SGC model by utilizing a more complex classifier head featuring **LayerNorm** and **SiLU** activations. 
+This report summarizes the individual head trials and the four sweep phases in `results/deep_res_mlp_results`.
 
-As requested, all performance metrics focus strictly on **Out-of-Time (OOT) Macro F1** and **OOT Pooled Illicit-F1**.
+### Reporting rule
 
-### Overview of the Sweep Phases
-The experiment was conducted sequentially, greedily locking in the best parameters from each phase to feed into the next.
+For the presentation, the deep-MLP comparison is standardized to **static OOT Macro** metrics:
 
-#### Phase A: Architecture Depth & Width
-* **Scope**: Swept the SGC neighborhood depth ($K \in \{1, 2, 3\}$) and the MLP hidden layer dimensions (e.g., `(64, 64)`, `(128, 128)`, `(256, 128)`).
-* **Base Configuration**: PCA features, Directional Message Passing ($Dir=T$), Topological features appended late ($Topo=late$), no residual connections.
-* **Findings**:
-  * The best performing configuration was **$K=3$** with a relatively small MLP of **`(64, 64)`**.
-  * **OOT Pooled F1:** $0.4827$
-  * **OOT Macro F1:** $0.2622$
-  * **Insight**: Smaller hidden layers `(64, 64)` significantly outperformed larger architectures like `(128, 128)` (Pooled F1: $0.4619$) or `(256, 128)` (Pooled F1: $0.4319$). The graph representations are highly susceptible to overfitting, and a massive MLP quickly memorizes the pre-shock topology.
+* **Primary reported metric**: OOT Macro PR-AUC on $\tau=35,\ldots,49$.
+* **Secondary reported metric**: OOT Macro F1 on the same snapshots.
+* Development-split scores are not used in the presentation figures because they stop before the shutdown and recovery period.
 
-#### Phase B: Graph Feature Control
-* **Scope**: Fixed the architecture to the winner of Phase A ($K=3$, `(64, 64)`). Swept across combinations of Base vs PCA features, Directional vs Symmetric message passing, and early/late/none topological features.
-* **Findings**:
-  * The absolute peak performance was achieved by **PCA + Directional + Late Topology**.
-  * **OOT Pooled F1:** $0.4827$
-  * **OOT Macro F1:** $0.2622$
-  * **Insight**: This is a fascinating divergence from the simple SGC Grid! In the simple SGC Grid, `Topo=None` was optimal when $K=3$ and PCA was used. However, with the addition of LayerNorm and SiLU in this deeper MLP, the model is stabilized enough to effectively parse the explicit explicit structural statistics appended *after* message passing (`Topo=late`), yielding an even higher peak score. Although, the scores are very close to each other and it is hard to distinguish the best.
+This matters here because the pre-shutdown development split can make brittle graph heads look safer than they are. The post-shutdown OOT window is the realistic stress test.
 
-#### Phase C: Dropout Regularization
-* **Scope**: Fixed the graph features to the winner of Phase B. Swept Dropout rates $\in \{0.1, 0.2, 0.3, 0.4\}$.
-* **Findings**:
-  * A moderate dropout of **$0.3$** provided the best out-of-time generalization.
-  * **Dropout 0.3**: OOT Pooled F1 = $0.4827$ | OOT Macro F1 = $0.2622$
-  * **Dropout 0.4**: OOT Pooled F1 = $0.4710$ | OOT Macro F1 = $0.2579$
-  * **Dropout 0.1**: OOT Pooled F1 = $0.4033$ | OOT Macro F1 = $0.2142$
-  * **Insight**: Insufficient dropout ($0.1$) causes a massive drop in OOT performance, reaffirming that aggressive regularization is absolutely mandatory to prevent overfitting to the pre-shock geometric structure.
+### What failed: residual heads
 
-#### Phase D: Optimizer Tuning
-* **Scope**: Fixed Dropout to $0.4$ (as selected by validation PR-AUC in Phase C). Swept AdamW Learning Rate and Weight Decay.
-* **Findings**:
-  * The optimal optimizer configuration was **LR = 0.01, Weight Decay = 0.0001**.
-  * **OOT Pooled F1:** $0.4772$
-  * **OOT Macro F1:** $0.2543$
-  * **Insight**: Higher learning rates ($0.01$) paired with minimal weight decay ($0.0001$) yielded the best results, likely helping the network escape sharp, overfitted local minima associated with the pre-shock graph structure.
+The residual variants were informative negative results:
 
----
+* `run0`: wide residual LayerNorm + SiLU head underperformed the previous graph-MLP benchmark.
+* `run1`: smaller residual LayerNorm + SiLU head still underperformed.
 
-### Conclusion & Final Network Configuration
-The Deep Residual MLP sweep successfully discovered a robust architecture that maximizes Out-of-Time generalization for Graph Neural Networks.
+The likely reason is that residual capacity made it easier for the head to memorize pre-shock graph motifs. In a non-stationary transaction graph, additional head capacity is not automatically helpful.
 
-**The Ultimate Graph Configuration:**
-* **SGC Parameters**: $K=3$, PCA Features, Directional Message Passing ($Dir=T$), Late Topological Features ($Topo=late$).
-* **MLP Architecture**: 2 hidden layers `(64, 64)`, LayerNorm, SiLU activations.
-* **Regularization**: Dropout $0.3$, AdamW (LR=$0.01$, WD=$0.0001$).
+### What worked: small LayerNorm + SiLU without residuals
 
-**Peak Out-of-Time Performance:**
-* **OOT Pooled Illicit-F1**: **$0.4827$**
-* **OOT Macro F1**: **$0.2622$**
+The first useful improvement came from removing residual connections while keeping LayerNorm and SiLU:
 
+* `run2`: `(128, 128)` LayerNorm + SiLU, no residual.
+* `run3`: `(256, 128)` tapered LayerNorm + SiLU, no residual.
+
+`run2` was the stronger targeted trial under OOT Macro reporting, improving the directional/PCA graph-MLP benchmark without adding residual capacity. This motivated the broader phase sweeps.
+
+### Overview of the sweep phases
+
+The experiment was conducted sequentially, reading each phase through OOT Macro PR-AUC and OOT Macro F1 for the presentation.
+
+#### Phase A: Architecture depth and width
+
+* **Scope**: swept SGC neighborhood depth $K \in \{1,2,3\}$ and MLP hidden sizes.
+* **Base configuration**: PCA features, directional message passing, late topology, no residuals.
+* **Finding**: $K=3$ with a compact `(64, 64)` head was best by OOT Macro PR-AUC: $0.305$.
+
+The key lesson is that wider heads were not better. The propagated graph representation is already rich; a large head can overfit brittle pre-shock topology.
+
+#### Phase B: Graph feature controls
+
+* **Scope**: fixed $K=3$, `(64, 64)` and swept Base/PCA, directional/symmetric propagation, and topology injection.
+* **Finding**: PCA + directional propagation + late topology remained the best OOT-Macro configuration.
+
+This result complements the earlier SGC grid: PCA is especially useful when deeper propagation is used, because it regularizes the oversmoothed high-hop representation.
+
+#### Phase C: Dropout regularization
+
+* **Scope**: fixed the graph configuration and swept dropout $\in \{0.1,0.2,0.3,0.4\}$.
+* **OOT Macro winner**: dropout $0.3$ with OOT Macro PR-AUC $0.305$ and OOT Macro F1 $0.262$.
+* **Diagnostic note**: dropout $0.4$ looked slightly better on the development split, but it was worse on the post-shutdown OOT window and is therefore not the presentation choice.
+
+#### Phase D: Optimizer tuning
+
+* **Scope**: swept AdamW learning rate and weight decay around the compact LayerNorm + SiLU head.
+* **OOT Macro winner within Phase D**: learning rate $0.01$, weight decay $0.0001$, with OOT Macro PR-AUC $0.297$.
+* **Finding**: optimizer tuning did not beat the Phase C OOT-Macro finalist; the simpler default setting remained the better presentation result.
+
+### Final graph-head configuration
+
+The final OOT-Macro graph head is:
+
+```python
+use_mlp_head = True
+use_multiscale_prop = True
+use_layernorm = True
+activation = "silu"
+use_residual = False
+
+mlp_hidden = (64, 64)
+mlp_dropout = 0.3
+
+sgc_k = 3
+use_directional_prop = True
+use_graph_structural = True
+topo_injection_mode = "late"
+
+use_pca = True
+pca_variance = 0.98
+
+sgc_lr = 0.01
+sgc_weight_decay = 0.0005
+```
+
+### Final interpretation
+
+The experiment should not be presented as a victory for residual MLPs. The better conclusion is:
+
+> Multiscale SGC benefits from a small LayerNorm + SiLU classifier head, but residual connections and wider heads are counterproductive in this non-stationary graph setting.
+
+The final graph head improves the graph-MLP OOT Macro comparison relative to many residual attempts, but it does **not** beat the strongest tabular baselines such as RandomForest and XGBoost.
