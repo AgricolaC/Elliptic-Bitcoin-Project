@@ -69,7 +69,7 @@ We tested this directly with a two-sample permutation test (10,000 permutations,
 | Raw node features | 8 / 10 | 0.003 – 0.065 |
 | One-hop propagated features | **10 / 10** | 0.002 – 0.046 |
 
-Propagation does **not** degrade separability at τ=43 — it slightly improves it. **Broadcast bias is falsified at the tested depth.** The τ=43 model failure is not a loss of representational information; it is a **classifier-head failure driven by class imbalance** — with only 24 illicit nodes, threshold calibration and the decision boundary become unstable even though the features remain separable. (*Caveats, stated honestly*: only single-hop propagation was tested — deeper stacks could still smear representations, so this rules out broadcast bias at K=1, not at arbitrary depth; and both separability tests at τ=43 are flagged low-confidence in the source data because n=24.)
+Propagation does **not** degrade separability at τ=43 — it slightly improves it. **Broadcast bias is falsified at the tested depth.** The τ=43 model failure is not porely a loss of representational information; it is a **classifier-head failure driven by class imbalance** — with only 24 illicit nodes, threshold calibration and the decision boundary become unstable even though the features remain separable. (*Caveats, stated honestly*: only single-hop propagation was tested — deeper stacks could still smear representations, so this rules out broadcast bias at K=1, not at arbitrary depth; and both separability tests at τ=43 are flagged low-confidence in the source data because n=24.)
 
 ### Hypothesis B (rejected): Anomalous geometric drift at τ=43
 
@@ -94,7 +94,7 @@ Both falsification tests point the same way: the τ=43 catastrophe is a **Prior 
 
 Falsifying broadcast bias doesn't mean graph models are fine — it relocates the failure to a different, later phase: **recovery** ($\tau \ge 44$).
 
-During the pre-shock phase, illicit transactions operated within established darknet-market infrastructure, forming characteristic local micro-motifs. Graph models propagate over these motifs and learn to classify illicit nodes partly by the *geometry of their neighborhood*, not just their raw features. When AlphaBay was seized, surviving actors re-entered the network through different local structures — sparser neighborhoods, new routing patterns. A model trained on the pre-shock motif library encounters a different structural vocabulary in recovery, and multi-hop propagation makes this worse, not better, because it bakes the obsolete topology deeper into every node's representation.
+During the pre-shock phase, illicit transactions operated more or less within established darknet-market infrastructure, forming characteristic local micro-motifs. Graph models propagate over these motifs and learn to classify illicit nodes partly by the *geometry of their neighborhood*, not just their raw features. When AlphaBay was seized, surviving actors re-entered the network through different local structures — sparser neighborhoods, new routing patterns. A model trained on the pre-shock motif library encounters a different structural vocabulary in recovery, and multi-hop propagation generally makes this worse, not better, because it bakes the obsolete topology deeper into every node's representation.
 
 Walk-forward (retrain on all steps $< \tau$, evaluate at $\tau$, report Macro-F1 = the mean of per-step illicit-F1) makes this precise:
 
@@ -103,9 +103,9 @@ Walk-forward (retrain on all steps $< \tau$, evaluate at $\tau$, report Macro-F1
 | XGBoost (walk-forward) | **0.895** | 0.000 | **0.393** |
 | Best graph model (SGC+MLP, K=2, Dir=F, Topo=early) | 0.786 | 0.000 | 0.175 |
 
-**At the shock itself both model families score exactly 0.000** — with 24 illicit nodes, neither family recovers the minority class. This is the trap to avoid on slides: *tabular models do not "survive" τ=43*; they collapse identically. Their real edge is **faster recovery** (0.393 vs 0.175 Macro-F1 over τ=44–49) and a higher pre-shock ceiling — not shock-robustness.
+**At the shock itself both model families score $\sim$ 0.000** — with 24 illicit nodes, neither family recovers the minority class. This is the trap to avoid on slides: *tabular models do not "survive" τ=43*; they collapse identically. Their real edge is **faster recovery** (0.393 vs 0.175 Macro-F1 over τ=44–49) and a higher pre-shock ceiling — not shock-robustness.
 
-**A tempting mechanism, correctly labeled as unproven:** of the 166 features, 72 are graph-neighborhood aggregates and 94 are purely local, so a tree could in principle stop splitting on the aggregates once the neighborhood signal becomes stale, while a GNN blends local and neighborhood information at every layer and cannot opt out. This is a plausible story for the *recovery* gap — but the committed experiments include **no feature-importance analysis and no 94-local-only vs. 166-all-features ablation** to confirm it (the harness exists at `source/experiments/local_only_prop_experiment.py` but is unrun). We report it as a hypothesis for future work, not a measured result — see [Limitations](#8-limitations).
+**A tempting mechanism, correctly labeled as unproven:** of the 166 features, 72 are graph-neighborhood aggregates and 94 are purely local, so a tree could in principle stop splitting on the aggregates once the neighborhood signal becomes stale, while a GNN blends local and neighborhood information at every layer and cannot opt out. This is a plausible story for the *recovery* gap — but the committed experiments include **no feature-importance analysis and no 94-local-only vs. 166-all-features ablation** to confirm it. We report it as a hypothesis for future work, not a measured result — see [Limitations](#8-limitations).
 
 ---
 
@@ -326,9 +326,9 @@ Stated explicitly so the project's claims aren't over-read:
 |---|---|
 | **Walk-Forward (WF)** | At each test step τ, retrain from scratch on all prior steps and evaluate at τ. The primary, deployment-style evaluation protocol; Macro-F1 = mean of per-step illicit-F1. |
 | **PR-AUC** | Threshold-free average precision on the illicit class; primary metric for static comparisons. |
-| **Prior Probability Shift** | A change in the marginal class distribution p(y) without a corresponding change in p(x\|y). What happens at τ=43, confirmed by falsifying both broadcast bias and drift-onset alternatives. |
+| **Prior Probability Shift** | A change in the marginal class distribution $P(y)$ without a corresponding change in $P(x|y)$. What happens at τ=43, confirmed by falsifying both broadcast bias and drift-onset alternatives. |
 | **Broadcast Bias** | Neighborhood aggregation homogenizing minority-class embeddings toward the majority. Falsified at τ=43 (K=1 propagation improves separability, not degrades it). |
-| **Graph Recovery Trap** | A graph model achieves state-of-the-art pre-shock performance while remaining structurally tethered to obsolete micro-motifs, causing it to underperform in the post-shock recovery regime relative to tabular models. |
+| **Graph Recovery Trap** | A graph model achieves near SOTA pre-shock performance while remaining structurally tethered to obsolete micro-motifs, causing it to underperform in the post-shock recovery regime relative to tabular models. |
 | **Temporal Decay** | Exponential sample re-weighting $w_t = \lambda^{\tau-t}$ applied during WF training to down-weight stale historical topology. |
 | **ε-Fallback** | When the threshold-calibration step has fewer than ε=10 illicit nodes, calibration falls back to a local-quantile estimator to avoid noise-driven miscalibration. |
 | **Intrinsic Dimensionality** | A proxy for information diversity in node embeddings, estimated via two-NN methods; collapses under oversmoothing. |
